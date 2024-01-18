@@ -1,0 +1,8 @@
+{
+  "columns": ["col1", "col2", "col3"],
+  "records": [
+    ["cell11", "cell12", "cell13"],
+    ["cell21", "cell22", "cell23"],
+    ["cell21", "cell22", "cell23"]
+  ]
+}
