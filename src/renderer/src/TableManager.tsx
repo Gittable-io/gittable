@@ -24,10 +24,10 @@ const reducer = (state: Table, action: TableDataUpdateAction): Table => {
   }
 };
 
-export function TableManager({ initialTable }: TableManagerProps) {
+export function TableManager({ initialTable }: TableManagerProps): JSX.Element {
   const [data, dispatch] = useReducer(reducer, initialTable);
 
-  const handleChange = (action: TableDataUpdateAction) => {
+  const handleChange = (action: TableDataUpdateAction): void => {
     console.info(
       `[TableManagerMock] Action dispatched: ${JSON.stringify(action, null, 2)}`,
     );
