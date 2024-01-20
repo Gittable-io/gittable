@@ -1,23 +1,19 @@
 import Versions from "./components/Versions";
-import { TableManager } from "./TableManager";
-import { useEffect, useState } from "react";
+import { DatabaseSelectorCard } from "./components";
+import { useState } from "react";
+import { DatabaseWorkspace } from "./components";
 
 function App(): JSX.Element {
-  const [data, setData] = useState(null);
-
-  const loadTable = async (): Promise<void> => {
-    const testTableData = await window.api.get_table();
-    setData(testTableData);
-  };
-
-  useEffect(() => {
-    loadTable();
-  }, []);
+  const [dbPath, setDbPath] = useState<string | null>(null);
 
   return (
     <div className="container">
       <Versions></Versions>
-      {data !== null && <TableManager initialTable={data} />}
+      {dbPath === null ? (
+        <DatabaseSelectorCard onFileSelect={setDbPath} />
+      ) : (
+        <DatabaseWorkspace dbPath={dbPath} />
+      )}
     </div>
   );
 }
