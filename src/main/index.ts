@@ -3,6 +3,9 @@ import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import icon from "../../resources/icon.png?asset";
 import { addHandlesForGittableElectronAPICall } from "./api";
+import installExtension, {
+  REACT_DEVELOPER_TOOLS,
+} from "electron-devtools-assembler";
 
 function createWindow(): void {
   // Create the browser window.
@@ -50,6 +53,12 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
+  // Install React Dev Tools : https://github.com/xupea/electron-devtools-installer
+  // TODO: Should this code be removed when the app is packaged and released for production?
+  installExtension(REACT_DEVELOPER_TOOLS)
+    .then((name) => console.log(`Added Extension:  ${name}`))
+    .catch((err) => console.log("An error occurred: ", err));
+
   // Let the main process listen to the Gittable API calls
   // from the renderer
   addHandlesForGittableElectronAPICall();
@@ -70,6 +79,16 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+// This additional code seems to be necessary to install Install React Dev Tools
+// TODO: Should this code be removed when the app is packaged and released for production?
+app.on("ready", async () => {
+  await installExtension(REACT_DEVELOPER_TOOLS, {
+    loadExtensionOptions: {
+      allowFileAccess: true,
+    },
+  });
 });
 
 // In this file you can include the rest of your app"s specific main process
