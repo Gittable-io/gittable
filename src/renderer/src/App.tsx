@@ -1,7 +1,7 @@
 import { DatabaseSelectorCard } from "./components";
 import { useState } from "react";
 import { DatabaseWorkspace } from "./components";
-import { Footer } from "./components/Footer/Footer";
+import { Footer } from "./components";
 import "./App.css";
 
 function App(): JSX.Element {
