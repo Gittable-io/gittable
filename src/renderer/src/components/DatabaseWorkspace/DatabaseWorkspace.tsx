@@ -16,6 +16,9 @@ const tableReducer = (
   curState: TableDataState,
   action: TableDataLoadAction | TableDataUpdateAction,
 ): TableDataState => {
+  console.debug(
+    `[DatabaseWorkspace/tableReducer]: Received action: ${action.type}`,
+  );
   if (curState === null) {
     switch (action.type) {
       case "tableDataLoaded": {
@@ -64,10 +67,14 @@ export function DatabaseWorkspace({
     React.Reducer<TableDataState, TableDataLoadAction | TableDataUpdateAction>
   >(tableReducer, null);
 
+  // Side effect: Load data when mounting
   useEffect(() => {
+    console.debug(`[DatabaseWorkspace/useEffect] Loading data`);
     const loadTableData = async (): Promise<void> => {
-      console.log(`DatabaseWorkspace: dbPath=${dbPath}`);
       const tableData = await window.api.get_table(dbPath);
+      console.debug(
+        `[DatabaseWorkspace/useEffect/loadTableData] dispatching tableDataLoaded action`,
+      );
       dispatchTableDataChange({ type: "tableDataLoaded", payload: tableData });
     };
 

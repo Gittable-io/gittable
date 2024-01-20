@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./DatabaseSelectorCard.css";
 
 type DatabaseSelectorCardProps = {
   onFileSelect: (path: string) => void;
@@ -17,7 +18,8 @@ export function DatabaseSelectorCard({
   };
 
   return (
-    <div>
+    <div className="database-selector-card">
+      <h1>Open Database</h1>
       <input
         type="file"
         accept=".table.json"
