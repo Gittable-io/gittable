@@ -1,5 +1,5 @@
 import { ElectronAPI } from "@electron-toolkit/preload";
-import { IGittableElectronAPI } from "./main/api";
+import { IGittableElectronAPI } from "../main/api";
 
 declare global {
   interface Window {

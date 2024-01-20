@@ -1,9 +1,10 @@
 import fs from "node:fs/promises";
 import { Table } from "gittable-editor";
 
-export async function get_table(): Promise<Table> {
+export async function get_table(path: string): Promise<Table> {
+  console.log(`get_table: path=${path}`);
   try {
-    const data = await fs.readFile("C:/Users/hhour/Desktop/test.table.json", {
+    const data = await fs.readFile(path, {
       encoding: "utf8",
     });
     return JSON.parse(data) as Table;
