@@ -35,12 +35,12 @@ export function DatabaseWorkspace({
   }, [dbPath, state]);
 
   return (
-    <div>
+    <>
       {state.tableData !== null ? (
         <TableEditor table={state.tableData} onDataChange={dispatch} />
       ) : (
-        "Loading..."
+        <div>Loading...</div>
       )}
-    </div>
+    </>
   );
 }
