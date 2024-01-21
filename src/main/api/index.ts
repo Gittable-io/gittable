@@ -1,6 +1,6 @@
 import { ipcRenderer, ipcMain } from "electron";
 import { Table } from "gittable-editor";
-import { get_table, post_table } from "./table";
+import { get_table, post_table } from "./table/";
 import { post_ping } from "./ping";
 
 // Define the functions (API) that the renderer
@@ -29,3 +29,4 @@ const addHandlesForGittableElectronAPICall = (): void => {
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };
+export type { IGittableElectronAPI };
