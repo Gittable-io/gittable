@@ -5,7 +5,6 @@
   overflow: hidden;
   font-family: "Menlo", "Lucida Console", monospace;
   color: black;
-  line-height: 1;
   transition: all 0.3s;
 }
 
