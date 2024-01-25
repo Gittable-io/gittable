@@ -22,8 +22,8 @@ const gittableElectronAPI: IGittableElectronAPI = {
 // Map ipcRenderer.invoke(<channel>) to controller function
 const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("post_ping", post_ping);
-  ipcMain.handle("get_table", (event, path) => get_table(path));
-  ipcMain.handle("post_table", (event, path, tableData) =>
+  ipcMain.handle("get_table", (_event, path) => get_table(path));
+  ipcMain.handle("post_table", (_event, path, tableData) =>
     post_table(path, tableData),
   );
 };
