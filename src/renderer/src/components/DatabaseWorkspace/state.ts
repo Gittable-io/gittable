@@ -47,13 +47,20 @@ export const reducer = (
   } else {
     switch (action.type) {
       case "cellValueChanged": {
-        const { row, col, newValue } = action.payload;
+        const { recordIdx, colIdx, newValue } = action.payload;
         return {
           tableData: {
             ...curState.tableData,
-            records: curState.tableData.records.map((r, rIdx) =>
-              rIdx === row
-                ? [...r.slice(0, col), newValue, ...r.slice(col + 1)]
+            records: curState.tableData.records.map((r) =>
+              r.idx === recordIdx
+                ? {
+                    ...r,
+                    data: [
+                      ...r.data.slice(0, colIdx),
+                      newValue,
+                      ...r.data.slice(colIdx + 1),
+                    ],
+                  }
                 : r,
             ),
           },
