@@ -1,4 +1,4 @@
-import { Table, TableDataUpdateAction } from "gittable-editor";
+import { Table, TableDataUpdateAction, tableReducer } from "gittable-editor";
 
 /**
  * State definition
@@ -46,27 +46,13 @@ export const reducer = (
     }
   } else {
     switch (action.type) {
-      case "cellValueChanged": {
-        const { recordIdx, colIdx, newValue } = action.payload;
+      case "changeCellValue":
+      case "newRecord":
         return {
-          tableData: {
-            ...curState.tableData,
-            records: curState.tableData.records.map((r) =>
-              r.idx === recordIdx
-                ? {
-                    ...r,
-                    data: [
-                      ...r.data.slice(0, colIdx),
-                      newValue,
-                      ...r.data.slice(colIdx + 1),
-                    ],
-                  }
-                : r,
-            ),
-          },
+          ...curState,
+          tableData: tableReducer(curState.tableData, action),
           tableDataModified: true,
         };
-      }
       case "tableDataSaved": {
         return {
           ...curState,
@@ -76,12 +62,6 @@ export const reducer = (
       case "tableDataLoaded": {
         console.warn(
           `Received ${action.type} action AND (state.tableData !== null). This should not occur`,
-        );
-        return curState;
-      }
-      default: {
-        console.warn(
-          `Received unknown action: ${action.type}. This should not occur`,
         );
         return curState;
       }
