@@ -1,20 +1,12 @@
-import { useState } from "react";
-import { DatabaseSelectorCard } from "./components";
-import { DatabaseWorkspace } from "./components";
-import { Footer } from "./components";
+import { WelcomePage } from "./components/WelcomePage";
+import { Footer } from "./components/Footer";
 import "./App.css";
 
 function App(): JSX.Element {
-  const [dbPath, setDbPath] = useState<string | null>(null);
-
   return (
     <div className="app-container">
       <div className="main-container">
-        {dbPath === null ? (
-          <DatabaseSelectorCard onFileSelect={setDbPath} />
-        ) : (
-          <DatabaseWorkspace dbPath={dbPath} />
-        )}
+        <WelcomePage />
       </div>
       <Footer />
     </div>
