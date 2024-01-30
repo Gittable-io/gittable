@@ -1,8 +1,8 @@
-import { WelcomePage } from "./components/WelcomePage";
-import { Footer } from "./components/Footer";
+import { WelcomePage } from "../WelcomePage";
+import { Footer } from "../Footer";
 import "./App.css";
 
-function App(): JSX.Element {
+export function App(): JSX.Element {
   return (
     <div className="app-container">
       <div className="main-container">
@@ -12,5 +12,3 @@ function App(): JSX.Element {
     </div>
   );
 }
-
-export default App;
