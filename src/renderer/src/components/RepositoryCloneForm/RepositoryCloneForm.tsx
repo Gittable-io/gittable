@@ -4,6 +4,10 @@ import "./RepositoryCloneForm.css";
 export function RepositoryCloneForm(): JSX.Element {
   const [url, setUrl] = useState<string>("");
 
+  const handleValidate = (): void => {
+    window.api.post_repository(url);
+  };
+
   return (
     <div className="repository-clone-form">
       <h2>Connect to an existing database</h2>
@@ -12,7 +16,7 @@ export function RepositoryCloneForm(): JSX.Element {
         value={url}
         onChange={(e) => setUrl(e.currentTarget.value)}
       ></input>
-      <button>Connect</button>
+      <button onClick={handleValidate}>Connect</button>
     </div>
   );
 }
