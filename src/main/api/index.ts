@@ -2,7 +2,7 @@ import { ipcRenderer, ipcMain } from "electron";
 import { Table } from "gittable-editor";
 import { get_table, post_table } from "./table/";
 import { post_ping } from "./ping";
-import { post_repository } from "./repository";
+import { clone_repository, type PostRepositoryResponse } from "./repository";
 
 // Define the functions (API) that the renderer
 // can call to communicate with the main process
@@ -10,7 +10,7 @@ interface IGittableElectronAPI {
   post_ping: () => Promise<string>;
   get_table: (path: string) => Promise<Table>; //TODO: Remove or modify to use git
   post_table: (path: string, table: Table) => Promise<void>; //TODO: Remove or modify to use git
-  post_repository: (remoteUrl: string) => Promise<void>;
+  clone_repository: (remoteUrl: string) => Promise<PostRepositoryResponse>;
 }
 
 const gittableElectronAPI: IGittableElectronAPI = {
@@ -19,8 +19,8 @@ const gittableElectronAPI: IGittableElectronAPI = {
     ipcRenderer.invoke("get_table", path), //TODO: Remove or modify to use git
   post_table: (path: string, table: Table): Promise<void> =>
     ipcRenderer.invoke("post_table", path, table), //TODO: Remove or modify to use git
-  post_repository: (remoteUrl: string): Promise<void> =>
-    ipcRenderer.invoke("post_repository", remoteUrl),
+  clone_repository: (remoteUrl: string): Promise<PostRepositoryResponse> =>
+    ipcRenderer.invoke("clone_repository", remoteUrl),
 };
 
 // Map ipcRenderer.invoke(<channel>) to controller function
@@ -31,8 +31,8 @@ const addHandlesForGittableElectronAPICall = (): void => {
     "post_table",
     (_event, path, tableData) => post_table(path, tableData), //TODO: Remove or modify to use git
   );
-  ipcMain.handle("post_repository", (_event, remoteUrl) =>
-    post_repository(remoteUrl),
+  ipcMain.handle("clone_repository", (_event, remoteUrl) =>
+    clone_repository(remoteUrl),
   );
 };
 

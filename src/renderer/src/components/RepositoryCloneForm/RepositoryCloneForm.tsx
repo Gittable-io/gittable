@@ -5,7 +5,7 @@ export function RepositoryCloneForm(): JSX.Element {
   const [url, setUrl] = useState<string>("");
 
   const handleValidate = (): void => {
-    window.api.post_repository(url);
+    window.api.clone_repository(url);
   };
 
   return (
