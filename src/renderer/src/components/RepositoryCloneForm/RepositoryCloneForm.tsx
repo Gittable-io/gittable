@@ -15,6 +15,11 @@ export function RepositoryCloneForm(): JSX.Element {
     }
   };
 
+  const handleInputChange = (e): void => {
+    setUrl(e.currentTarget.value);
+    setError(null);
+  };
+
   return (
     <div className="repository-clone-form-card">
       <h2>Connect to an existing database</h2>
@@ -24,7 +29,7 @@ export function RepositoryCloneForm(): JSX.Element {
             type="text"
             placeholder="Repository URL"
             value={url}
-            onChange={(e) => setUrl(e.currentTarget.value)}
+            onChange={handleInputChange}
           ></input>
           {error && <div className="form-validation-error">{error}</div>}
         </div>
