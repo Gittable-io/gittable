@@ -7,7 +7,7 @@ const OS_USER_DATA_FOLDER =
     ? process.env.HOME + "/Library/Preferences"
     : process.env.HOME + "/.local/share");
 
-const APP_NAME = "gittable-repos";
+const APP_NAME = "gittable";
 
 const HOME_DIR = path.join(OS_USER_DATA_FOLDER, APP_NAME);
 

@@ -1,4 +1,4 @@
-export function post_ping(): string {
+export async function ping(): Promise<string> {
   console.log("Main: Received Ping from Renderer");
   return "pong";
 }
