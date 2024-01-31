@@ -40,5 +40,6 @@
 }
 
 .repository-clone-form button:hover {
+  background-color: var(--primary-color-dark);
   box-shadow: 0 0 0 4px var(--secondary-color);
 }
