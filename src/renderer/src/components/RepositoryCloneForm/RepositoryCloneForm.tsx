@@ -22,6 +22,7 @@ export function RepositoryCloneForm(): JSX.Element {
         <div>
           <input
             type="text"
+            placeholder="Repository URL"
             value={url}
             onChange={(e) => setUrl(e.currentTarget.value)}
           ></input>
