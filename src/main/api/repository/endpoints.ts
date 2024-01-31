@@ -8,7 +8,8 @@ import { config } from "../../config";
 import { getRepositoryId } from "../../utils";
 
 export type CloneRepositoryResponse =
-  | { status: "success" }
+  | { status: "success"; type: "cloned" }
+  | { status: "success"; type: "already cloned" }
   | { status: "error"; type: "malformed url"; message: string }
   | { status: "error"; type: "connection error"; message: string }
   | { status: "error"; type: "unknown"; message: string };
@@ -24,9 +25,12 @@ export type CloneRepositoryResponse =
  *
  * The following events may happen:
  *
+ * Repository already cloned:
+ * => Return { status: "success"; type: "repository already cloned" }
+ *
  * Successfull clone :
  * - The whole repository is cloned.
- * => Return { status: "success" }
+ * => Return { status: "success"; type: "cloned" }
  *
  * An error occured which may be due to
  *    - URL is not in the correct format
@@ -45,7 +49,12 @@ export async function clone_repository(
   const repositoryId = getRepositoryId(remoteUrl);
   const repositoryDir = path.join(config.dir.repositories, repositoryId);
 
-  let errorResponse: CloneRepositoryResponse | null = null;
+  let response: CloneRepositoryResponse | null = null;
+
+  // If repository is already cloned
+  if (fsync.existsSync(repositoryDir)) {
+    return { status: "success", type: "already cloned" };
+  }
 
   //* it seems that the git.clone() creates the dir if it doesn't exist. So no need to create the folder beforehand
   try {
@@ -73,20 +82,20 @@ export async function clone_repository(
       );
 
       if (error.name === "UrlParseError") {
-        errorResponse = {
+        response = {
           status: "error",
           type: "malformed url",
           message: "URL is not valid",
         };
       } else {
-        errorResponse = {
+        response = {
           status: "error",
           type: "connection error",
           message: "Error connecting to Git repository",
         };
       }
     } else {
-      errorResponse = {
+      response = {
         status: "error",
         type: "unknown",
         message: "Unknown error",
@@ -94,7 +103,7 @@ export async function clone_repository(
     }
   } finally {
     // If there was an error, delete the repository folder that was created by git.clone()
-    if (errorResponse) {
+    if (response) {
       // If I used fs.rm({force:true}) (force:true silences exceptions if folder doesn't exist), I would not need to check if folder exist,
       // but it seems that force:true have different behavior in each OS (see https://github.com/nodejs/node/issues/45253)
       console.debug(
@@ -104,7 +113,7 @@ export async function clone_repository(
         try {
           await fs.rm(repositoryDir, { recursive: true });
         } catch (error) {
-          errorResponse = {
+          response = {
             status: "error",
             type: "unknown",
             message: "Unknown error",
@@ -114,11 +123,12 @@ export async function clone_repository(
     }
   }
 
-  if (!errorResponse) {
+  if (response === null) {
+    response = { status: "success", type: "cloned" };
     console.debug(
       `[API/clone_repository] Finished cloning in ${repositoryDir}`,
     );
   }
 
-  return errorResponse ? errorResponse : { status: "success" };
+  return response;
 }

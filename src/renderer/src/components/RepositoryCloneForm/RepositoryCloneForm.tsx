@@ -7,6 +7,9 @@ export function RepositoryCloneForm(): JSX.Element {
 
   const handleValidate = async (): Promise<void> => {
     const result = await window.api.clone_repository(url);
+    console.debug(
+      `[RepositoryCloneForm/handleValidate] clone_repository(${url}) returned: ${JSON.stringify(result)}`,
+    );
     if (result.status === "error") {
       setError(result.message);
     }
