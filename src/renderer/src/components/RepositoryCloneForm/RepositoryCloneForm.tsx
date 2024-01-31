@@ -4,8 +4,10 @@ import "./RepositoryCloneForm.css";
 export function RepositoryCloneForm(): JSX.Element {
   const [url, setUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [waitingForResponse, setWaitingForResponse] = useState(false);
 
   const handleValidate = async (): Promise<void> => {
+    setWaitingForResponse(true);
     const result = await window.api.clone_repository(url);
     console.debug(
       `[RepositoryCloneForm/handleValidate] clone_repository(${url}) returned: ${JSON.stringify(result)}`,
@@ -13,6 +15,7 @@ export function RepositoryCloneForm(): JSX.Element {
     if (result.status === "error") {
       setError(result.message);
     }
+    setWaitingForResponse(false);
   };
 
   const handleInputChange = (e): void => {
@@ -43,6 +46,11 @@ export function RepositoryCloneForm(): JSX.Element {
           </button>
         }
       </div>
+      {waitingForResponse && (
+        <div className="backdrop">
+          <div className="spinner"></div>
+        </div>
+      )}
     </div>
   );
 }
