@@ -28,7 +28,11 @@ export function RepositoryCloneForm(): JSX.Element {
           {error && <div className="form-validation-error">{error}</div>}
         </div>
         {
-          <button type="button" onClick={handleValidate}>
+          <button
+            type="button"
+            onClick={handleValidate}
+            disabled={url.length === 0}
+          >
             Connect
           </button>
         }
