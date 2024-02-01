@@ -5,12 +5,12 @@
   height: 100%;
 }
 
-.welcome-page .available-repos-section {
+.welcome-page .available-repositories-section {
   flex-grow: 1;
   flex-basis: 25%;
 }
 
-.welcome-page .new-repo-section {
+.welcome-page .new-repository-section {
   flex-grow: 2;
   flex-basis: 50%;
 }

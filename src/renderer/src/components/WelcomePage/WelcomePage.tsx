@@ -1,4 +1,4 @@
-import { NewRepoSection } from "../NewRepoSection";
+import { NewRepositorySection } from "../NewRepositorySection";
 import "./WelcomePage.css";
 
 type WelcomePageProps = {
@@ -8,8 +8,10 @@ type WelcomePageProps = {
 export function WelcomePage({ onProjectOpen }: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <div className="available-repos-section">available-repos</div>
-      <NewRepoSection
+      <div className="available-repositories-section">
+        available-repositories
+      </div>
+      <NewRepositorySection
         onProjectCreate={(projectPath) => onProjectOpen(projectPath)}
       />
       <div className="help-section">information-section</div>

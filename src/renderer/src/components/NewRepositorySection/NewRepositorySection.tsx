@@ -1,15 +1,15 @@
 import { RepositoryCloneForm } from "../RepositoryCloneForm";
-import "./NewRepoSection.css";
+import "./NewRepositorySection.css";
 
-type NewRepoSectionProps = {
+type NewRepositorySectionProps = {
   onProjectCreate: (projectPath: string, alreadyExisting?: boolean) => void;
 };
 
-export function NewRepoSection({
+export function NewRepositorySection({
   onProjectCreate,
-}: NewRepoSectionProps): JSX.Element {
+}: NewRepositorySectionProps): JSX.Element {
   return (
-    <div className="new-repo-section">
+    <div className="new-repository-section">
       <RepositoryCloneForm onProjectCreate={onProjectCreate} />
     </div>
   );
