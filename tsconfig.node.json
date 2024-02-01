@@ -3,6 +3,15 @@
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/*"],
   "compilerOptions": {
     "composite": true,
-    "types": ["electron-vite/node"]
+    "types": ["electron-vite/node"],
+    "paths": {
+      /*
+      I added this path alias, so that the Main and Renderer can more easily share types
+      How it works, when, in Main or Renderer, I write : import type { X } from "@sharedTypes/index";
+      Typescript retrieve the types from the "types.index.d.ts" folder
+      It prevents me from writing : import "../../../../../types" when I'm deep in the Main or Renderer hierarchy
+      */
+      "@sharedTypes/*": ["./src/types/*"]
+    }
   }
 }
