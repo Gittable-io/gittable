@@ -25,7 +25,7 @@ export function RepositoryCloneForm({
       setError(response.message);
     } else if (response.status === "success") {
       onRepositoryClone(
-        response.repositoryId,
+        response.repository.id,
         response.type === "already cloned",
       );
     }
