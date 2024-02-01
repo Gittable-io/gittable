@@ -10,3 +10,8 @@
   font-weight: 500;
   font-size: 24px;
 }
+
+.welcome-sidebar .repository-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}
