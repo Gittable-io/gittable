@@ -8,8 +8,8 @@ import { config } from "../../config";
 import { getRepositoryId } from "../../utils";
 
 export type CloneRepositoryResponse =
-  | { status: "success"; type: "cloned" }
-  | { status: "success"; type: "already cloned" }
+  | { status: "success"; type: "cloned"; projectPath: string }
+  | { status: "success"; type: "already cloned"; projectPath: string }
   | { status: "error"; type: "malformed url"; message: string }
   | { status: "error"; type: "connection error"; message: string }
   | { status: "error"; type: "unknown"; message: string };
@@ -53,7 +53,11 @@ export async function clone_repository(
 
   // If repository is already cloned
   if (fsync.existsSync(repositoryDir)) {
-    return { status: "success", type: "already cloned" };
+    return {
+      status: "success",
+      type: "already cloned",
+      projectPath: repositoryDir,
+    };
   }
 
   //* it seems that the git.clone() creates the dir if it doesn't exist. So no need to create the folder beforehand
@@ -124,7 +128,11 @@ export async function clone_repository(
   }
 
   if (response === null) {
-    response = { status: "success", type: "cloned" };
+    response = {
+      status: "success",
+      type: "cloned",
+      projectPath: repositoryDir,
+    };
     console.debug(
       `[API/clone_repository] Finished cloning in ${repositoryDir}`,
     );

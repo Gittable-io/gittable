@@ -1,21 +1,31 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
 
-export function RepositoryCloneForm(): JSX.Element {
+type RepositoryCloneFormProps = {
+  onProjectCreate: (projectPath: string, alreadyExisting?: boolean) => void;
+};
+
+export function RepositoryCloneForm({
+  onProjectCreate,
+}: RepositoryCloneFormProps): JSX.Element {
   const [url, setUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [waitingForResponse, setWaitingForResponse] = useState(false);
 
   const handleValidate = async (): Promise<void> => {
     setWaitingForResponse(true);
-    const result = await window.api.clone_repository(url);
+    const response = await window.api.clone_repository(url);
     console.debug(
-      `[RepositoryCloneForm/handleValidate] clone_repository(${url}) returned: ${JSON.stringify(result)}`,
+      `[RepositoryCloneForm/handleValidate] clone_repository(${url}) returned: ${JSON.stringify(response)}`,
     );
-    if (result.status === "error") {
-      setError(result.message);
-    }
+
     setWaitingForResponse(false);
+
+    if (response.status === "error") {
+      setError(response.message);
+    } else if (response.status === "success") {
+      onProjectCreate(response.projectPath, response.type === "already cloned");
+    }
   };
 
   const handleInputChange = (e): void => {
