@@ -4,6 +4,8 @@ import path from "node:path";
 import git, { GitProgressEvent, GitAuth } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
+import type { Repository } from "@sharedTypes/index";
+
 import { config } from "../../config";
 import { getRepositoryId } from "../../utils";
 
@@ -139,4 +141,22 @@ export async function clone_repository(
   }
 
   return response;
+}
+
+export type ListRepositoriesReponse = {
+  status: "success";
+  repositories: Repository[];
+};
+
+export async function list_repositories(): Promise<ListRepositoriesReponse> {
+  const repositoriesDir = config.dir.repositories;
+  const repositoryFolders = (
+    await fs.readdir(repositoriesDir, {
+      withFileTypes: true,
+    })
+  )
+    .filter((dirent) => dirent.isDirectory())
+    .map((folder) => ({ id: folder.name, path: folder.path }));
+
+  return { status: "success", repositories: repositoryFolders };
 }
