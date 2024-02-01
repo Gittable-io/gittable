@@ -1,4 +1,5 @@
 import { NewRepositorySection } from "../NewRepositorySection";
+import { WelcomeSidebar } from "../WelcomeSidebar";
 import "./WelcomePage.css";
 
 type WelcomePageProps = {
@@ -8,9 +9,7 @@ type WelcomePageProps = {
 export function WelcomePage({ onProjectOpen }: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <div className="available-repositories-section">
-        available-repositories
-      </div>
+      <WelcomeSidebar />
       <NewRepositorySection
         onProjectCreate={(projectPath) => onProjectOpen(projectPath)}
       />
