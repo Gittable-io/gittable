@@ -30,7 +30,7 @@ export function RepositoryList({
   return (
     <ul className="repository-list">
       {repositories.map((repo) => (
-        <li key={repo.id} onClick={() => onProjectSelect(repo.path)}>
+        <li key={repo.id} onClick={() => onProjectSelect(repo.id)}>
           {repo.id}
         </li>
       ))}

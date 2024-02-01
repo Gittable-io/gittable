@@ -16,4 +16,5 @@ export const config = {
     home: HOME_DIR,
     repositories: path.join(HOME_DIR, "repositories"),
   },
+  userDataFile: path.join(HOME_DIR, "data.json"),
 };

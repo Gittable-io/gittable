@@ -7,7 +7,8 @@ import http from "isomorphic-git/http/node";
 import type { Repository } from "@sharedTypes/index";
 
 import { config } from "../../config";
-import { getRepositoryId } from "../../utils";
+import { generateRepositoryId, getRepositoryNameFromRemoteUrl } from "./utils";
+import { UserDataStore } from "../../db";
 
 export type CloneRepositoryResponse =
   | { status: "success"; type: "cloned"; projectPath: string }
@@ -48,19 +49,26 @@ export async function clone_repository(
 ): Promise<CloneRepositoryResponse> {
   console.debug(`[API/clone_repository] Called with remoteUrl=${remoteUrl}`);
 
-  const repositoryId = getRepositoryId(remoteUrl);
-  const repositoryDir = path.join(config.dir.repositories, repositoryId);
+  const trimmedRemoteUrl = remoteUrl.trim();
 
-  let response: CloneRepositoryResponse | null = null;
-
-  // If repository is already cloned
-  if (fsync.existsSync(repositoryDir)) {
+  // First, check that we didn't already clone this repository
+  const repositories = UserDataStore.getInstance().getUserData().repositories;
+  const existingRepository = repositories.find(
+    (repo) => repo.remoteUrl === trimmedRemoteUrl,
+  );
+  if (existingRepository) {
     return {
       status: "success",
       type: "already cloned",
-      projectPath: repositoryDir,
+      projectPath: existingRepository.id, //TODO: return the whole repository and not the path
     };
   }
+
+  // This is a repository that we never cloned. Let's go!
+  const repositoryId = generateRepositoryId(remoteUrl);
+  const repositoryDir = path.join(config.dir.repositories, repositoryId);
+
+  let response: CloneRepositoryResponse | null = null;
 
   //* it seems that the git.clone() creates the dir if it doesn't exist. So no need to create the folder beforehand
   try {
@@ -130,14 +138,21 @@ export async function clone_repository(
   }
 
   if (response === null) {
+    // If cloning was a success
+    // 1. Save the repository in user data
+    UserDataStore.getInstance().addRepository({
+      id: repositoryId,
+      remoteUrl: trimmedRemoteUrl,
+      name: getRepositoryNameFromRemoteUrl(remoteUrl),
+    });
+
+    // 2. Send the response
     response = {
       status: "success",
       type: "cloned",
-      projectPath: repositoryDir,
+      projectPath: repositoryId,
     };
-    console.debug(
-      `[API/clone_repository] Finished cloning in ${repositoryDir}`,
-    );
+    console.debug(`[API/clone_repository] Finished cloning in ${repositoryId}`);
   }
 
   return response;
@@ -149,14 +164,6 @@ export type ListRepositoriesReponse = {
 };
 
 export async function list_repositories(): Promise<ListRepositoriesReponse> {
-  const repositoriesDir = config.dir.repositories;
-  const repositoryFolders = (
-    await fs.readdir(repositoriesDir, {
-      withFileTypes: true,
-    })
-  )
-    .filter((dirent) => dirent.isDirectory())
-    .map((folder) => ({ id: folder.name, path: folder.path }));
-
-  return { status: "success", repositories: repositoryFolders };
+  const repositories = UserDataStore.getInstance().getUserData().repositories;
+  return { status: "success", repositories: repositories };
 }

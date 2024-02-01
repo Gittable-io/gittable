@@ -1,4 +1,5 @@
 export type Repository = {
   id: string;
-  path: string;
+  name: string;
+  remoteUrl: string;
 };
