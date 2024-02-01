@@ -9,7 +9,7 @@ type WelcomePageProps = {
 export function WelcomePage({ onProjectOpen }: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <WelcomeSidebar />
+      <WelcomeSidebar onProjectSelect={onProjectOpen} />
       <NewRepositorySection
         onProjectCreate={(projectPath) => onProjectOpen(projectPath)}
       />

@@ -2,11 +2,17 @@ import { RepositoryList } from "../RepositoryList";
 
 import "./WelcomeSidebar.css";
 
-export function WelcomeSidebar(): JSX.Element {
+type WelcomeSidebarProps = {
+  onProjectSelect: (projectPath: string) => void;
+};
+
+export function WelcomeSidebar({
+  onProjectSelect,
+}: WelcomeSidebarProps): JSX.Element {
   return (
     <div className="welcome-sidebar">
       <div className="logo">Gittable</div>
-      <RepositoryList />
+      <RepositoryList onProjectSelect={onProjectSelect} />
     </div>
   );
 }

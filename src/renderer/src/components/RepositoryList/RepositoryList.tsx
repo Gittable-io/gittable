@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import type { Repository } from "@sharedTypes/index";
 import "./RepositoryList.css";
 
-export function RepositoryList(): JSX.Element {
+type RepositoryListProps = {
+  onProjectSelect: (projectPath: string) => void;
+};
+
+export function RepositoryList({
+  onProjectSelect,
+}: RepositoryListProps): JSX.Element {
   const [repositories, setRepositories] = useState<Repository[]>([]);
 
   /** 
@@ -22,12 +28,12 @@ export function RepositoryList(): JSX.Element {
   }, []);
 
   return (
-    <div className="repository-list">
-      <ul>
-        {repositories.map((repo) => (
-          <li key={repo.id}>{repo.id}</li>
-        ))}
-      </ul>
-    </div>
+    <ul className="repository-list">
+      {repositories.map((repo) => (
+        <li key={repo.id} onClick={() => onProjectSelect(repo.path)}>
+          {repo.id}
+        </li>
+      ))}
+    </ul>
   );
 }

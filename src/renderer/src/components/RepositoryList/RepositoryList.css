@@ -2,3 +2,7 @@
   background-color: var(--primary-color-light);
   padding: 20px;
 }
+
+.repository-list li {
+  cursor: pointer;
+}
