@@ -11,8 +11,8 @@ import { generateRepositoryId, getRepositoryNameFromRemoteUrl } from "./utils";
 import { UserDataStore } from "../../db";
 
 export type CloneRepositoryResponse =
-  | { status: "success"; type: "cloned"; projectPath: string }
-  | { status: "success"; type: "already cloned"; projectPath: string }
+  | { status: "success"; type: "cloned"; repositoryId: string }
+  | { status: "success"; type: "already cloned"; repositoryId: string }
   | { status: "error"; type: "malformed url"; message: string }
   | { status: "error"; type: "connection error"; message: string }
   | { status: "error"; type: "unknown"; message: string };
@@ -60,7 +60,7 @@ export async function clone_repository(
     return {
       status: "success",
       type: "already cloned",
-      projectPath: existingRepository.id, //TODO: return the whole repository and not the path
+      repositoryId: existingRepository.id, //TODO: return the whole repository and not the path
     };
   }
 
@@ -150,7 +150,7 @@ export async function clone_repository(
     response = {
       status: "success",
       type: "cloned",
-      projectPath: repositoryId,
+      repositoryId: repositoryId,
     };
     console.debug(`[API/clone_repository] Finished cloning in ${repositoryId}`);
   }

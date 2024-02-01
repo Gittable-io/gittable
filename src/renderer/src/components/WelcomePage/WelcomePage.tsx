@@ -3,15 +3,17 @@ import { WelcomeSidebar } from "../WelcomeSidebar";
 import "./WelcomePage.css";
 
 type WelcomePageProps = {
-  onProjectOpen: (projectPath: string) => void;
+  onRepositorySelect: (repositoryId: string) => void;
 };
 
-export function WelcomePage({ onProjectOpen }: WelcomePageProps): JSX.Element {
+export function WelcomePage({
+  onRepositorySelect,
+}: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <WelcomeSidebar onProjectSelect={onProjectOpen} />
+      <WelcomeSidebar onRepositorySelect={onRepositorySelect} />
       <NewRepositorySection
-        onProjectCreate={(projectPath) => onProjectOpen(projectPath)}
+        onRepositoryClone={(repositoryId) => onRepositorySelect(repositoryId)}
       />
       <div className="help-section">information-section</div>
     </div>

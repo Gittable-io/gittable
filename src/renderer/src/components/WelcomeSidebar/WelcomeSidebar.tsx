@@ -3,16 +3,16 @@ import { RepositoryList } from "../RepositoryList";
 import "./WelcomeSidebar.css";
 
 type WelcomeSidebarProps = {
-  onProjectSelect: (projectPath: string) => void;
+  onRepositorySelect: (projectPath: string) => void;
 };
 
 export function WelcomeSidebar({
-  onProjectSelect,
+  onRepositorySelect,
 }: WelcomeSidebarProps): JSX.Element {
   return (
     <div className="welcome-sidebar">
       <div className="logo">Gittable</div>
-      <RepositoryList onProjectSelect={onProjectSelect} />
+      <RepositoryList onProjectSelect={onRepositorySelect} />
     </div>
   );
 }

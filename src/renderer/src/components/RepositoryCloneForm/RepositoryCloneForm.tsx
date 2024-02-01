@@ -2,11 +2,11 @@ import { useState } from "react";
 import "./RepositoryCloneForm.css";
 
 type RepositoryCloneFormProps = {
-  onProjectCreate: (projectPath: string, alreadyExisting?: boolean) => void;
+  onRepositoryClone: (repositoryId: string, alreadyExisting?: boolean) => void;
 };
 
 export function RepositoryCloneForm({
-  onProjectCreate,
+  onRepositoryClone,
 }: RepositoryCloneFormProps): JSX.Element {
   const [url, setUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,10 @@ export function RepositoryCloneForm({
     if (response.status === "error") {
       setError(response.message);
     } else if (response.status === "success") {
-      onProjectCreate(response.projectPath, response.type === "already cloned");
+      onRepositoryClone(
+        response.repositoryId,
+        response.type === "already cloned",
+      );
     }
   };
 

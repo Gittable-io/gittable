@@ -1,23 +1,25 @@
 import { useState } from "react";
 
 import { WelcomePage } from "../WelcomePage";
-import { ProjectWorkspace } from "../ProjectWorkspace";
+import { RepositoryWorkspace } from "../RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
 
 export function App(): JSX.Element {
-  const [currentProjectPath, setCurrentProjectPath] = useState<string | null>(
+  const [currentRepositoryId, setCurrentRepositoryId] = useState<string | null>(
     null,
   );
 
   return (
     <div className="app-container">
       <div className="main-container">
-        {currentProjectPath ? (
-          <ProjectWorkspace projectPath={currentProjectPath} />
+        {currentRepositoryId ? (
+          <RepositoryWorkspace repositoryId={currentRepositoryId} />
         ) : (
           <WelcomePage
-            onProjectOpen={(projectPath) => setCurrentProjectPath(projectPath)}
+            onRepositorySelect={(repositoryId) =>
+              setCurrentRepositoryId(repositoryId)
+            }
           />
         )}
       </div>

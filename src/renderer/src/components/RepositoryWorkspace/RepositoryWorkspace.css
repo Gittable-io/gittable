@@ -1,16 +1,16 @@
-.project-workspace {
+.repository-workspace {
   display: flex;
   flex-direction: row;
   width: 100%;
   height: 100%;
 }
 
-.project-workspace .project-structure {
+.repository-workspace .repository-content {
   flex-grow: 1;
   flex-basis: 25%;
 }
 
-.project-workspace .table-workspace {
+.repository-workspace .table-workspace {
   flex-grow: 3;
   flex-basis: 75%;
 }
