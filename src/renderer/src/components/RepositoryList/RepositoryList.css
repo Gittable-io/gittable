@@ -4,5 +4,19 @@
 }
 
 .repository-list li {
+  margin-top: 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* TODO: This is horrible CSS, but I will rehaul styles later*/
+.repository-list li div {
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+.repository-list li .delete-button {
   cursor: pointer;
 }

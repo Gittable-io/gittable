@@ -7,6 +7,8 @@ import {
   type CloneRepositoryResponse,
   list_repositories,
   type ListRepositoriesReponse,
+  delete_repository,
+  type DeleteRepositoryReponse,
 } from "./repository";
 
 // Define the functions (API) that the renderer
@@ -17,6 +19,7 @@ interface IGittableElectronAPI {
   post_table: (path: string, table: Table) => Promise<void>; //TODO: Remove or modify to use git
   clone_repository: (remoteUrl: string) => Promise<CloneRepositoryResponse>;
   list_repositories: () => Promise<ListRepositoriesReponse>;
+  delete_repository: (repositoryId: string) => Promise<DeleteRepositoryReponse>;
 }
 
 const gittableElectronAPI: IGittableElectronAPI = {
@@ -29,6 +32,8 @@ const gittableElectronAPI: IGittableElectronAPI = {
     ipcRenderer.invoke("clone_repository", remoteUrl),
   list_repositories: (): Promise<ListRepositoriesReponse> =>
     ipcRenderer.invoke("list_repositories"),
+  delete_repository: (repositoryId: string): Promise<DeleteRepositoryReponse> =>
+    ipcRenderer.invoke("delete_repository", repositoryId),
 };
 
 // Map ipcRenderer.invoke(<channel>) to controller function
@@ -43,6 +48,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
     clone_repository(remoteUrl),
   );
   ipcMain.handle("list_repositories", list_repositories);
+  ipcMain.handle("delete_repository", (_event, repositoryId) =>
+    delete_repository(repositoryId),
+  );
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };

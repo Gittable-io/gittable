@@ -21,7 +21,6 @@ export function RepositoryWorkspace({
           >
             close
           </span>
-          {/* <button onClick={onRepositoryClose}>Close</button> */}
         </div>
 
         <div className="repository-content">Repository content</div>

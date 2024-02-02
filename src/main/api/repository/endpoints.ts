@@ -7,7 +7,11 @@ import http from "isomorphic-git/http/node";
 import type { Repository } from "@sharedTypes/index";
 
 import { config } from "../../config";
-import { generateRepositoryId, getRepositoryNameFromRemoteUrl } from "./utils";
+import {
+  generateRepositoryId,
+  getRepositoryNameFromRemoteUrl,
+  getRepositoryPath,
+} from "./utils";
 import { UserDataStore } from "../../db";
 
 export type CloneRepositoryResponse =
@@ -66,7 +70,7 @@ export async function clone_repository(
 
   // This is a repository that we never cloned. Let's go!
   const repositoryId = generateRepositoryId(remoteUrl);
-  const repositoryDir = path.join(config.dir.repositories, repositoryId);
+  const repositoryPath = getRepositoryPath(repositoryId);
 
   let response: CloneRepositoryResponse | null = null;
 
@@ -75,7 +79,7 @@ export async function clone_repository(
     await git.clone({
       fs,
       http,
-      dir: repositoryDir,
+      dir: repositoryPath,
       url: remoteUrl,
       onMessage: (message: string) => {
         console.log(`onMessage: ${message}`);
@@ -123,9 +127,9 @@ export async function clone_repository(
       console.debug(
         `[API/clone_repository] Following an error, clean any folder that was created`,
       );
-      if (fsync.existsSync(repositoryDir)) {
+      if (fsync.existsSync(repositoryPath)) {
         try {
-          await fs.rm(repositoryDir, { recursive: true });
+          await fs.rm(repositoryPath, { recursive: true });
         } catch (error) {
           response = {
             status: "error",
@@ -165,6 +169,59 @@ export type ListRepositoriesReponse = {
 };
 
 export async function list_repositories(): Promise<ListRepositoriesReponse> {
+  console.debug(`[API/list_repositories] Called`);
+
   const repositories = UserDataStore.getInstance().getUserData().repositories;
   return { status: "success", repositories: repositories };
+}
+
+export type DeleteRepositoryReponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "non-existing repository folder";
+      message: "An error occured. Please contact support";
+    }
+  | {
+      status: "error";
+      type: "error deleting repository folder";
+      message: "An error occured. Please contact support";
+    };
+
+export async function delete_repository(
+  repositoryId: string,
+): Promise<DeleteRepositoryReponse> {
+  console.debug(
+    `[API/delete_repository] Called with repositoryId=${repositoryId}`,
+  );
+
+  const repositoryPath = getRepositoryPath(repositoryId);
+
+  // TODO: Deleting a repository folder is used in this endpoint and in clone_repository(). Consider extracting it
+  if (fsync.existsSync(repositoryPath)) {
+    try {
+      // Delete repository folder
+      await fs.rm(repositoryPath, { recursive: true });
+
+      // Remove repository entry from user data
+      await UserDataStore.getInstance().deleteRepository(repositoryId);
+      return {
+        status: "success",
+      };
+    } catch (error) {
+      return {
+        status: "error",
+        type: "error deleting repository folder",
+        message: "An error occured. Please contact support",
+      };
+    }
+  } else {
+    return {
+      status: "error",
+      type: "non-existing repository folder",
+      message: "An error occured. Please contact support",
+    };
+  }
 }

@@ -47,6 +47,7 @@ export class UserDataStore {
   }
 
   // Methods to modify and save the user data back to the file
+  // TODO: Add check that there's no existing repository with the same ID
   async addRepository(repository: Repository): Promise<void> {
     this.userData = {
       ...this.userData,
@@ -56,6 +57,19 @@ export class UserDataStore {
     this.save();
   }
 
+  // TODO: Add check that the repository exists
+  async deleteRepository(repositoryId: string): Promise<void> {
+    this.userData = {
+      ...this.userData,
+      repositories: this.userData.repositories.filter(
+        (repo) => repo.id !== repositoryId,
+      ),
+    };
+
+    this.save();
+  }
+
+  // TODO: investigate : should save() by sync or async? should it have an await?
   private async save(): Promise<void> {
     await fs.writeFile(
       config.userDataFile,

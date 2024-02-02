@@ -1,3 +1,6 @@
+import path from "node:path";
+import { config } from "../../config";
+
 /**
  *
  * @param remoteUrl
@@ -32,4 +35,8 @@ export const generateRepositoryId = (remoteUrl: string): string => {
   const id = `${timestamp}_${getRepositoryNameFromRemoteUrl(remoteUrl)}`;
 
   return id;
+};
+
+export const getRepositoryPath = (repositoryId: string): string => {
+  return path.join(config.dir.repositories, repositoryId);
 };

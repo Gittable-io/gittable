@@ -11,6 +11,12 @@ export function RepositoryList({
 }: RepositoryListProps): JSX.Element {
   const [repositories, setRepositories] = useState<Repository[]>([]);
 
+  const handleDeleteRepository = async (
+    repositoryId: string,
+  ): Promise<void> => {
+    await window.api.delete_repository(repositoryId);
+  };
+
   /** 
   @sideeffect At start load repository list
   */
@@ -30,8 +36,14 @@ export function RepositoryList({
   return (
     <ul className="repository-list">
       {repositories.map((repo) => (
-        <li key={repo.id} onClick={() => onRepositorySelect(repo)}>
-          {repo.name}
+        <li key={repo.id}>
+          <div onClick={() => onRepositorySelect(repo)}>{repo.name}</div>
+          <span
+            className="material-icons md-18 delete-button"
+            onClick={() => handleDeleteRepository(repo.id)}
+          >
+            delete
+          </span>
         </li>
       ))}
     </ul>
