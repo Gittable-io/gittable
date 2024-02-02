@@ -1,9 +1,10 @@
+import { Repository } from "@sharedTypes/index";
 import { NewRepositorySection } from "../NewRepositorySection";
 import { WelcomeSidebar } from "../WelcomeSidebar";
 import "./WelcomePage.css";
 
 type WelcomePageProps = {
-  onRepositorySelect: (repositoryId: string) => void;
+  onRepositorySelect: (repository: Repository) => void;
 };
 
 export function WelcomePage({
@@ -13,7 +14,7 @@ export function WelcomePage({
     <div className="welcome-page">
       <WelcomeSidebar onRepositorySelect={onRepositorySelect} />
       <NewRepositorySection
-        onRepositoryClone={(repositoryId) => onRepositorySelect(repositoryId)}
+        onRepositoryClone={(repository) => onRepositorySelect(repository)}
       />
       <div className="help-section">information-section</div>
     </div>

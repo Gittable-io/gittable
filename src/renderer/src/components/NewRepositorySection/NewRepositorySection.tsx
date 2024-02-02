@@ -1,8 +1,12 @@
+import { Repository } from "@sharedTypes/index";
 import { RepositoryCloneForm } from "../RepositoryCloneForm";
 import "./NewRepositorySection.css";
 
 type NewRepositorySectionProps = {
-  onRepositoryClone: (repositoryId: string, alreadyExisting?: boolean) => void;
+  onRepositoryClone: (
+    repository: Repository,
+    alreadyExisting?: boolean,
+  ) => void;
 };
 
 export function NewRepositorySection({

@@ -3,11 +3,11 @@ import type { Repository } from "@sharedTypes/index";
 import "./RepositoryList.css";
 
 type RepositoryListProps = {
-  onProjectSelect: (projectPath: string) => void;
+  onRepositorySelect: (repository: Repository) => void;
 };
 
 export function RepositoryList({
-  onProjectSelect,
+  onRepositorySelect,
 }: RepositoryListProps): JSX.Element {
   const [repositories, setRepositories] = useState<Repository[]>([]);
 
@@ -30,8 +30,8 @@ export function RepositoryList({
   return (
     <ul className="repository-list">
       {repositories.map((repo) => (
-        <li key={repo.id} onClick={() => onProjectSelect(repo.id)}>
-          {repo.id}
+        <li key={repo.id} onClick={() => onRepositorySelect(repo)}>
+          {repo.name}
         </li>
       ))}
     </ul>

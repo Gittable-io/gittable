@@ -1,19 +1,20 @@
+import { Repository } from "@sharedTypes/index";
 import "./RepositoryWorkspace.css";
 
 type RepositoryWorkspaceProps = {
-  repositoryId: string;
+  repository: Repository;
   onRepositoryClose: () => void;
 };
 
 export function RepositoryWorkspace({
-  repositoryId,
+  repository,
   onRepositoryClose,
 }: RepositoryWorkspaceProps): JSX.Element {
   return (
     <div className="repository-workspace">
       <div className="respository-workspace-sidebar">
         <div className="repository-header">
-          <div className="repository-title"> {repositoryId} </div>
+          <div className="repository-title"> {repository.name} </div>
           <span
             className="material-icons md-18 close-button"
             onClick={onRepositoryClose}
@@ -26,7 +27,7 @@ export function RepositoryWorkspace({
         <div className="repository-content">Repository content</div>
       </div>
       <div className="table-workspace">
-        RepositoryWorkspace : {repositoryId}
+        RepositoryWorkspace : {repository.name}
       </div>
     </div>
   );

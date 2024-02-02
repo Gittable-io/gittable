@@ -1,9 +1,10 @@
+import { Repository } from "@sharedTypes/index";
 import { RepositoryList } from "../RepositoryList";
 
 import "./WelcomeSidebar.css";
 
 type WelcomeSidebarProps = {
-  onRepositorySelect: (projectPath: string) => void;
+  onRepositorySelect: (repository: Repository) => void;
 };
 
 export function WelcomeSidebar({
@@ -12,7 +13,7 @@ export function WelcomeSidebar({
   return (
     <div className="welcome-sidebar">
       <div className="logo">Gittable</div>
-      <RepositoryList onProjectSelect={onRepositorySelect} />
+      <RepositoryList onRepositorySelect={onRepositorySelect} />
     </div>
   );
 }

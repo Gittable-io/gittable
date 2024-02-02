@@ -1,8 +1,12 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
+import { Repository } from "@sharedTypes/index";
 
 type RepositoryCloneFormProps = {
-  onRepositoryClone: (repositoryId: string, alreadyExisting?: boolean) => void;
+  onRepositoryClone: (
+    repository: Repository,
+    alreadyExisting?: boolean,
+  ) => void;
 };
 
 export function RepositoryCloneForm({
@@ -25,7 +29,7 @@ export function RepositoryCloneForm({
       setError(response.message);
     } else if (response.status === "success") {
       onRepositoryClone(
-        response.repository.id,
+        response.repository,
         response.type === "already cloned",
       );
     }
