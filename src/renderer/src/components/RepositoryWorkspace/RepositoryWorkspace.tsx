@@ -12,8 +12,15 @@ export function RepositoryWorkspace({
   return (
     <div className="repository-workspace">
       <div className="respository-workspace-sidebar">
-        <div className="repository-title">
-          {repositoryId} <button onClick={onRepositoryClose}>Close</button>
+        <div className="repository-header">
+          <div className="repository-title"> {repositoryId} </div>
+          <span
+            className="material-icons md-18 close-button"
+            onClick={onRepositoryClose}
+          >
+            close
+          </span>
+          {/* <button onClick={onRepositoryClose}>Close</button> */}
         </div>
 
         <div className="repository-content">Repository content</div>

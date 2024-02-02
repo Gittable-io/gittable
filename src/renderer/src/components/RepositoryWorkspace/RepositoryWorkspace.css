@@ -6,17 +6,25 @@
 }
 
 .repository-workspace .respository-workspace-sidebar {
-  flex-grow: 1;
-  flex-basis: 25%;
-}
-
-.respository-workspace-sidebar .repository-title {
-  background-color: var(--primary-color);
-  padding: 20px;
-  color: white;
+  flex-grow: 2;
+  flex-basis: 20%;
 }
 
 .repository-workspace .table-workspace {
-  flex-grow: 3;
-  flex-basis: 75%;
+  flex-grow: 8;
+  flex-basis: 80%;
+}
+
+.repository-header {
+  background-color: var(--primary-color);
+  padding: 20px;
+  color: white;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.repository-header .close-button {
+  cursor: pointer;
 }
