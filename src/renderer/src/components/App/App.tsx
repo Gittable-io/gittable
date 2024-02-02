@@ -14,7 +14,10 @@ export function App(): JSX.Element {
     <div className="app-container">
       <div className="main-container">
         {currentRepositoryId ? (
-          <RepositoryWorkspace repositoryId={currentRepositoryId} />
+          <RepositoryWorkspace
+            repositoryId={currentRepositoryId}
+            onRepositoryClose={() => setCurrentRepositoryId(null)}
+          />
         ) : (
           <WelcomePage
             onRepositorySelect={(repositoryId) =>

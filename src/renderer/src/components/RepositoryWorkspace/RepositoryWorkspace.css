@@ -5,9 +5,15 @@
   height: 100%;
 }
 
-.repository-workspace .repository-content {
+.repository-workspace .respository-workspace-sidebar {
   flex-grow: 1;
   flex-basis: 25%;
+}
+
+.respository-workspace-sidebar .repository-title {
+  background-color: var(--primary-color);
+  padding: 20px;
+  color: white;
 }
 
 .repository-workspace .table-workspace {
