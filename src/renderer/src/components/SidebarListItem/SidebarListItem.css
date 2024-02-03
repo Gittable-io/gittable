@@ -19,6 +19,7 @@
 }
 
 .sidebar-list-item .action-icon {
+  font-size: 1.25em;
   cursor: pointer;
   border-radius: 50%;
 }

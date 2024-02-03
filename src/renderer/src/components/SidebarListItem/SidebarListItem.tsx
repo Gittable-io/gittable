@@ -23,7 +23,7 @@ export function SidebarListItem({
         {text}
       </div>
       <span
-        className="action-icon material-icons md-18 delete-button"
+        className="action-icon material-symbols-outlined"
         onClick={action.onClick}
       >
         {action.materialIcon}

@@ -1,0 +1,36 @@
+/*
+ To install Material Symbols (the successor to Material Icons), I followed the tutorial in https://developers.google.com/fonts/docs/material_symbol
+
+ The tutorial tells you to just add 
+ <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+ However, I want to self-host the icons, so : 
+ 1. I opened this link in the browser https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined
+ 2. I copied the CSS here.
+ 3. I downloaded the .woff2 file from the src url referenced in the @font-face
+ 4. I copied the .woff2 file in /assets/material-icons/fonts (I also renamed it to MaterialSymbolsOutlined.woff2)
+ 4. I changed the src url in @font-face to reference the fonts folder
+*/
+
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 400;
+  src: url(./fonts/MaterialSymbolsOutlined.woff2) format("woff2");
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
