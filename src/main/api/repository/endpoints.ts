@@ -1,12 +1,10 @@
 import fs from "node:fs/promises";
 import fsync from "node:fs";
-import path from "node:path";
 import git, { GitProgressEvent, GitAuth } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import type { Repository } from "@sharedTypes/index";
 
-import { config } from "../../config";
 import {
   generateRepositoryId,
   getRepositoryNameFromRemoteUrl,
@@ -56,7 +54,7 @@ export async function clone_repository(
   const trimmedRemoteUrl = remoteUrl.trim();
 
   // First, check that we didn't already clone this repository
-  const repositories = UserDataStore.getInstance().getUserData().repositories;
+  const repositories = (await UserDataStore.getUserData()).repositories;
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
   );
@@ -149,7 +147,7 @@ export async function clone_repository(
       remoteUrl: trimmedRemoteUrl,
       name: getRepositoryNameFromRemoteUrl(remoteUrl),
     };
-    UserDataStore.getInstance().addRepository(newRepository);
+    await UserDataStore.addRepository(newRepository);
 
     // 2. Send the response
     response = {
@@ -171,7 +169,7 @@ export type ListRepositoriesReponse = {
 export async function list_repositories(): Promise<ListRepositoriesReponse> {
   console.debug(`[API/list_repositories] Called`);
 
-  const repositories = UserDataStore.getInstance().getUserData().repositories;
+  const repositories = (await UserDataStore.getUserData()).repositories;
   return { status: "success", repositories: repositories };
 }
 
@@ -206,7 +204,7 @@ export async function delete_repository(
       await fs.rm(repositoryPath, { recursive: true });
 
       // Remove repository entry from user data
-      await UserDataStore.getInstance().deleteRepository(repositoryId);
+      await UserDataStore.deleteRepository(repositoryId);
       return {
         status: "success",
       };
