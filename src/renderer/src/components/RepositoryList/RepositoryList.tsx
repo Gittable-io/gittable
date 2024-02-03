@@ -34,18 +34,21 @@ export function RepositoryList({
   }, []);
 
   return (
-    <ul className="repository-list">
-      {repositories.map((repo) => (
-        <li key={repo.id}>
-          <div onClick={() => onRepositorySelect(repo)}>{repo.name}</div>
-          <span
-            className="material-icons md-18 delete-button"
-            onClick={() => handleDeleteRepository(repo.id)}
-          >
-            delete
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="repository-list">
+      <h2>Repositories</h2>
+      <ul>
+        {repositories.map((repo) => (
+          <li key={repo.id}>
+            <div onClick={() => onRepositorySelect(repo)}>{repo.name}</div>
+            <span
+              className="material-icons md-18 delete-button"
+              onClick={() => handleDeleteRepository(repo.id)}
+            >
+              delete
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

@@ -3,4 +3,9 @@
   --primary-color-dark: #00593f;
   --primary-color-light: #f9fbfa;
   --secondary-color: #e3fcf7;
+
+  --padding: 20px;
+
+  --h1-font-size: 18px;
+  --h2-font-size: 16px;
 }

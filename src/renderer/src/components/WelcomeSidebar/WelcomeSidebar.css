@@ -3,14 +3,6 @@
   flex-direction: column;
 }
 
-.welcome-sidebar .logo {
-  background-color: var(--primary-color);
-  padding: 20px;
-  color: white;
-  font-weight: 500;
-  font-size: 24px;
-}
-
 .welcome-sidebar .repository-list {
   flex-grow: 1;
   overflow-y: auto;

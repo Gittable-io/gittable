@@ -6,16 +6,15 @@
 }
 
 .welcome-page .welcome-sidebar {
-  flex-grow: 1;
-  flex-basis: 25%;
+  flex-grow: 0;
+  flex-basis: 250px;
 }
 
 .welcome-page .new-repository-section {
-  flex-grow: 2;
-  flex-basis: 50%;
+  flex-grow: 0;
+  flex-basis: 800px;
 }
 
 .welcome-page .help-section {
   flex-grow: 1;
-  flex-basis: 25%;
 }

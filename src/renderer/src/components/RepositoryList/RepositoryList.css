@@ -1,9 +1,11 @@
 .repository-list {
   background-color: var(--primary-color-light);
-  padding: 20px;
+  padding: 16px var(--padding);
 }
 
 .repository-list li {
+  padding: 0 16px;
+
   margin-top: 20px;
 
   display: flex;

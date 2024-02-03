@@ -1,5 +1,6 @@
 import { Repository } from "@sharedTypes/index";
 import { RepositoryList } from "../RepositoryList";
+import { TitleBar } from "../TitleBar";
 
 import "./WelcomeSidebar.css";
 
@@ -12,7 +13,7 @@ export function WelcomeSidebar({
 }: WelcomeSidebarProps): JSX.Element {
   return (
     <div className="welcome-sidebar">
-      <div className="logo">Gittable</div>
+      <TitleBar title="Gittable" />
       <RepositoryList onRepositorySelect={onRepositorySelect} />
     </div>
   );
