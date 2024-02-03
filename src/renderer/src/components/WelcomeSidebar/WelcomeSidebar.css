@@ -3,7 +3,7 @@
   flex-direction: column;
 }
 
-.welcome-sidebar .repository-list {
+.welcome-sidebar .sidebar-list {
   flex-grow: 1;
   overflow-y: auto;
 }

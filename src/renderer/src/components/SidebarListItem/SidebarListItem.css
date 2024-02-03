@@ -1,0 +1,29 @@
+.sidebar-list-item {
+  padding: 10px var(--padding);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar-list-item:has(.text:hover) {
+  background-color: var(--secondary-color-hover);
+}
+
+.sidebar-list-item .text {
+  flex-grow: 1;
+}
+
+.sidebar-list-item .text.clickable {
+  cursor: pointer;
+}
+
+.sidebar-list-item .action-icon {
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.sidebar-list-item .action-icon:hover {
+  background-color: var(--secondary-color-hover);
+  box-shadow: 0 0 0 5px var(--secondary-color-hover);
+}

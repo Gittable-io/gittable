@@ -1,0 +1,8 @@
+.sidebar-list {
+  background-color: var(--secondary-color);
+  padding: 16px 0;
+}
+
+.sidebar-list h2 {
+  padding: 0px var(--padding);
+}

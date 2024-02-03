@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Repository } from "@sharedTypes/index";
-import "./RepositoryList.css";
+import { SidebarList } from "../SidebarList";
+import { SidebarListItem } from "../SidebarListItem";
 
 type RepositoryListProps = {
   onRepositorySelect: (repository: Repository) => void;
@@ -34,21 +35,18 @@ export function RepositoryList({
   }, []);
 
   return (
-    <div className="repository-list">
-      <h2>Repositories</h2>
-      <ul>
-        {repositories.map((repo) => (
-          <li key={repo.id}>
-            <div onClick={() => onRepositorySelect(repo)}>{repo.name}</div>
-            <span
-              className="material-icons md-18 delete-button"
-              onClick={() => handleDeleteRepository(repo.id)}
-            >
-              delete
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <SidebarList title="Repositories">
+      {repositories.map((repo) => (
+        <SidebarListItem
+          key={repo.id}
+          text={repo.name}
+          onClick={() => onRepositorySelect(repo)}
+          action={{
+            materialIcon: "delete",
+            onClick: () => handleDeleteRepository(repo.id),
+          }}
+        ></SidebarListItem>
+      ))}
+    </SidebarList>
   );
 }

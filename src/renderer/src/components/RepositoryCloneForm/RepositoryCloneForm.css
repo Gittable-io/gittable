@@ -42,16 +42,12 @@
 }
 
 .repository-clone-form button:not(:disabled):hover {
-  background-color: var(--primary-color-dark);
-  box-shadow: 0 0 0 4px var(--secondary-color);
+  background-color: var(--primary-color-hover);
+  box-shadow: 0 0 0 4px var(--primary-color-shadow);
 }
 
 .repository-clone-form button:disabled {
-  background-color: color-mix(
-    in srgb,
-    var(--primary-color-dark),
-    transparent 40%
-  );
+  background-color: color-mix(in srgb, var(--primary-color), transparent 40%);
   color: color-mix(in srgb, white, transparent 40%);
   cursor: default;
 }
