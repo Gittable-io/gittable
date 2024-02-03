@@ -41,28 +41,24 @@ export function RepositoryCloneForm({
   };
 
   return (
-    <div className="repository-clone-form-card">
+    <div className="repository-clone-form">
       <h2>Connect to an existing database</h2>
-      <div className="repository-clone-form">
-        <div>
-          <input
-            type="text"
-            placeholder="Repository URL"
-            value={url}
-            onChange={handleInputChange}
-          ></input>
-          {error && <div className="form-validation-error">{error}</div>}
-        </div>
-        {
-          <button
-            type="button"
-            onClick={handleValidate}
-            disabled={url.length === 0}
-          >
-            Connect
-          </button>
-        }
+      <div className="input-and-validation">
+        <input
+          type="text"
+          placeholder="Repository URL"
+          value={url}
+          onChange={handleInputChange}
+        ></input>
+        {error && <div className="validation-errors">{error}</div>}
       </div>
+      <button
+        type="button"
+        onClick={handleValidate}
+        disabled={url.length === 0}
+      >
+        Connect
+      </button>
       {waitingForResponse && (
         <div className="backdrop">
           <div className="spinner"></div>
