@@ -74,7 +74,7 @@ export class UserDataStore {
   }
 
   // Methods to modify and save the user data back to the file
-  static async addRepository(repository: Repository): Promise<UserData> {
+  static async addRepository(repository: Repository): Promise<void> {
     const userData = await UserDataStore.getUserData();
 
     // If a repository with the same ID already exists, throw an error
@@ -90,12 +90,17 @@ export class UserDataStore {
     };
 
     await UserDataStore.save(newUserData);
-    return newUserData;
   }
 
-  // TODO: Add check that the repository exists
   static async deleteRepository(repositoryId: string): Promise<void> {
     const userData = await UserDataStore.getUserData();
+
+    // If there's no repository with that ID, throw an error
+    if (!userData.repositories.some((repo) => repo.id === repositoryId)) {
+      throw new Error(
+        `You are trying to delete a repository, but there's no repository with the id: ${repositoryId}`,
+      );
+    }
 
     const newUserData = {
       ...userData,
