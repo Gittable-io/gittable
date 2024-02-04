@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
 import { Repository } from "@sharedTypes/index";
+import { Button } from "../Button";
 
 type RepositoryCloneFormProps = {
   onRepositoryClone: (
@@ -52,13 +53,11 @@ export function RepositoryCloneForm({
         ></input>
         {error && <div className="validation-errors">{error}</div>}
       </div>
-      <button
-        type="button"
+      <Button
+        text="Connect"
         onClick={handleValidate}
         disabled={url.length === 0}
-      >
-        Connect
-      </button>
+      />
       {waitingForResponse && (
         <div className="backdrop">
           <div className="spinner"></div>
