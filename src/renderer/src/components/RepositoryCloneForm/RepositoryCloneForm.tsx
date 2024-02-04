@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
 import { Repository } from "@sharedTypes/index";
-import { Button } from "../Button";
+import { Button } from "../ui-components/Button";
 
 type RepositoryCloneFormProps = {
   onRepositoryClone: (

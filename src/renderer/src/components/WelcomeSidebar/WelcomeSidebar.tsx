@@ -1,6 +1,6 @@
 import { Repository } from "@sharedTypes/index";
 import { RepositoryList } from "../RepositoryList";
-import { TitleBar } from "../TitleBar";
+import { TitleBar } from "../ui-components/TitleBar";
 
 import "./WelcomeSidebar.css";
 
