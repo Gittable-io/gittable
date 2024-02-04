@@ -73,6 +73,18 @@ export class UserDataStore {
     }
   }
 
+  // Get repository from ID
+  static async getRepository(repositoryId): Promise<Repository> {
+    const userData = await UserDataStore.getUserData();
+
+    const repository = userData.repositories.find(
+      (repo) => repo.id === repositoryId,
+    );
+
+    if (repository) return repository;
+    else throw new Error(`There's no repository with id : ${repositoryId}`);
+  }
+
   // Methods to modify and save the user data back to the file
   static async addRepository(repository: Repository): Promise<void> {
     const userData = await UserDataStore.getUserData();

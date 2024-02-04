@@ -3,7 +3,7 @@ import "./SidebarListItem.css";
 export type SidebarListItemProps = {
   text: string;
   onClick?: () => void;
-  action: {
+  action?: {
     materialSymbol: string;
     onClick: () => void;
   };
@@ -22,12 +22,14 @@ export function SidebarListItem({
       >
         {text}
       </div>
-      <span
-        className="action-icon material-symbols-outlined"
-        onClick={action.onClick}
-      >
-        {action.materialSymbol}
-      </span>
+      {action && (
+        <span
+          className="action-icon material-symbols-outlined"
+          onClick={action.onClick}
+        >
+          {action.materialSymbol}
+        </span>
+      )}{" "}
     </li>
   );
 }

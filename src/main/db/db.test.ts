@@ -152,4 +152,17 @@ describe("Test UserDataStore", () => {
       UserDataStore.deleteRepository("1706953975_myrepo2"),
     ).rejects.toThrow(Error);
   });
+
+  test("Retrieve an existing repository", async () => {
+    mockUserDataStoreFs(mockUserData_2repo);
+    const repository = await UserDataStore.getRepository("1706889976_myrepo1");
+    expect(repository).toEqual(mockRepository1);
+  });
+
+  test("Retrieve a non-existing repository", async () => {
+    mockUserDataStoreFs(mockUserData_2repo);
+    await expect(
+      UserDataStore.getRepository("non-existing-id"),
+    ).rejects.toThrow(Error);
+  });
 });

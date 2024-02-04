@@ -18,7 +18,7 @@ export function RepositoryWorkspaceSidebar({
         title={repository.name}
         action={{ materialSymbol: "close", onClick: onRepositoryClose }}
       />
-      <RepositoryContent />
+      <RepositoryContent repositoryId={repository.id} />
     </div>
   );
 }

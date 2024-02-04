@@ -1,4 +1,4 @@
-import { getRepositoryNameFromRemoteUrl } from "../utils";
+import { getRepositoryNameFromRemoteUrl } from "./utils";
 
 describe("Test getRepositoryNameFromRemoteUrl()", () => {
   test("https://github.com/user/repo.git => repo", () => {

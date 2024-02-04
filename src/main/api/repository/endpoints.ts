@@ -9,7 +9,7 @@ import {
   generateRepositoryId,
   getRepositoryNameFromRemoteUrl,
   getRepositoryPath,
-} from "./utils";
+} from "../../utils/utils";
 import { UserDataStore } from "../../db";
 
 export type CloneRepositoryResponse =

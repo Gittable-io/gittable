@@ -1,5 +1,5 @@
 import path from "node:path";
-import { config } from "../../config";
+import { config } from "../config";
 
 /**
  *
