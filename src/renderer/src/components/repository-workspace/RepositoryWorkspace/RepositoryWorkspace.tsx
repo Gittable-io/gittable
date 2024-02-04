@@ -1,5 +1,6 @@
 import { Repository } from "@sharedTypes/index";
 import "./RepositoryWorkspace.css";
+import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -12,19 +13,10 @@ export function RepositoryWorkspace({
 }: RepositoryWorkspaceProps): JSX.Element {
   return (
     <div className="repository-workspace">
-      <div className="respository-workspace-sidebar">
-        <div className="repository-header">
-          <div className="repository-title"> {repository.name} </div>
-          <span
-            className="material-icons md-18 close-button"
-            onClick={onRepositoryClose}
-          >
-            close
-          </span>
-        </div>
-
-        <div className="repository-content">Repository content</div>
-      </div>
+      <RepositoryWorkspaceSidebar
+        repository={repository}
+        onRepositoryClose={onRepositoryClose}
+      />
       <div className="table-workspace">
         RepositoryWorkspace : {repository.name}
       </div>

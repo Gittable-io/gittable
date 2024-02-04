@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Repository } from "@sharedTypes/index";
-import { SidebarList } from "../ui-components/SidebarList";
+import { SidebarList } from "../../ui-components/SidebarList";
 import { RepositoryListItem } from "../RepositoryListItem";
 
 type RepositoryListProps = {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { WelcomePage } from "../WelcomePage";
-import { RepositoryWorkspace } from "../RepositoryWorkspace";
+import { WelcomePage } from "../welcome/WelcomePage";
+import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
 import { Repository } from "@sharedTypes/index";

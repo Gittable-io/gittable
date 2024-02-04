@@ -1,7 +1,7 @@
 import "./SidebarList.css";
 
 export type SidebarListProps = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   title?: string;
 };
 
@@ -12,7 +12,7 @@ export function SidebarList({
   return (
     <div className="sidebar-list">
       {title && <h2>{title}</h2>}
-      <ul>{children}</ul>
+      {children && <ul>{children}</ul>}
     </div>
   );
 }

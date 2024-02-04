@@ -1,0 +1,14 @@
+/* There's CSS in commin with WelcomeSidebar
+TODO: Maybe, wait and see how RepositoryWorkspaceSidebar will evolve 
+and check if we need to put those components in common
+*/
+
+.repository-workspace-sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.repository-workspace-sidebar .sidebar-list {
+  flex-grow: 1;
+  overflow-y: auto;
+}

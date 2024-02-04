@@ -1,7 +1,7 @@
-import { SidebarListItem } from "../ui-components/SidebarListItem";
+import { SidebarListItem } from "../../ui-components/SidebarListItem";
 import type { Repository } from "@sharedTypes/index";
 import { useModal } from "react-modal-hook";
-import { ConfirmationModal } from "../ui-components/ConfirmationModal";
+import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 
 export type RepositoryListItemProps = {
   repository: Repository;
