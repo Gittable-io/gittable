@@ -5,8 +5,7 @@ import { RepositoryWorkspace } from "../RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
 import { Repository } from "@sharedTypes/index";
-import { ModalProvider, useModal } from "react-modal-hook";
-import ReactModal from "react-modal";
+import { ModalProvider } from "react-modal-hook";
 
 /*
 I did not export App directly. AppWithModal below
@@ -16,17 +15,9 @@ function App(): JSX.Element {
     null,
   );
 
-  const [showModal, hideModal] = useModal(() => (
-    <ReactModal isOpen>
-      <p>Modal content</p>
-      <button onClick={hideModal}>Hide modal</button>
-    </ReactModal>
-  ));
-
   return (
     <div className="app-container">
       <div className="main-container">
-        <button onClick={showModal}>Show modal</button>
         {currentRepository ? (
           <RepositoryWorkspace
             repository={currentRepository}
