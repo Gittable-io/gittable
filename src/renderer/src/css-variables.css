@@ -1,13 +1,12 @@
 :root {
-  /* TODO: rename --color-primary, --font-size-h1 ... */
   /* TODO: convert colors to HSL */
   /* Colors */
-  --primary-color: #00684a;
-  --primary-color-hover: #00593f;
-  --primary-color-shadow: #e3fcf7;
+  --color-primary: #00684a;
+  --color-primary-hover: #00593f;
+  --color-primary-shadow: #e3fcf7;
 
-  --secondary-color: #f9fbfa;
-  --secondary-color-hover: #e8edeb;
+  --color-secondary: #f9fbfa;
+  --color-secondary-hover: #e8edeb;
 
   --color-danger: #db3030;
   --color-danger-hover: #c82222;
@@ -19,8 +18,8 @@
   --padding: 20px;
 
   /* Font */
-  --h1-font-size: 18px;
-  --h2-font-size: 16px;
+  --font-size-h1: 18px;
+  --font-size-h2: 16px;
 
   /* Other */
   --border-radius: 5px;

@@ -13,36 +13,36 @@
 /* Styles for variant "contained" */
 .button.contained {
   border: none;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   color: white;
 }
 
 .button.contained:not(:disabled):hover {
-  background-color: var(--primary-color-hover);
-  box-shadow: 0 0 0 4px var(--primary-color-shadow);
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 0 0 4px var(--color-primary-shadow);
 }
 
 .button.contained:disabled {
-  background-color: color-mix(in srgb, var(--primary-color), transparent 40%);
+  background-color: color-mix(in srgb, var(--color-primary), transparent 40%);
   color: color-mix(in srgb, white, transparent 40%);
 }
 
 /* Styles for variant "outlined" */
 .button.outlined {
-  border: 1px solid var(--primary-color);
+  border: 1px solid var(--color-primary);
   background-color: white;
-  color: var(--primary-color);
+  color: var(--color-primary);
 }
 
 .button.outlined:not(:disabled):hover {
   background-color: white;
-  box-shadow: 0 0 0 4px var(--primary-color-shadow);
+  box-shadow: 0 0 0 4px var(--color-primary-shadow);
 }
 
 .button.outlined:disabled {
-  border-color: color-mix(in srgb, var(--primary-color), transparent 40%);
+  border-color: color-mix(in srgb, var(--color-primary), transparent 40%);
   background-color: color-mix(in srgb, white, transparent 40%);
-  color: color-mix(in srgb, var(--primary-color), transparent 40%);
+  color: color-mix(in srgb, var(--color-primary), transparent 40%);
 }
 
 /* Styles for variant "danger" */

@@ -1,6 +1,6 @@
 .title-bar {
   height: 64px;
-  background-color: var(--primary-color);
+  background-color: var(--color-primary);
   padding: 0px var(--padding);
 
   display: flex;
