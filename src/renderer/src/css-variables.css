@@ -1,5 +1,7 @@
 :root {
   /* TODO: rename --color-primary, --font-size-h1 ... */
+  /* TODO: convert colors to HSL */
+  /* Colors */
   --primary-color: #00684a;
   --primary-color-hover: #00593f;
   --primary-color-shadow: #e3fcf7;
@@ -7,12 +9,19 @@
   --secondary-color: #f9fbfa;
   --secondary-color-hover: #e8edeb;
 
+  --color-danger: #db3030;
+  --color-danger-hover: #c82222;
+  --color-danger-shadow: #ffeae5;
+
   --color-backdrop: rgba(0, 0, 0, 0.2);
 
+  /* Spacing */
   --padding: 20px;
 
+  /* Font */
   --h1-font-size: 18px;
   --h2-font-size: 16px;
 
+  /* Other */
   --border-radius: 5px;
 }

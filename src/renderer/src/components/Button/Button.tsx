@@ -1,15 +1,23 @@
 import "./Button.css";
 
+type ButtonVariant = "contained" | "outlined" | "danger";
+
 export type ButtonProps = {
   text: string;
-  disabled: boolean;
-  onClick: () => void; // TODO: or () => Promise<void>
+  variant?: ButtonVariant;
+  disabled?: boolean;
+  onClick: () => void; // TODO: or () => Promise<void> instead?
 };
 
-export function Button({ text, disabled, onClick }: ButtonProps): JSX.Element {
+export function Button({
+  text,
+  variant = "contained",
+  disabled = false,
+  onClick,
+}: ButtonProps): JSX.Element {
   return (
     <button
-      className="button"
+      className={`button ${variant}`}
       type="button"
       disabled={disabled}
       onClick={onClick}

@@ -1,0 +1,32 @@
+.backdrop-modal {
+  position: fixed;
+  inset: 0px;
+  background-color: var(--color-backdrop);
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  padding-top: 100px;
+}
+
+.confirmation-modal {
+  background-color: white;
+  padding: var(--padding);
+
+  box-shadow: lightgray 3px 3px 10px;
+  border-radius: var(--border-radius);
+}
+
+.confirmation-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.confirmation-modal .modal-content .button-group {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 10px;
+}

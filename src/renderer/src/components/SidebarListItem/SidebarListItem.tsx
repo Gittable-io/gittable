@@ -4,7 +4,7 @@ export type SidebarListItemProps = {
   text: string;
   onClick?: () => void;
   action: {
-    materialIcon: string;
+    materialSymbol: string;
     onClick: () => void;
   };
 };
@@ -26,7 +26,7 @@ export function SidebarListItem({
         className="action-icon material-symbols-outlined"
         onClick={action.onClick}
       >
-        {action.materialIcon}
+        {action.materialSymbol}
       </span>
     </li>
   );
