@@ -1,17 +1,16 @@
 :root {
-  /* TODO: convert colors to HSL */
   /* Colors */
-  --color-primary: #00684a;
-  --color-primary-hover: #00593f;
-  --color-primary-shadow: #e3fcf7;
+  --color-primary: hsl(163, 100%, 20%) /* #00684a */;
+  --color-primary-hover: hsl(162, 100%, 17%) /* #00593f */;
+  --color-primary-shadow: hsl(168, 81%, 94%) /* #e3fcf7 */;
 
-  --color-secondary: #f9fbfa;
-  --color-secondary-hover: #e8edeb;
-  --color-secondary-hover-darker: #d4d9d7;
+  --color-secondary: hsl(150, 20%, 98%) /* #f9fbfa */;
+  --color-secondary-hover: hsl(156, 12%, 92%) /* #e8edeb */;
+  --color-secondary-hover-darker: hsl(156, 6%, 84%) /* #d4d9d7 */;
 
-  --color-danger: #db3030;
-  --color-danger-hover: #c82222;
-  --color-danger-shadow: #ffeae5;
+  --color-danger: hsl(0, 70%, 52%) /* #db3030 */;
+  --color-danger-hover: hsl(0, 71%, 46%) /* #c82222 */;
+  --color-danger-shadow: hsl(12, 100%, 95%) /* #ffeae5 */;
 
   --color-backdrop: rgba(0, 0, 0, 0.2);
 
