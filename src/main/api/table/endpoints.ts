@@ -1,7 +1,12 @@
 import fs from "node:fs/promises";
 import { Table } from "gittable-editor";
-import { getRepositoryPath, getTablePath } from "../../utils/utils";
+import {
+  getRepositoryPath,
+  getTableNameFromFileName,
+  getTablePath,
+} from "../../utils/utils";
 import { config } from "../../config";
+import { TableMetadata } from "@sharedTypes/index";
 
 /*
  TODO: Review the errors that are returned by those endpoints. Analyze different types of errors. Compare with repositories endpoint
@@ -9,7 +14,7 @@ import { config } from "../../config";
 export type ListTablesResponse =
   | {
       status: "success";
-      tableFileNames: string[];
+      tableMetadataList: TableMetadata[];
     }
   | {
       status: "error";
@@ -28,13 +33,16 @@ export async function list_tables(
       withFileTypes: true,
       recursive: false,
     });
-    const tableFileNames = (await dirents)
+    const tableMetadataList = (await dirents)
       .filter(
         (dirent) =>
           dirent.isFile() && dirent.name.endsWith(config.fileExtensions.table),
       )
-      .map((dirent) => dirent.name);
-    return { status: "success", tableFileNames: tableFileNames };
+      .map((dirent) => ({
+        id: dirent.name,
+        name: getTableNameFromFileName(dirent.name),
+      }));
+    return { status: "success", tableMetadataList: tableMetadataList };
   } catch (err) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
@@ -43,7 +51,7 @@ export async function list_tables(
 export type GetTableResponse =
   | {
       status: "success";
-      table: Table;
+      tableData: Table;
     }
   | {
       status: "error";
@@ -51,19 +59,19 @@ export type GetTableResponse =
       message: "Unknown error";
     };
 
-export async function get_table(
+export async function get_table_data(
   repositoryId: string,
-  tableFileName: string,
+  tableId: string,
 ): Promise<GetTableResponse> {
-  console.debug(`[API/table] get_table: tableFileName=${tableFileName}`);
+  console.debug(`[API/table] get_table_data: tableId=${tableId}`);
 
-  const tablePath = getTablePath(repositoryId, tableFileName);
+  const tablePath = getTablePath(repositoryId, tableId);
   try {
     const data = await fs.readFile(tablePath, {
       encoding: "utf8",
     });
     const tableContent = JSON.parse(data) as Table;
-    return { status: "success", table: tableContent };
+    return { status: "success", tableData: tableContent };
   } catch (err: unknown) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
@@ -81,16 +89,16 @@ export type SaveTableResponse =
 
 export async function save_table(
   repositoryId: string,
-  tableFileName: string,
-  table: Table,
+  tableId: string,
+  tableData: Table,
 ): Promise<SaveTableResponse> {
   console.debug(
-    `[API/table] post_table: repository_id=${repositoryId}, tableFileName=${tableFileName}`,
+    `[API/table] save_table: repository_id=${repositoryId}, tableId=${tableId}`,
   );
 
   try {
-    const tablePath = getTablePath(repositoryId, tableFileName);
-    const tableDataJson = JSON.stringify(table);
+    const tablePath = getTablePath(repositoryId, tableId);
+    const tableDataJson = JSON.stringify(tableData);
     await fs.writeFile(tablePath, tableDataJson, { encoding: "utf8" });
     return { status: "success" };
   } catch (error) {

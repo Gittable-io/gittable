@@ -1,12 +1,12 @@
 import { TitleBar } from "../../ui-components/TitleBar";
 import "./RepositoryWorkspaceSidebar.css";
-import { Repository } from "@sharedTypes/index";
+import { Repository, TableMetadata } from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
 
 export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
   onRepositoryClose: () => void;
-  onTableSelect: (table: string) => void;
+  onTableSelect: (tableMetadata: TableMetadata) => void;
 };
 
 export function RepositoryWorkspaceSidebar({

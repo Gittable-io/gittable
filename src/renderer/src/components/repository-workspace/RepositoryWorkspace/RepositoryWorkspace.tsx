@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Repository } from "@sharedTypes/index";
+import type { Repository, TableMetadata } from "@sharedTypes/index";
 import "./RepositoryWorkspace.css";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { TableWorkspace } from "../TableWorkspace";
@@ -13,19 +13,19 @@ export function RepositoryWorkspace({
   repository,
   onRepositoryClose,
 }: RepositoryWorkspaceProps): JSX.Element {
-  const [openedTable, setOpenedTable] = useState<string | null>(null);
+  const [openedTable, setOpenedTable] = useState<TableMetadata | null>(null);
 
   return (
     <div className="repository-workspace">
       <RepositoryWorkspaceSidebar
         repository={repository}
         onRepositoryClose={onRepositoryClose}
-        onTableSelect={(table) => setOpenedTable(table)}
+        onTableSelect={(tableMetadata) => setOpenedTable(tableMetadata)}
       />
       {openedTable && (
         <TableWorkspace
           repositoryId={repository.id}
-          tableFileName={openedTable}
+          tableMetadata={openedTable}
         />
       )}
     </div>

@@ -48,3 +48,14 @@ export const getTablePath = (
   const repositoryPath = getRepositoryPath(repositoryId);
   return path.join(repositoryPath, tableFileName);
 };
+
+export const getTableNameFromFileName = (tableFileName: string): string => {
+  const tableFileExtension = config.fileExtensions.table;
+
+  if (tableFileName.endsWith(tableFileExtension)) {
+    return tableFileName.slice(
+      0,
+      tableFileName.length - tableFileExtension.length,
+    );
+  } else return tableFileName;
+};

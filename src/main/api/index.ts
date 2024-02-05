@@ -10,13 +10,15 @@ import {
   type DeleteRepositoryReponse,
 } from "./repository";
 import {
-  get_table,
+  get_table_data,
   type GetTableResponse,
   save_table,
   type SaveTableResponse,
   list_tables,
   type ListTablesResponse,
 } from "./table";
+
+//TODO: Create types EndpointParameters (like for Endpoint Response), so I don't have to change this file when I change parameters
 
 // Define the functions (API) that the renderer
 // can call to communicate with the main process
@@ -28,13 +30,13 @@ interface IGittableElectronAPI {
   delete_repository: (repositoryId: string) => Promise<DeleteRepositoryReponse>;
 
   list_tables: (repositoryId: string) => Promise<ListTablesResponse>;
-  get_table: (
+  get_table_data: (
     repositoryId: string,
-    tableFileName: string,
+    tableId: string,
   ) => Promise<GetTableResponse>;
   save_table: (
     repositoryId: string,
-    tableFileName: string,
+    tableId: string,
     table: Table,
   ) => Promise<SaveTableResponse>;
 }
@@ -51,17 +53,17 @@ const gittableElectronAPI: IGittableElectronAPI = {
 
   list_tables: (repositoryId: string): Promise<ListTablesResponse> =>
     ipcRenderer.invoke("list_tables", repositoryId),
-  get_table: (
+  get_table_data: (
     repositoryId: string,
-    tableFileName: string,
+    tableId: string,
   ): Promise<GetTableResponse> =>
-    ipcRenderer.invoke("get_table", repositoryId, tableFileName),
+    ipcRenderer.invoke("get_table_data", repositoryId, tableId),
   save_table: (
     repositoryId: string,
-    tableFileName: string,
+    tableId: string,
     table: Table,
   ): Promise<SaveTableResponse> =>
-    ipcRenderer.invoke("save_table", repositoryId, tableFileName, table),
+    ipcRenderer.invoke("save_table", repositoryId, tableId, table),
 };
 
 // Map ipcRenderer.invoke(<channel>) to controller function
@@ -79,11 +81,11 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("list_tables", (_event, repositoryId) =>
     list_tables(repositoryId),
   );
-  ipcMain.handle("get_table", (_event, repositoryId, tableFileName) =>
-    get_table(repositoryId, tableFileName),
+  ipcMain.handle("get_table_data", (_event, repositoryId, tableId) =>
+    get_table_data(repositoryId, tableId),
   );
-  ipcMain.handle("save_table", (_event, repositoryId, tableFileName, table) =>
-    save_table(repositoryId, tableFileName, table),
+  ipcMain.handle("save_table", (_event, repositoryId, tableId, table) =>
+    save_table(repositoryId, tableId, table),
   );
 };
 

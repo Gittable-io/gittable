@@ -1,22 +1,25 @@
 import { useState, useEffect } from "react";
 import { SidebarList } from "../../ui-components/SidebarList";
 import { RepositoryContentItem } from "../RepositoryContentItem";
+import { TableMetadata } from "@sharedTypes/index";
 
 export type RepositoryContentProps = {
   repositoryId: string;
-  onTableSelect: (table: string) => void;
+  onTableSelect: (tableMetadata: TableMetadata) => void;
 };
 
 export function RepositoryContent({
   repositoryId,
   onTableSelect,
 }: RepositoryContentProps): JSX.Element {
-  const [tableFileNames, setTableFileNames] = useState<string[]>([]);
+  const [tableMetadataList, setTableMetadataList] = useState<TableMetadata[]>(
+    [],
+  );
 
   const fetchTables = async (): Promise<void> => {
     const response = await window.api.list_tables(repositoryId);
     if (response.status === "success") {
-      setTableFileNames(response.tableFileNames);
+      setTableMetadataList(response.tableMetadataList);
     } else {
       console.error("[RepositoryContent] Couldn't retrieve table list");
     }
@@ -31,11 +34,11 @@ export function RepositoryContent({
 
   return (
     <SidebarList title="Tables">
-      {tableFileNames.map((tableFileName) => (
+      {tableMetadataList.map((tableMetadata) => (
         <RepositoryContentItem
-          key={tableFileName}
-          tableName={tableFileName}
-          onTableSelect={() => onTableSelect(tableFileName)}
+          key={tableMetadata.id}
+          tableName={tableMetadata.name}
+          onTableSelect={() => onTableSelect(tableMetadata)}
         />
       ))}
     </SidebarList>

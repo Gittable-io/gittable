@@ -3,15 +3,16 @@ import { TableEditor } from "gittable-editor";
 import { reducer, initializeState } from "./state";
 import { Spinner } from "@renderer/components/ui-components/Spinner";
 import "./TableWorkspace.css";
+import type { TableMetadata } from "@sharedTypes/index";
 
 type TableWorkspaceProps = {
   repositoryId: string;
-  tableFileName: string;
+  tableMetadata: TableMetadata;
 };
 
 export function TableWorkspace({
   repositoryId,
-  tableFileName,
+  tableMetadata,
 }: TableWorkspaceProps): JSX.Element {
   const [state, dispatch] = useReducer(reducer, initializeState());
 
@@ -24,17 +25,20 @@ export function TableWorkspace({
     dispatch({ type: "fetchingTableData", payload: {} });
 
     const fetchTableData = async (): Promise<void> => {
-      const response = await window.api.get_table(repositoryId, tableFileName);
+      const response = await window.api.get_table_data(
+        repositoryId,
+        tableMetadata.id,
+      );
 
       if (response.status === "success") {
-        dispatch({ type: "loadTableData", payload: response.table });
+        dispatch({ type: "loadTableData", payload: response.tableData });
       } else {
         console.error(`[TableWorkspace] Error loading table data`);
       }
     };
 
     fetchTableData();
-  }, [repositoryId, tableFileName]);
+  }, [repositoryId, tableMetadata]);
 
   /**
    * @sideeffect Save table data to file when modified
@@ -42,7 +46,7 @@ export function TableWorkspace({
   useEffect(() => {
     if (state.tableData !== null && state.tableDataModified) {
       console.debug(`[TableWorkspace/useEffect] Saving data to file`);
-      window.api.save_table(repositoryId, tableFileName, state.tableData);
+      window.api.save_table(repositoryId, tableMetadata.id, state.tableData);
       dispatch({ type: "tableDataSaved", payload: {} });
     }
     /*
@@ -50,7 +54,7 @@ export function TableWorkspace({
       can't I just save data every time state.tableData is modified?
       especially that my reducer returns a new reference to tableData when it's modified 
       */
-  }, [state.tableDataModified, repositoryId, tableFileName]);
+  }, [state.tableDataModified, repositoryId, tableMetadata]);
 
   return (
     <div className="table-workspace">
