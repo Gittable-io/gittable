@@ -6,7 +6,7 @@
   align-items: center;
 }
 
-.sidebar-list-item:has(.text:hover) {
+.sidebar-list-item:hover {
   background-color: var(--color-secondary-hover);
 }
 
@@ -22,9 +22,15 @@
   font-size: 1.25em;
   cursor: pointer;
   border-radius: 50%;
+
+  visibility: hidden;
+}
+
+.sidebar-list-item:hover .action-icon {
+  visibility: visible;
 }
 
 .sidebar-list-item .action-icon:hover {
-  background-color: var(--color-secondary-hover);
-  box-shadow: 0 0 0 5px var(--color-secondary-hover);
+  background-color: var(--color-secondary-hover-darker);
+  box-shadow: 0 0 0 5px var(--color-secondary-hover-darker);
 }
