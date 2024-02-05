@@ -42,6 +42,7 @@ export function RepositoryListItem({
   return (
     <SidebarListItem
       text={repository.name}
+      materialSymbol="database"
       onClick={onRepositorySelect}
       action={{
         materialSymbol: "delete",

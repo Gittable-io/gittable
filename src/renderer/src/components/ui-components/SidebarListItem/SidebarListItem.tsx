@@ -1,7 +1,9 @@
+import { IconAndText } from "../IconAndText";
 import "./SidebarListItem.css";
 
 export type SidebarListItemProps = {
   text: string;
+  materialSymbol?: string;
   onClick?: () => void;
   action?: {
     materialSymbol: string;
@@ -11,6 +13,7 @@ export type SidebarListItemProps = {
 
 export function SidebarListItem({
   text,
+  materialSymbol,
   onClick,
   action,
 }: SidebarListItemProps): JSX.Element {
@@ -20,7 +23,7 @@ export function SidebarListItem({
         className={`text ${onClick ? "clickable" : ""}`}
         {...(onClick && { onClick: onClick })}
       >
-        {text}
+        <IconAndText text={text} {...(materialSymbol && { materialSymbol })} />
       </div>
       {action && (
         <span
@@ -29,7 +32,7 @@ export function SidebarListItem({
         >
           {action.materialSymbol}
         </span>
-      )}{" "}
+      )}
     </li>
   );
 }

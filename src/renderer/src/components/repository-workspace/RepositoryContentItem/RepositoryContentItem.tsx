@@ -9,5 +9,11 @@ export function RepositoryContentItem({
   tableName,
   onTableSelect,
 }: RepositoryContentItemProps): JSX.Element {
-  return <SidebarListItem text={tableName} onClick={onTableSelect} />;
+  return (
+    <SidebarListItem
+      text={tableName}
+      materialSymbol="table"
+      onClick={onTableSelect}
+    />
+  );
 }

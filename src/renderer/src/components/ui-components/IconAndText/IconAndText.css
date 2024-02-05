@@ -1,0 +1,10 @@
+.icon-and-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-and-text .icon {
+  font-size: 1.25em;
+}
