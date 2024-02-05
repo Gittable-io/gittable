@@ -11,7 +11,9 @@ import {
 } from "./repository";
 import {
   get_table,
-  post_table,
+  type GetTableResponse,
+  save_table,
+  type SaveTableResponse,
   list_tables,
   type ListTablesResponse,
 } from "./table";
@@ -26,8 +28,15 @@ interface IGittableElectronAPI {
   delete_repository: (repositoryId: string) => Promise<DeleteRepositoryReponse>;
 
   list_tables: (repositoryId: string) => Promise<ListTablesResponse>;
-  get_table: (path: string) => Promise<Table>; //TODO: Remove or modify to use git
-  post_table: (path: string, table: Table) => Promise<void>; //TODO: Remove or modify to use git
+  get_table: (
+    repositoryId: string,
+    tableFileName: string,
+  ) => Promise<GetTableResponse>;
+  save_table: (
+    repositoryId: string,
+    tableFileName: string,
+    table: Table,
+  ) => Promise<SaveTableResponse>;
 }
 
 const gittableElectronAPI: IGittableElectronAPI = {
@@ -42,10 +51,17 @@ const gittableElectronAPI: IGittableElectronAPI = {
 
   list_tables: (repositoryId: string): Promise<ListTablesResponse> =>
     ipcRenderer.invoke("list_tables", repositoryId),
-  get_table: (path: string): Promise<Table> =>
-    ipcRenderer.invoke("get_table", path), //TODO: Remove or modify to use git
-  post_table: (path: string, table: Table): Promise<void> =>
-    ipcRenderer.invoke("post_table", path, table), //TODO: Remove or modify to use git
+  get_table: (
+    repositoryId: string,
+    tableFileName: string,
+  ): Promise<GetTableResponse> =>
+    ipcRenderer.invoke("get_table", repositoryId, tableFileName),
+  save_table: (
+    repositoryId: string,
+    tableFileName: string,
+    table: Table,
+  ): Promise<SaveTableResponse> =>
+    ipcRenderer.invoke("save_table", repositoryId, tableFileName, table),
 };
 
 // Map ipcRenderer.invoke(<channel>) to controller function
@@ -63,10 +79,11 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("list_tables", (_event, repositoryId) =>
     list_tables(repositoryId),
   );
-  ipcMain.handle("get_table", (_event, path) => get_table(path)); //TODO: Remove or modify to use git
-  ipcMain.handle(
-    "post_table",
-    (_event, path, tableData) => post_table(path, tableData), //TODO: Remove or modify to use git
+  ipcMain.handle("get_table", (_event, repositoryId, tableFileName) =>
+    get_table(repositoryId, tableFileName),
+  );
+  ipcMain.handle("save_table", (_event, repositoryId, tableFileName, table) =>
+    save_table(repositoryId, tableFileName, table),
   );
 };
 

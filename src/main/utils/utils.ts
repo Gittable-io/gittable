@@ -40,3 +40,11 @@ export const generateRepositoryId = (remoteUrl: string): string => {
 export const getRepositoryPath = (repositoryId: string): string => {
   return path.join(config.dir.repositories, repositoryId);
 };
+
+export const getTablePath = (
+  repositoryId: string,
+  tableFileName: string,
+): string => {
+  const repositoryPath = getRepositoryPath(repositoryId);
+  return path.join(repositoryPath, tableFileName);
+};

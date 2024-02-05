@@ -6,10 +6,12 @@ import { RepositoryContent } from "../RepositoryContent";
 export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
   onRepositoryClose: () => void;
+  onTableSelect: (table: string) => void;
 };
 
 export function RepositoryWorkspaceSidebar({
   repository,
+  onTableSelect,
   onRepositoryClose,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   return (
@@ -18,7 +20,10 @@ export function RepositoryWorkspaceSidebar({
         title={repository.name}
         action={{ materialSymbol: "close", onClick: onRepositoryClose }}
       />
-      <RepositoryContent repositoryId={repository.id} />
+      <RepositoryContent
+        repositoryId={repository.id}
+        onTableSelect={onTableSelect}
+      />
     </div>
   );
 }

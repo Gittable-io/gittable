@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./RepositoryCloneForm.css";
 import { Repository } from "@sharedTypes/index";
 import { Button } from "../../ui-components/Button";
+import { Spinner } from "@renderer/components/ui-components/Spinner";
 
 type RepositoryCloneFormProps = {
   onRepositoryClone: (
@@ -61,7 +62,7 @@ export function RepositoryCloneForm({
       />
       {waitingForResponse && (
         <div className="backdrop">
-          <div className="spinner"></div>
+          <Spinner text="Connecting to repository..." />
         </div>
       )}
     </div>

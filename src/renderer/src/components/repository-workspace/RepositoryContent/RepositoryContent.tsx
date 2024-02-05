@@ -4,17 +4,19 @@ import { RepositoryContentItem } from "../RepositoryContentItem";
 
 export type RepositoryContentProps = {
   repositoryId: string;
+  onTableSelect: (table: string) => void;
 };
 
 export function RepositoryContent({
   repositoryId,
+  onTableSelect,
 }: RepositoryContentProps): JSX.Element {
-  const [tables, setTables] = useState<string[]>([]);
+  const [tableFileNames, setTableFileNames] = useState<string[]>([]);
 
   const fetchTables = async (): Promise<void> => {
     const response = await window.api.list_tables(repositoryId);
     if (response.status === "success") {
-      setTables(response.tables);
+      setTableFileNames(response.tableFileNames);
     } else {
       console.error("[RepositoryContent] Couldn't retrieve table list");
     }
@@ -29,8 +31,12 @@ export function RepositoryContent({
 
   return (
     <SidebarList title="Tables">
-      {tables.map((table) => (
-        <RepositoryContentItem key={table} table={table} />
+      {tableFileNames.map((tableFileName) => (
+        <RepositoryContentItem
+          key={tableFileName}
+          tableName={tableFileName}
+          onTableSelect={() => onTableSelect(tableFileName)}
+        />
       ))}
     </SidebarList>
   );

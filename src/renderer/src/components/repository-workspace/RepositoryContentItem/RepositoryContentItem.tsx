@@ -1,11 +1,13 @@
 import { SidebarListItem } from "@renderer/components/ui-components/SidebarListItem";
 
 export type RepositoryContentItemProps = {
-  table: string;
+  tableName: string;
+  onTableSelect: () => void;
 };
 
 export function RepositoryContentItem({
-  table,
+  tableName,
+  onTableSelect,
 }: RepositoryContentItemProps): JSX.Element {
-  return <SidebarListItem text={table} />;
+  return <SidebarListItem text={tableName} onClick={onTableSelect} />;
 }
