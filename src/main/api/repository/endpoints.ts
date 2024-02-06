@@ -88,8 +88,10 @@ export async function clone_repository({
       },
       onProgress: (progress: GitProgressEvent) =>
         console.log(`onProgress: ${JSON.stringify(progress)}`),
-      onAuth: (url: string, auth: GitAuth) =>
-        console.log(`onAuth: url=${url}, auth=${JSON.stringify(auth)}`),
+      onAuth: (url: string, auth: GitAuth) => ({
+        username: "habib",
+        password: "habib",
+      }),
       onAuthFailure: (url: string, auth: GitAuth) =>
         console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
       onAuthSuccess: (url: string, auth: GitAuth) =>
