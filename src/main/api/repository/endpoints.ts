@@ -255,3 +255,31 @@ export async function add_file({
 
   return { status: "success" };
 }
+
+export type CommitParameters = {
+  repositoryId: string;
+};
+
+export type CommitResponse = {
+  status: "success";
+};
+
+export async function commit({
+  repositoryId,
+}: AddFileParameters): Promise<AddFileResponse> {
+  console.debug(`[API/commit] Called with repositoryId=${repositoryId}`);
+
+  const repositoryPath = getRepositoryPath(repositoryId);
+
+  await git.commit({
+    fs,
+    dir: repositoryPath,
+    author: {
+      name: "Mr. Test",
+      email: "mrtest@example.com",
+    },
+    message: "Test commit of isogit",
+  });
+
+  return { status: "success" };
+}

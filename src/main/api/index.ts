@@ -12,6 +12,9 @@ import {
   add_file,
   type AddFileParameters,
   type AddFileResponse,
+  commit,
+  type CommitParameters,
+  type CommitResponse,
 } from "./repository";
 import {
   get_table_data,
@@ -55,6 +58,8 @@ const gittableElectronAPI = {
 
   add_file: (params: AddFileParameters): Promise<AddFileResponse> =>
     ipcRenderer.invoke("add_file", params),
+  commit: (params: CommitParameters): Promise<CommitResponse> =>
+    ipcRenderer.invoke("commit", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
@@ -76,6 +81,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("save_table", (_event, params) => save_table(params));
 
   ipcMain.handle("add_file", (_event, params) => add_file(params));
+  ipcMain.handle("commit", (_event, params) => commit(params));
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };
