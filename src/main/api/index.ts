@@ -9,6 +9,9 @@ import {
   delete_repository,
   type DeleteRepositoryParameters,
   type DeleteRepositoryReponse,
+  add_file,
+  type AddFileParameters,
+  type AddFileResponse,
 } from "./repository";
 import {
   get_table_data,
@@ -49,6 +52,9 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("get_table_data", params),
   save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
     ipcRenderer.invoke("save_table", params),
+
+  add_file: (params: AddFileParameters): Promise<AddFileResponse> =>
+    ipcRenderer.invoke("add_file", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
@@ -68,6 +74,8 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("list_tables", (_event, params) => list_tables(params));
   ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
   ipcMain.handle("save_table", (_event, params) => save_table(params));
+
+  ipcMain.handle("add_file", (_event, params) => add_file(params));
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };

@@ -231,3 +231,27 @@ export async function delete_repository({
     };
   }
 }
+
+export type AddFileParameters = {
+  repositoryId: string;
+  tableId: string;
+};
+
+export type AddFileResponse = {
+  status: "success";
+};
+
+export async function add_file({
+  repositoryId,
+  tableId,
+}: AddFileParameters): Promise<AddFileResponse> {
+  console.debug(
+    `[API/add_file] Called with repositoryId=${repositoryId}, tableId=${tableId}`,
+  );
+
+  const repositoryPath = getRepositoryPath(repositoryId);
+
+  await git.add({ fs, dir: repositoryPath, filepath: tableId });
+
+  return { status: "success" };
+}
