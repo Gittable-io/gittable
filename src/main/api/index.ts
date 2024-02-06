@@ -15,6 +15,9 @@ import {
   commit,
   type CommitParameters,
   type CommitResponse,
+  push,
+  type PushParameters,
+  type PushResponse,
 } from "./repository";
 import {
   get_table_data,
@@ -60,6 +63,8 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("add_file", params),
   commit: (params: CommitParameters): Promise<CommitResponse> =>
     ipcRenderer.invoke("commit", params),
+  push: (params: PushParameters): Promise<PushResponse> =>
+    ipcRenderer.invoke("push", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
@@ -82,6 +87,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
 
   ipcMain.handle("add_file", (_event, params) => add_file(params));
   ipcMain.handle("commit", (_event, params) => commit(params));
+  ipcMain.handle("push", (_event, params) => push(params));
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };

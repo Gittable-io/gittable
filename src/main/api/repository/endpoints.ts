@@ -283,3 +283,32 @@ export async function commit({
 
   return { status: "success" };
 }
+
+export type PushParameters = {
+  repositoryId: string;
+};
+
+export type PushResponse = {
+  status: "success";
+};
+
+export async function push({
+  repositoryId,
+}: AddFileParameters): Promise<AddFileResponse> {
+  console.debug(`[API/push] Called with repositoryId=${repositoryId}`);
+
+  const repositoryPath = getRepositoryPath(repositoryId);
+
+  const pushResult = await git.push({
+    fs,
+    http,
+    dir: repositoryPath,
+    remote: "origin",
+    ref: "main",
+    onAuth: () => ({ username: "habib", password: "habib" }),
+  });
+
+  console.debug(`[API/push] pushResult=${JSON.stringify(pushResult)}`);
+
+  return { status: "success" };
+}
