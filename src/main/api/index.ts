@@ -18,6 +18,9 @@ import {
   push,
   type PushParameters,
   type PushResponse,
+  get_old_version,
+  type GetOldVersionParameters,
+  type GetOldVersionResponse,
 } from "./repository";
 import {
   get_table_data,
@@ -65,6 +68,10 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("commit", params),
   push: (params: PushParameters): Promise<PushResponse> =>
     ipcRenderer.invoke("push", params),
+  get_old_version: (
+    params: GetOldVersionParameters,
+  ): Promise<GetOldVersionResponse> =>
+    ipcRenderer.invoke("get_old_version", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
@@ -88,6 +95,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("add_file", (_event, params) => add_file(params));
   ipcMain.handle("commit", (_event, params) => commit(params));
   ipcMain.handle("push", (_event, params) => push(params));
+  ipcMain.handle("get_old_version", (_event, params) =>
+    get_old_version(params),
+  );
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };

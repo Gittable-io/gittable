@@ -314,3 +314,36 @@ export async function push({
 
   return { status: "success" };
 }
+
+export type GetOldVersionParameters = {
+  repositoryId: string;
+  tableId: string;
+  commitId: string;
+};
+
+export type GetOldVersionResponse = {
+  status: "success";
+};
+
+export async function get_old_version({
+  repositoryId,
+  tableId,
+  commitId,
+}: GetOldVersionParameters): Promise<GetOldVersionResponse> {
+  console.debug(
+    `[API/get_old_version] Called with repositoryId=${repositoryId}, tableId=${tableId}, commitId=${commitId}`,
+  );
+
+  const repositoryPath = getRepositoryPath(repositoryId);
+
+  const { blob } = await git.readBlob({
+    fs,
+    dir: repositoryPath,
+    oid: commitId,
+    filepath: tableId,
+  });
+
+  console.debug(`[API/push] blob=${Buffer.from(blob).toString("utf8")}`);
+
+  return { status: "success" };
+}
