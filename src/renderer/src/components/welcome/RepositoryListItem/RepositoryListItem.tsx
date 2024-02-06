@@ -26,7 +26,9 @@ export function RepositoryListItem({
   );
 
   const deleteRepository = async (): Promise<void> => {
-    const response = await window.api.delete_repository(repository.id);
+    const response = await window.api.delete_repository({
+      repositoryId: repository.id,
+    });
     if (response.status === "success") {
       hideDeleteRepositoryModal();
     } else {

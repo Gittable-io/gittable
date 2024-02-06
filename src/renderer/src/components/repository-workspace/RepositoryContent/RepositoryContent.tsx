@@ -17,7 +17,7 @@ export function RepositoryContent({
   );
 
   const fetchTables = async (): Promise<void> => {
-    const response = await window.api.list_tables(repositoryId);
+    const response = await window.api.list_tables({ repositoryId });
     if (response.status === "success") {
       setTableMetadataList(response.tableMetadataList);
     } else {

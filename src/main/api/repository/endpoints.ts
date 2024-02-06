@@ -12,6 +12,10 @@ import {
 } from "../../utils/utils";
 import { UserDataStore } from "../../db";
 
+export type CloneRepositoryParameters = {
+  remoteUrl: string;
+};
+
 export type CloneRepositoryResponse =
   | { status: "success"; type: "cloned"; repository: Repository }
   | { status: "success"; type: "already cloned"; repository: Repository }
@@ -46,9 +50,9 @@ export type CloneRepositoryResponse =
  *    => Return { status: "error"; type: "unknown"; message: string }
  *
  */
-export async function clone_repository(
-  remoteUrl: string,
-): Promise<CloneRepositoryResponse> {
+export async function clone_repository({
+  remoteUrl,
+}: CloneRepositoryParameters): Promise<CloneRepositoryResponse> {
   console.debug(`[API/clone_repository] Called with remoteUrl=${remoteUrl}`);
 
   const trimmedRemoteUrl = remoteUrl.trim();
@@ -173,6 +177,10 @@ export async function list_repositories(): Promise<ListRepositoriesReponse> {
   return { status: "success", repositories: repositories };
 }
 
+export type DeleteRepositoryParameters = {
+  repositoryId: string;
+};
+
 export type DeleteRepositoryReponse =
   | {
       status: "success";
@@ -188,9 +196,9 @@ export type DeleteRepositoryReponse =
       message: "An error occured. Please contact support";
     };
 
-export async function delete_repository(
-  repositoryId: string,
-): Promise<DeleteRepositoryReponse> {
+export async function delete_repository({
+  repositoryId,
+}: DeleteRepositoryParameters): Promise<DeleteRepositoryReponse> {
   console.debug(
     `[API/delete_repository] Called with repositoryId=${repositoryId}`,
   );

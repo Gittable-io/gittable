@@ -1,4 +1,6 @@
-export async function ping(): Promise<string> {
+export type PingResponse = { status: "success"; message: "pong" };
+
+export async function ping(): Promise<PingResponse> {
   console.log("Main: Received Ping from Renderer");
-  return "pong";
+  return { status: "success", message: "pong" };
 }

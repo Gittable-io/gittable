@@ -25,10 +25,10 @@ export function TableWorkspace({
     dispatch({ type: "fetchingTableData", payload: {} });
 
     const fetchTableData = async (): Promise<void> => {
-      const response = await window.api.get_table_data(
+      const response = await window.api.get_table_data({
         repositoryId,
-        tableMetadata.id,
-      );
+        tableId: tableMetadata.id,
+      });
 
       if (response.status === "success") {
         dispatch({ type: "loadTableData", payload: response.tableData });
@@ -46,7 +46,11 @@ export function TableWorkspace({
   useEffect(() => {
     if (state.tableData !== null && state.tableDataModified) {
       console.debug(`[TableWorkspace/useEffect] Saving data to file`);
-      window.api.save_table(repositoryId, tableMetadata.id, state.tableData);
+      window.api.save_table({
+        repositoryId,
+        tableId: tableMetadata.id,
+        tableData: state.tableData,
+      });
       dispatch({ type: "tableDataSaved", payload: {} });
     }
     /*

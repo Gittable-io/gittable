@@ -11,6 +11,11 @@ import { TableMetadata } from "@sharedTypes/index";
 /*
  TODO: Review the errors that are returned by those endpoints. Analyze different types of errors. Compare with repositories endpoint
 */
+
+export type ListTablesParameters = {
+  repositoryId: string;
+};
+
 export type ListTablesResponse =
   | {
       status: "success";
@@ -22,9 +27,9 @@ export type ListTablesResponse =
       message: "Unknown error";
     };
 
-export async function list_tables(
-  repositoryId: string,
-): Promise<ListTablesResponse> {
+export async function list_tables({
+  repositoryId,
+}: ListTablesParameters): Promise<ListTablesResponse> {
   console.debug(`[API/list_tables] Called with repositoryId=${repositoryId}`);
 
   try {
@@ -48,6 +53,11 @@ export async function list_tables(
   }
 }
 
+export type GetTableParameters = {
+  repositoryId: string;
+  tableId: string;
+};
+
 export type GetTableResponse =
   | {
       status: "success";
@@ -59,10 +69,10 @@ export type GetTableResponse =
       message: "Unknown error";
     };
 
-export async function get_table_data(
-  repositoryId: string,
-  tableId: string,
-): Promise<GetTableResponse> {
+export async function get_table_data({
+  repositoryId,
+  tableId,
+}: GetTableParameters): Promise<GetTableResponse> {
   console.debug(`[API/table] get_table_data: tableId=${tableId}`);
 
   const tablePath = getTablePath(repositoryId, tableId);
@@ -77,6 +87,12 @@ export async function get_table_data(
   }
 }
 
+export type SaveTableParameters = {
+  repositoryId: string;
+  tableId: string;
+  tableData: Table;
+};
+
 export type SaveTableResponse =
   | {
       status: "success";
@@ -87,11 +103,11 @@ export type SaveTableResponse =
       message: "Unknown error";
     };
 
-export async function save_table(
-  repositoryId: string,
-  tableId: string,
-  tableData: Table,
-): Promise<SaveTableResponse> {
+export async function save_table({
+  repositoryId,
+  tableId,
+  tableData,
+}: SaveTableParameters): Promise<SaveTableResponse> {
   console.debug(
     `[API/table] save_table: repository_id=${repositoryId}, tableId=${tableId}`,
   );

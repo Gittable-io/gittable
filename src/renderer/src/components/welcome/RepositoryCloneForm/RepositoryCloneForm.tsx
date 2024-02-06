@@ -20,7 +20,7 @@ export function RepositoryCloneForm({
 
   const handleValidate = async (): Promise<void> => {
     setWaitingForResponse(true);
-    const response = await window.api.clone_repository(url);
+    const response = await window.api.clone_repository({ remoteUrl: url });
     console.debug(
       `[RepositoryCloneForm/handleValidate] clone_repository(${url}) returned: ${JSON.stringify(response)}`,
     );
