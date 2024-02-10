@@ -1,3 +1,4 @@
 .table-workspace {
   padding-top: var(--padding);
+  overflow: hidden;
 }
