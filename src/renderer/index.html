@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <title>Electron</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- Added "font-src 'self' data:;" to allow font Data URL (needed to read correctly gittable-editor's style.css) -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'self'; script-src 'self'; font-src 'self' data:; style-src 'self' 'unsafe-inline'"
     />
     <link
       href="./src/assets/material-symbols/material-symbols.css"

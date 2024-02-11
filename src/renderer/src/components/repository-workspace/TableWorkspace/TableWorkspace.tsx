@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from "react";
 import { TableEditor } from "gittable-editor";
+import "gittable-editor/style.css";
 import { reducer, initializeState } from "./state";
 import { Spinner } from "@renderer/components/ui-components/Spinner";
 import "./TableWorkspace.css";

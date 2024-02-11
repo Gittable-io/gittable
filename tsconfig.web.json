@@ -7,6 +7,19 @@
     "src/preload/*.d.ts"
   ],
   "compilerOptions": {
+    /*
+    I added those values of "module" and "moduleResolution" to remove an error when I import "gitable-editor"
+    At one point, I changed how gittable-editor was built, and the properties in its package.json, so now projects that use "gittable-editor" (like this one)
+    should read from "gittable-editor/dist" instead of gittable-editor/src.
+    And then typescript in "gittable" stopped being able to correctly import from "gittable-editor"
+
+    So after fiddling around and inspired from the values I chose in gittable-editor's tsconfig.json,
+    I found the values that doesn't throw an error. 
+    npm run dev, npm run typecheck and npm run build:win seem to work fine
+*/
+    "module": "esnext",
+    "moduleResolution": "bundler",
+
     "composite": true,
     "jsx": "react-jsx",
     "baseUrl": ".",

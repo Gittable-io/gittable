@@ -68,6 +68,12 @@ export const reducer = (
         tableDataModified: false,
       };
     }
+    default: {
+      console.warn(
+        `[TableWorkspace/state] Received unknown action: ${action.type}. This should not occur`,
+      );
+      return curState;
+    }
   }
 };
 
