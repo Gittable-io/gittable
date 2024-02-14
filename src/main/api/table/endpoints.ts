@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { Table } from "gittable-editor";
+import { Table, tableToJsonString } from "gittable-editor";
 import {
   getRepositoryPath,
   getTableNameFromFileName,
@@ -114,7 +114,7 @@ export async function save_table({
 
   try {
     const tablePath = getTablePath(repositoryId, tableId);
-    const tableDataJson = JSON.stringify(tableData);
+    const tableDataJson = tableToJsonString(tableData);
     await fs.writeFile(tablePath, tableDataJson, { encoding: "utf8" });
     return { status: "success" };
   } catch (error) {
