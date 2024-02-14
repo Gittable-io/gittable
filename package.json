@@ -26,6 +26,8 @@
     "electron-updater": "^6.1.7",
     "gittable-editor": "file:../gittable-editor",
     "isomorphic-git": "^1.25.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-modal": "^3.16.1",
     "react-modal-hook": "^3.0.2"
   },
@@ -46,8 +48,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "jest": "^29.7.0",
     "prettier": "^3.1.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
