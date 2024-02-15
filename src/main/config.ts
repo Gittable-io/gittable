@@ -1,23 +1,27 @@
 import path from "node:path";
+import { app } from "electron";
 
-// The OS specific folder where app data should be saved. see : https://stackoverflow.com/a/26227660/471461
-const OS_USER_DATA_FOLDER =
-  process.env.APPDATA ||
-  (process.platform == "darwin"
-    ? process.env.HOME + "/Library/Preferences"
-    : process.env.HOME + "/.local/share");
-
-const APP_NAME = "gittable";
-
-const HOME_DIR = path.join(OS_USER_DATA_FOLDER, APP_NAME);
-
-export const config = {
+export type Config = {
   dir: {
-    home: HOME_DIR,
-    repositories: path.join(HOME_DIR, "repositories"),
+    repositories: string;
+  };
+  userDataFile: string;
+  fileExtensions: {
+    table: string;
+  };
+};
+
+/**
+ * * Why didn't I just returned an object Config? Why return a function getConfig()?
+ * * Because the config uses "app" from "electron", but it can't use it before the app is launched
+ * * and we are in the context of the app (or else it throws an error)
+ */
+export const getConfig = (): Config => ({
+  dir: {
+    repositories: path.join(app.getPath("userData"), "repositories"),
   },
-  userDataFile: path.join(HOME_DIR, "data.json"),
+  userDataFile: path.join(app.getPath("userData"), "data.json"),
   fileExtensions: {
     table: ".table.json",
   },
-};
+});

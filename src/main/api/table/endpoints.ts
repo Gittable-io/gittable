@@ -5,7 +5,7 @@ import {
   getTableNameFromFileName,
   getTablePath,
 } from "../../utils/utils";
-import { config } from "../../config";
+import { getConfig } from "../../config";
 import { TableMetadata } from "@sharedTypes/index";
 
 /*
@@ -41,7 +41,8 @@ export async function list_tables({
     const tableMetadataList = (await dirents)
       .filter(
         (dirent) =>
-          dirent.isFile() && dirent.name.endsWith(config.fileExtensions.table),
+          dirent.isFile() &&
+          dirent.name.endsWith(getConfig().fileExtensions.table),
       )
       .map((dirent) => ({
         id: dirent.name,

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { config } from "../config";
+import { getConfig } from "../config";
 
 /**
  *
@@ -38,7 +38,7 @@ export const generateRepositoryId = (remoteUrl: string): string => {
 };
 
 export const getRepositoryPath = (repositoryId: string): string => {
-  return path.join(config.dir.repositories, repositoryId);
+  return path.join(getConfig().dir.repositories, repositoryId);
 };
 
 export const getTablePath = (
@@ -50,7 +50,7 @@ export const getTablePath = (
 };
 
 export const getTableNameFromFileName = (tableFileName: string): string => {
-  const tableFileExtension = config.fileExtensions.table;
+  const tableFileExtension = getConfig().fileExtensions.table;
 
   if (tableFileName.endsWith(tableFileExtension)) {
     return tableFileName.slice(

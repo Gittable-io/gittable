@@ -1,6 +1,6 @@
 import { Repository } from "@sharedTypes/index";
 import fs from "node:fs/promises";
-import { config } from "../config";
+import { getConfig } from "../config";
 
 export type UserData = {
   repositories: Repository[];
@@ -33,7 +33,7 @@ export class UserDataStore {
   private static async userDataFileExists(): Promise<boolean> {
     try {
       // fs.access() throws an error if file does not exists. see (https://nodejs.org/api/fs.html#fsaccesspath-mode-callback)
-      await fs.access(config.userDataFile, fs.constants.F_OK);
+      await fs.access(getConfig().userDataFile, fs.constants.F_OK);
       return true;
     } catch (error) {
       if (error instanceof Error) {
@@ -45,7 +45,7 @@ export class UserDataStore {
   }
 
   private static async fetchUserData(): Promise<UserData> {
-    const userDataJson = await fs.readFile(config.userDataFile, {
+    const userDataJson = await fs.readFile(getConfig().userDataFile, {
       encoding: "utf-8",
     });
     const userData = JSON.parse(userDataJson) as UserData;
@@ -53,9 +53,13 @@ export class UserDataStore {
   }
 
   private static async save(userData: UserData): Promise<void> {
-    await fs.writeFile(config.userDataFile, JSON.stringify(userData, null, 2), {
-      encoding: "utf-8",
-    });
+    await fs.writeFile(
+      getConfig().userDataFile,
+      JSON.stringify(userData, null, 2),
+      {
+        encoding: "utf-8",
+      },
+    );
   }
 
   /* Public methods */
