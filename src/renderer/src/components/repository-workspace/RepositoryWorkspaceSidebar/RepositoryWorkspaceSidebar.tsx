@@ -18,7 +18,11 @@ export function RepositoryWorkspaceSidebar({
     <div className="repository-workspace-sidebar">
       <TitleBar
         title={repository.name}
-        action={{ materialSymbol: "close", onClick: onRepositoryClose }}
+        action={{
+          materialSymbol: "close",
+          onClick: onRepositoryClose,
+          testId: "close repository",
+        }}
       />
       <RepositoryContent
         repositoryId={repository.id}

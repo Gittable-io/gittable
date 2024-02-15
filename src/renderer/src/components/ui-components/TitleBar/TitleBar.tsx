@@ -5,6 +5,7 @@ export type TitleBarProps = {
   action?: {
     materialSymbol: string;
     onClick: () => void;
+    testId?: string;
   };
 };
 
@@ -16,6 +17,7 @@ export function TitleBar({ title, action }: TitleBarProps): JSX.Element {
         <span
           className="action-icon material-symbols-outlined"
           onClick={action.onClick}
+          {...(action.testId ? { "data-testid": action.testId } : {})}
         >
           {action.materialSymbol}
         </span>
