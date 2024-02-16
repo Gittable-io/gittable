@@ -16,7 +16,7 @@ function App(): JSX.Element {
   );
 
   return (
-    <div className="app-container">
+    <div className="app">
       <div className="main-container">
         {currentRepository ? (
           <RepositoryWorkspace
