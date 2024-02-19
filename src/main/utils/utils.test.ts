@@ -3,6 +3,18 @@ import {
   getTableNameFromFileName,
 } from "./utils";
 
+// Mock app.getPath(), as getConfig() calls it to construct some properties. However we are not running tests in the context of an app
+jest.mock("electron", () => {
+  const electronModule = jest.requireActual("electron");
+  return {
+    ...electronModule,
+    app: {
+      ...electronModule.app,
+      getPath: jest.fn(() => ""),
+    },
+  };
+});
+
 describe("Test getRepositoryNameFromRemoteUrl()", () => {
   test("https://github.com/user/repo.git => repo", () => {
     expect(

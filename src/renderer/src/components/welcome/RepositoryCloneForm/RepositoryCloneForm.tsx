@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./RepositoryCloneForm.css";
 import { Repository } from "@sharedTypes/index";
 import { Button } from "../../ui-components/Button";
-import { Spinner } from "@renderer/components/ui-components/Spinner";
+import { Spinner } from "gittable-editor";
 
 type RepositoryCloneFormProps = {
   onRepositoryClone: (
