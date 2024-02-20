@@ -1,4 +1,4 @@
-import { IconAndText } from "../IconAndText";
+import { IconAndText } from "gittable-editor";
 import "./SidebarListItem.css";
 
 export type SidebarListItemProps = {
