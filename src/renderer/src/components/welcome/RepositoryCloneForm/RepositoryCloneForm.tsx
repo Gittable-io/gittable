@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./RepositoryCloneForm.css";
 import { Repository } from "@sharedTypes/index";
 import { Button } from "../../ui-components/Button";
-import { Spinner } from "gittable-editor";
+import { Spinner, InputAndValidation } from "gittable-editor";
 
 type RepositoryCloneFormProps = {
   onRepositoryClone: (
@@ -37,23 +37,20 @@ export function RepositoryCloneForm({
     }
   };
 
-  const handleInputChange = (e): void => {
-    setUrl(e.currentTarget.value);
+  const handleInputChange = (value): void => {
+    setUrl(value);
     setError(null);
   };
 
   return (
     <div className="repository-clone-form">
       <h2>Connect to an existing database</h2>
-      <div className="input-and-validation">
-        <input
-          type="text"
-          placeholder="Repository URL"
-          value={url}
-          onChange={handleInputChange}
-        ></input>
-        {error && <div className="validation-errors">{error}</div>}
-      </div>
+      <InputAndValidation
+        placeholder="Repository URL"
+        value={url}
+        onChange={handleInputChange}
+        {...(error != null ? { error } : {})}
+      />
       <Button
         text="Connect"
         variant="contained"
