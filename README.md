@@ -32,3 +32,9 @@ $ npm run build:mac
 # For Linux
 $ npm run build:linux
 ```
+
+## Development notes
+
+### Libraries
+
+- `electron-devtools-assembler`: is a fork of the more popular `electron-devtools-installer`. I used it as `electron-devtools-installer` seems to be no longer maintained (see https://github.com/xupea/electron-devtools-installer)

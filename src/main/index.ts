@@ -54,8 +54,13 @@ app.whenReady().then(() => {
   });
 
   // Install React Dev Tools : https://github.com/xupea/electron-devtools-installer
+  // If starting from a fresh install, you should restart the app after the first launch to use the devtools
   // TODO: Should this code be removed when the app is packaged and released for production?
-  installExtension(REACT_DEVELOPER_TOOLS)
+  installExtension(REACT_DEVELOPER_TOOLS, {
+    loadExtensionOptions: {
+      allowFileAccess: true,
+    },
+  })
     .then((name) => console.log(`Added Extension:  ${name}`))
     .catch((err) => console.log("An error occurred: ", err));
 
@@ -79,16 +84,6 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
-});
-
-// This additional code seems to be necessary to install Install React Dev Tools
-// TODO: Should this code be removed when the app is packaged and released for production?
-app.on("ready", async () => {
-  await installExtension(REACT_DEVELOPER_TOOLS, {
-    loadExtensionOptions: {
-      allowFileAccess: true,
-    },
-  });
 });
 
 // In this file you can include the rest of your app"s specific main process
