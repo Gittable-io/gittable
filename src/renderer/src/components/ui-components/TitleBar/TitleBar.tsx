@@ -1,4 +1,5 @@
 import "./TitleBar.css";
+import { MaterialSymbol } from "gittable-editor";
 
 export type TitleBarProps = {
   title: string;
@@ -14,13 +15,11 @@ export function TitleBar({ title, action }: TitleBarProps): JSX.Element {
     <div className="title-bar">
       <h1>{title}</h1>
       {action && (
-        <span
-          className="action-icon material-symbols-outlined"
+        <MaterialSymbol
+          symbol={action.materialSymbol}
           onClick={action.onClick}
-          {...(action.testId ? { "data-testid": action.testId } : {})}
-        >
-          {action.materialSymbol}
-        </span>
+          {...(action.testId ? { testId: action.testId } : {})}
+        />
       )}
     </div>
   );

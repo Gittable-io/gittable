@@ -4,6 +4,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  --material-symbol-color-hover: var(--color-secondary-hover-darker);
 }
 
 .sidebar-list-item:hover {
@@ -18,19 +20,10 @@
   cursor: pointer;
 }
 
-.sidebar-list-item .action-icon {
-  font-size: 1.25em;
-  cursor: pointer;
-  border-radius: 50%;
-
+.sidebar-list-item .secondary-action {
   visibility: hidden;
 }
 
-.sidebar-list-item:hover .action-icon {
+.sidebar-list-item:hover .secondary-action {
   visibility: visible;
-}
-
-.sidebar-list-item .action-icon:hover {
-  background-color: var(--color-secondary-hover-darker);
-  box-shadow: 0 0 0 5px var(--color-secondary-hover-darker);
 }

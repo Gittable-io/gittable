@@ -1,6 +1,6 @@
 import ReactModal from "react-modal";
 import "./ConfirmationModal.css";
-import { Button } from "../Button";
+import { Button } from "gittable-editor";
 
 export type ConfirmationModalProps = {
   title: string;

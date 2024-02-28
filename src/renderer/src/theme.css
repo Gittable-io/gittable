@@ -6,6 +6,7 @@
 
   --color-secondary: hsl(150, 20%, 98%) /* #f9fbfa */;
   --color-secondary-hover: hsl(156, 12%, 92%) /* #e8edeb */;
+  --color-secondary-hover-lighter: hsl(156, 12%, 96%);
   --color-secondary-hover-darker: hsl(156, 6%, 84%) /* #d4d9d7 */;
 
   --color-danger: hsl(0, 70%, 52%) /* #db3030 */;
@@ -13,6 +14,10 @@
   --color-danger-shadow: hsl(12, 100%, 95%) /* #ffeae5 */;
 
   --color-backdrop: rgba(0, 0, 0, 0.2);
+  --color-borders: hsl(156, 12%, 92%);
+
+  --color-text: black; /* Still not used */
+  --color-text-lighter: color-mix(in srgb, var(--color-text), transparent 40%);
 
   /* Spacing */
   --padding: 20px;
