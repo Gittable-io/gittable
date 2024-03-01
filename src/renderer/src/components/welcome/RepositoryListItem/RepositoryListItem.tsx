@@ -1,7 +1,7 @@
-import { SidebarListItem } from "../../ui-components/SidebarListItem";
 import type { Repository } from "@sharedTypes/index";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
+import { ListItem } from "gittable-editor";
 
 export type RepositoryListItemProps = {
   repository: Repository;
@@ -42,14 +42,14 @@ export function RepositoryListItem({
   };
 
   return (
-    <SidebarListItem
+    <ListItem
       text={repository.name}
       materialSymbol="database"
       onClick={onRepositorySelect}
-      action={{
+      secondaryAction={{
         materialSymbol: "delete",
         onClick: showDeleteRepositoryModal,
       }}
-    ></SidebarListItem>
+    />
   );
 }

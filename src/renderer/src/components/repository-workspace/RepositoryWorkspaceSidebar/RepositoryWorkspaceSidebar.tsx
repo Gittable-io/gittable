@@ -2,6 +2,7 @@ import { TitleBar } from "../../ui-components/TitleBar";
 import "./RepositoryWorkspaceSidebar.css";
 import { Repository, TableMetadata } from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
+import { SourceControl } from "../SourceControl";
 
 export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
@@ -28,6 +29,7 @@ export function RepositoryWorkspaceSidebar({
         repositoryId={repository.id}
         onTableSelect={onTableSelect}
       />
+      <SourceControl repositoryId={repository.id} />
     </div>
   );
 }

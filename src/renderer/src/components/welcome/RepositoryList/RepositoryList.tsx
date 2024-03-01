@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import type { Repository } from "@sharedTypes/index";
-import { SidebarList } from "../../ui-components/SidebarList";
 import { RepositoryListItem } from "../RepositoryListItem";
+import { List } from "gittable-editor";
+import "./RepositoryList.css";
+import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 
 type RepositoryListProps = {
   onRepositorySelect: (repository: Repository) => void;
@@ -29,15 +31,17 @@ export function RepositoryList({
   }, []);
 
   return (
-    <SidebarList title="Repositories">
-      {repositories.map((repo) => (
-        <RepositoryListItem
-          key={repo.id}
-          repository={repo}
-          onRepositorySelect={() => onRepositorySelect(repo)}
-          onRepositoryDelete={fetchRepositories}
-        />
-      ))}
-    </SidebarList>
+    <SidebarSection id="repository-list" title="Repositories">
+      <List>
+        {repositories.map((repo) => (
+          <RepositoryListItem
+            key={repo.id}
+            repository={repo}
+            onRepositorySelect={() => onRepositorySelect(repo)}
+            onRepositoryDelete={fetchRepositories}
+          />
+        ))}
+      </List>
+    </SidebarSection>
   );
 }

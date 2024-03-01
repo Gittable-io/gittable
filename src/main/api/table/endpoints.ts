@@ -1,7 +1,10 @@
 import fs from "node:fs/promises";
+import git from "isomorphic-git";
+
 import { Table, tableToJsonString } from "gittable-editor";
 import {
   getRepositoryPath,
+  getTableFileNameFromId,
   getTableNameFromFileName,
   getTablePath,
 } from "../../utils/utils";
@@ -124,5 +127,52 @@ export async function save_table({
       type: "unknown",
       message: "Unknown error",
     };
+  }
+}
+
+export type ListChangesParameters = {
+  repositoryId: string;
+};
+
+export type ListChangesResponse =
+  | {
+      status: "success";
+      tableMetadataList: TableMetadata[];
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function list_changes({
+  repositoryId,
+}: ListChangesParameters): Promise<ListChangesResponse> {
+  console.debug(`[API/list_changes] Called with repositoryId=${repositoryId}`);
+
+  try {
+    const response = await list_tables({ repositoryId });
+    if (response.status === "error") {
+      throw new Error();
+    }
+    const tableMetadata = response.tableMetadataList;
+    const tableStatuses = await Promise.all(
+      tableMetadata.map(async (table) => {
+        const status = await git.status({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          filepath: getTableFileNameFromId(table.id),
+        });
+
+        return status;
+      }),
+    );
+    const modifiedTables = tableMetadata.filter(
+      (_table, idx) => tableStatuses[idx] === "*modified",
+    );
+
+    return { status: "success", tableMetadataList: modifiedTables };
+  } catch (err) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { SidebarList } from "../../ui-components/SidebarList";
 import { RepositoryContentItem } from "../RepositoryContentItem";
 import { TableMetadata } from "@sharedTypes/index";
+import { List } from "gittable-editor";
+import "./RepositoryContent.css";
+import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 
 export type RepositoryContentProps = {
   repositoryId: string;
@@ -16,31 +18,33 @@ export function RepositoryContent({
     [],
   );
 
-  const fetchTables = async (): Promise<void> => {
-    const response = await window.api.list_tables({ repositoryId });
-    if (response.status === "success") {
-      setTableMetadataList(response.tableMetadataList);
-    } else {
-      console.error("[RepositoryContent] Couldn't retrieve table list");
-    }
-  };
-
   /**
    * @sideeffect  : at start load table list
    */
   useEffect(() => {
+    const fetchTables = async (): Promise<void> => {
+      const response = await window.api.list_tables({ repositoryId });
+      if (response.status === "success") {
+        setTableMetadataList(response.tableMetadataList);
+      } else {
+        console.error("[RepositoryContent] Couldn't retrieve table list");
+      }
+    };
+
     fetchTables();
-  }, []);
+  }, [repositoryId]);
 
   return (
-    <SidebarList title="Tables">
-      {tableMetadataList.map((tableMetadata) => (
-        <RepositoryContentItem
-          key={tableMetadata.id}
-          tableName={tableMetadata.name}
-          onTableSelect={() => onTableSelect(tableMetadata)}
-        />
-      ))}
-    </SidebarList>
+    <SidebarSection id="repository-content" title="Tables">
+      <List>
+        {tableMetadataList.map((tableMetadata) => (
+          <RepositoryContentItem
+            key={tableMetadata.id}
+            tableName={tableMetadata.name}
+            onTableSelect={() => onTableSelect(tableMetadata)}
+          />
+        ))}
+      </List>
+    </SidebarSection>
   );
 }

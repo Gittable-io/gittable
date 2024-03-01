@@ -41,14 +41,22 @@ export const getRepositoryPath = (repositoryId: string): string => {
   return path.join(getConfig().dir.repositories, repositoryId);
 };
 
-export const getTablePath = (
-  repositoryId: string,
-  tableFileName: string,
-): string => {
+/**
+ *
+ * @param repositoryId
+ * @param tableId
+ * @returns the path to the table file
+ */
+export const getTablePath = (repositoryId: string, tableId: string): string => {
   const repositoryPath = getRepositoryPath(repositoryId);
-  return path.join(repositoryPath, tableFileName);
+  return path.join(repositoryPath, tableId);
 };
 
+/**
+ *
+ * @param tableFileName the Table file name. ex: `srs.table.json`
+ * @returns the Table name, which is the file name without the extension. ex: `srs`
+ */
 export const getTableNameFromFileName = (tableFileName: string): string => {
   const tableFileExtension = getConfig().fileExtensions.table;
 
@@ -58,4 +66,8 @@ export const getTableNameFromFileName = (tableFileName: string): string => {
       tableFileName.length - tableFileExtension.length,
     );
   } else return tableFileName;
+};
+
+export const getTableFileNameFromId = (tableId: string): string => {
+  return tableId;
 };

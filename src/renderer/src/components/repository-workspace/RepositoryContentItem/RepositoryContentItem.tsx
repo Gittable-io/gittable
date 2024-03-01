@@ -1,4 +1,4 @@
-import { SidebarListItem } from "@renderer/components/ui-components/SidebarListItem";
+import { ListItem } from "gittable-editor";
 
 export type RepositoryContentItemProps = {
   tableName: string;
@@ -10,10 +10,6 @@ export function RepositoryContentItem({
   onTableSelect,
 }: RepositoryContentItemProps): JSX.Element {
   return (
-    <SidebarListItem
-      text={tableName}
-      materialSymbol="table"
-      onClick={onTableSelect}
-    />
+    <ListItem text={tableName} materialSymbol="table" onClick={onTableSelect} />
   );
 }

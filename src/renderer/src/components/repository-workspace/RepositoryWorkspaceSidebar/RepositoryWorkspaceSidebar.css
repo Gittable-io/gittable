@@ -6,9 +6,22 @@ and check if we need to put those components in common
 .repository-workspace-sidebar {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+
+  background-color: var(--color-secondary);
 }
 
-.repository-workspace-sidebar .sidebar-list {
+.repository-workspace-sidebar .title-bar {
+  flex-grow: 0;
+}
+
+.repository-workspace-sidebar #repository-content {
+  height: 50%;
   flex-grow: 1;
-  overflow-y: auto;
+}
+
+.repository-workspace-sidebar #source-control {
+  height: 50%;
+  flex-grow: 1;
 }

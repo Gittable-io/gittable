@@ -6,8 +6,13 @@ export type Repository = {
   remoteUrl: string;
 };
 
+/**
+ * Represent information (metadata) about a Table without the table data itself
+ */
 export type TableMetadata = {
+  /** The ID of the table, which corresponds currently to the table file name as saved on the fs */
   id: string;
+  /** The name of the table, which corresponds currently to the ID (or filename) without the .table.json extension */
   name: string;
 };
 

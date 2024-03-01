@@ -1,5 +1,5 @@
 .title-bar {
-  height: 64px;
+  min-height: 64px;
   background-color: var(--color-primary);
   padding: 0px var(--padding);
 
