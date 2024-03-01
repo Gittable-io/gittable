@@ -6,6 +6,11 @@ export type Repository = {
   remoteUrl: string;
 };
 
+export type RepositoryStatus = {
+  lastCommitId: string;
+  tables: TableStatus[];
+};
+
 /**
  * Represent information (metadata) about a Table without the table data itself
  */
@@ -19,3 +24,5 @@ export type TableMetadata = {
 export type TableWithMetadata = TableMetadata & {
   tableData: Table;
 };
+
+export type TableStatus = TableMetadata & { modified: boolean };

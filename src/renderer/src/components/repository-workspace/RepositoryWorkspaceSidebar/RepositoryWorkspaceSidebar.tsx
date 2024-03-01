@@ -1,18 +1,26 @@
 import { TitleBar } from "../../ui-components/TitleBar";
 import "./RepositoryWorkspaceSidebar.css";
-import { Repository, TableMetadata } from "@sharedTypes/index";
+import {
+  Repository,
+  RepositoryStatus,
+  TableMetadata,
+} from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
 import { SourceControl } from "../SourceControl";
 
 export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
+  repositoryStatus: RepositoryStatus;
   onRepositoryClose: () => void;
+  onRepositoryChange: () => void;
   onTableSelect: (tableMetadata: TableMetadata) => void;
 };
 
 export function RepositoryWorkspaceSidebar({
   repository,
+  repositoryStatus,
   onTableSelect,
+  onRepositoryChange,
   onRepositoryClose,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   return (
@@ -29,7 +37,11 @@ export function RepositoryWorkspaceSidebar({
         repositoryId={repository.id}
         onTableSelect={onTableSelect}
       />
-      <SourceControl repository={repository} />
+      <SourceControl
+        repository={repository}
+        repositoryStatus={repositoryStatus}
+        onRepositoryChange={onRepositoryChange}
+      />
     </div>
   );
 }

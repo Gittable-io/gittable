@@ -1,17 +1,21 @@
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import "./SourceControl.css";
-import { useEffect, useState } from "react";
-import type { TableMetadata, Repository } from "@sharedTypes/index";
+import type { Repository, RepositoryStatus } from "@sharedTypes/index";
 import { List, ListItem } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 
 export type SourceControlProps = {
   repository: Repository;
+  repositoryStatus: RepositoryStatus;
+  onRepositoryChange: () => void;
 };
 
-export function SourceControl({ repository }: SourceControlProps): JSX.Element {
-  const [modifiedTables, setModifiedTables] = useState<TableMetadata[]>([]);
+export function SourceControl({
+  repository,
+  repositoryStatus,
+  onRepositoryChange,
+}: SourceControlProps): JSX.Element {
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
     <ConfirmationModal
       title="Discarding changes"
@@ -21,18 +25,6 @@ export function SourceControl({ repository }: SourceControlProps): JSX.Element {
       onCancel={hideDiscardChangesModal}
     />
   ));
-
-  const fetchChanges = async (): Promise<void> => {
-    const response = await window.api.list_changes({
-      repositoryId: repository.id,
-    });
-    if (response.status === "success") {
-      setModifiedTables(response.tableMetadataList);
-      console.log("[SourceControl] Sucessfully discarded");
-    } else {
-      console.error("[SourceControl] Couldn't retrieve changes");
-    }
-  };
 
   const handleDiscardChangesConfirm = async (): Promise<void> => {
     discardChanges();
@@ -44,19 +36,15 @@ export function SourceControl({ repository }: SourceControlProps): JSX.Element {
     });
     if (response.status === "success") {
       hideDiscardChangesModal();
-      fetchChanges();
+      onRepositoryChange();
     } else {
       console.warn(`[SourceControl] Error discarding changes`);
     }
   };
 
-  useEffect(() => {
-    fetchChanges();
-
-    const intervalId = setInterval(fetchChanges, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [repository]);
+  const modifiedTables = repositoryStatus.tables.filter(
+    (tableStatus) => tableStatus.modified === true,
+  );
 
   return (
     <SidebarSection id="source-control" title="Source control">
