@@ -61,10 +61,14 @@ export function SourceControl({
       <List>
         <ListItem
           text="Changes"
-          secondaryAction={{
-            materialSymbol: "undo",
-            onClick: showDiscardChangesModal,
-          }}
+          {...(modifiedTables.length > 0
+            ? {
+                secondaryAction: {
+                  materialSymbol: "undo",
+                  onClick: showDiscardChangesModal,
+                },
+              }
+            : {})}
         />
         <List subList>
           {modifiedTables.map((table) => (
