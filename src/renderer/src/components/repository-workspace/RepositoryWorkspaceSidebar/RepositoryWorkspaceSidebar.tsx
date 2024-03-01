@@ -35,6 +35,7 @@ export function RepositoryWorkspaceSidebar({
       />
       <RepositoryContent
         repositoryId={repository.id}
+        repositoryStatus={repositoryStatus}
         onTableSelect={onTableSelect}
       />
       <SourceControl

@@ -33,6 +33,7 @@ export type ListTablesResponse =
       message: "Unknown error";
     };
 
+// ! Note : this endpoint is no longer used as from 1/03/2024. Consider removing it after some times
 export async function list_tables({
   repositoryId,
 }: ListTablesParameters): Promise<ListTablesResponse> {
