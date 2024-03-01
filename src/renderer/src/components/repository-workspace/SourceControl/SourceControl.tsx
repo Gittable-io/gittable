@@ -1,23 +1,21 @@
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import "./SourceControl.css";
 import { useEffect, useState } from "react";
-import { TableMetadata } from "@sharedTypes/index";
+import type { TableMetadata, Repository } from "@sharedTypes/index";
 import { List, ListItem } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 
 export type SourceControlProps = {
-  repositoryId: string;
+  repository: Repository;
 };
 
-export function SourceControl({
-  repositoryId,
-}: SourceControlProps): JSX.Element {
+export function SourceControl({ repository }: SourceControlProps): JSX.Element {
   const [modifiedTables, setModifiedTables] = useState<TableMetadata[]>([]);
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
     <ConfirmationModal
       title="Discarding changes"
-      text={`Are you sure you want to discard all changes to ${repositoryId} ?`}
+      text={`Are you sure you want to discard all changes to ${repository.name} ?`}
       confirmButtonLabel="Discard changes"
       onConfirm={handleDiscardChangesConfirm}
       onCancel={hideDiscardChangesModal}
@@ -25,7 +23,9 @@ export function SourceControl({
   ));
 
   const fetchChanges = async (): Promise<void> => {
-    const response = await window.api.list_changes({ repositoryId });
+    const response = await window.api.list_changes({
+      repositoryId: repository.id,
+    });
     if (response.status === "success") {
       setModifiedTables(response.tableMetadataList);
       console.log("[SourceControl] Sucessfully discarded");
@@ -39,7 +39,9 @@ export function SourceControl({
   };
 
   const discardChanges = async (): Promise<void> => {
-    const response = await window.api.discard_changes({ repositoryId });
+    const response = await window.api.discard_changes({
+      repositoryId: repository.id,
+    });
     if (response.status === "success") {
       hideDiscardChangesModal();
       fetchChanges();
@@ -54,7 +56,7 @@ export function SourceControl({
     const intervalId = setInterval(fetchChanges, 5000);
 
     return () => clearInterval(intervalId);
-  }, [repositoryId]);
+  }, [repository]);
 
   return (
     <SidebarSection id="source-control" title="Source control">

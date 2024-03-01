@@ -29,7 +29,7 @@ export function RepositoryWorkspaceSidebar({
         repositoryId={repository.id}
         onTableSelect={onTableSelect}
       />
-      <SourceControl repositoryId={repository.id} />
+      <SourceControl repository={repository} />
     </div>
   );
 }
