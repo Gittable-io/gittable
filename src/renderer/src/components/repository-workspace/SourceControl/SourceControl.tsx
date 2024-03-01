@@ -18,6 +18,7 @@ export function SourceControl({
     <ConfirmationModal
       title="Discarding changes"
       text={`Are you sure you want to discard all changes to ${repositoryId} ?`}
+      confirmButtonLabel="Discard changes"
       onConfirm={handleDiscardChangesConfirm}
       onCancel={hideDiscardChangesModal}
     />

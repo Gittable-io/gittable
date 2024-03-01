@@ -19,6 +19,7 @@ export function RepositoryListItem({
       <ConfirmationModal
         title="Deleting repository"
         text={`Are you sure you want to delete repository ${repository.name} ?`}
+        confirmButtonLabel="Delete repository"
         onConfirm={handleDeleteRepositoryConfirm}
         onCancel={hideDeleteRepositoryModal}
       />
