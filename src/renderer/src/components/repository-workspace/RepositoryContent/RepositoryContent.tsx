@@ -1,5 +1,5 @@
 import { RepositoryContentItem } from "../RepositoryContentItem";
-import { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
+import { RepositoryStatus } from "@sharedTypes/index";
 import { List } from "gittable-editor";
 import "./RepositoryContent.css";
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
@@ -7,7 +7,7 @@ import { SidebarSection } from "@renderer/components/ui-components/SidebarSectio
 export type RepositoryContentProps = {
   repositoryId: string;
   repositoryStatus: RepositoryStatus;
-  onTableSelect: (tableMetadata: TableMetadata) => void;
+  onTableSelect: (tableId: string) => void;
 };
 
 export function RepositoryContent({
@@ -21,7 +21,7 @@ export function RepositoryContent({
           <RepositoryContentItem
             key={tableMetadata.id}
             tableName={tableMetadata.name}
-            onTableSelect={() => onTableSelect(tableMetadata)}
+            onTableSelect={() => onTableSelect(tableMetadata.id)}
           />
         ))}
       </List>

@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type {
-  Repository,
-  RepositoryStatus,
-  TableMetadata,
-} from "@sharedTypes/index";
+import type { Repository, RepositoryStatus } from "@sharedTypes/index";
 import "./RepositoryWorkspace.css";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { TableWorkspace } from "../TableWorkspace";
@@ -19,7 +15,7 @@ export function RepositoryWorkspace({
 }: RepositoryWorkspaceProps): JSX.Element {
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
-  const [openedTable, setOpenedTable] = useState<TableMetadata | null>(null);
+  const [openedTableId, setOpenedTableId] = useState<string | null>(null);
 
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
@@ -54,6 +50,11 @@ export function RepositoryWorkspace({
     fetchRepositoryStatus();
   };
 
+  const openedTable =
+    openedTableId != null
+      ? repositoryStatus?.tables.find((table) => table.id === openedTableId)
+      : null;
+
   return (
     <div className="repository-workspace">
       {repositoryStatus && (
@@ -63,7 +64,7 @@ export function RepositoryWorkspace({
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
             onRepositoryChange={onRepositoryChange}
-            onTableSelect={(tableMetadata) => setOpenedTable(tableMetadata)}
+            onTableSelect={(tableId) => setOpenedTableId(tableId)}
           />
           {openedTable && (
             <TableWorkspace

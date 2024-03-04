@@ -12,7 +12,7 @@ export function SidebarSection({
   children,
 }: SidebarSectionProps): JSX.Element {
   return (
-    <div {...(id ? { id } : {})} className="sidebar-section">
+    <div {...(id ? { id } : {})} className="sidebar-section" aria-label={title}>
       <div className="section-title">{title}</div>
       <div className="section-content">{children}</div>
     </div>

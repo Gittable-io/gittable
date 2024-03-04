@@ -186,7 +186,7 @@ export async function get_repository_status({
   repositoryId,
 }: GetRepositoryStatusParameters): Promise<GetRepositoryStatusResponse> {
   console.debug(
-    `[API/get_last_commit] Called with repositoryId=${repositoryId}`,
+    `[API/get_repository_status] Called with repositoryId=${repositoryId}`,
   );
 
   try {

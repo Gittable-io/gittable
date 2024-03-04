@@ -54,13 +54,14 @@ export function SourceControl({
           {...(modifiedTables.length > 0
             ? {
                 secondaryAction: {
+                  label: "Discard all changes",
                   materialSymbol: "undo",
                   onClick: showDiscardChangesModal,
                 },
               }
             : {})}
         />
-        <List subList>
+        <List subList label="Changed table list">
           {modifiedTables.map((table) => (
             <ListItem
               key={table.id}
