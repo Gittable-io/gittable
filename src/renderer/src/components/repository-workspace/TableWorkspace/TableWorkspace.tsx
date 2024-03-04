@@ -25,7 +25,7 @@ export function TableWorkspace({
         `Error loading table data. repositoryId = ${repositoryId}, tableId=${tableMetadata.id}`,
       );
     }
-  }, [repositoryId, tableMetadata]);
+  }, [repositoryId, tableMetadata.id]);
 
   const saveTable = useCallback(
     async (tableData: Table) => {
@@ -41,7 +41,7 @@ export function TableWorkspace({
           `Error saving table data. repositoryId = ${repositoryId}, tableId=${tableMetadata.id}`,
         );
     },
-    [repositoryId, tableMetadata],
+    [repositoryId, tableMetadata.id],
   );
 
   return (
@@ -50,6 +50,7 @@ export function TableWorkspace({
         key={tableMetadata.id}
         fetchTable={fetchTable}
         saveTable={saveTable}
+        watchExternalChanges
       />
     </div>
   );

@@ -5,6 +5,7 @@ import { Button } from "gittable-editor";
 export type ConfirmationModalProps = {
   title: string;
   text: string;
+  confirmButtonLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -12,6 +13,7 @@ export type ConfirmationModalProps = {
 export function ConfirmationModal({
   title,
   text,
+  confirmButtonLabel,
   onConfirm,
   onCancel,
 }: ConfirmationModalProps): JSX.Element {
@@ -27,7 +29,7 @@ export function ConfirmationModal({
         <div className="button-group">
           <Button text="Cancel" variant="outlined" onClick={onCancel} />
           <Button
-            text="Delete repository"
+            text={confirmButtonLabel}
             variant="danger"
             onClick={onConfirm}
           />
