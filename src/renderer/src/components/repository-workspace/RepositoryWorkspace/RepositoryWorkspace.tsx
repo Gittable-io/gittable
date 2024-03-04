@@ -7,6 +7,7 @@ import type {
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { TableWorkspace } from "../TableWorkspace";
 import { Tab } from "@headlessui/react";
+import { IconAndText, MaterialSymbol } from "gittable-editor";
 
 import "./RepositoryWorkspace.css";
 
@@ -65,6 +66,27 @@ export function RepositoryWorkspace({
     setSelectedTableId(tableId);
   };
 
+  const closeTable = (tableId: string): void => {
+    const positiondIdx = openedTableIds.findIndex((id) => id === tableId);
+    if (positiondIdx !== -1) {
+      // If we're closing the selected tab
+      if (selectedTableId === tableId) {
+        // If it's the last tab, set selection to null
+        if (openedTableIds.length === 1) setSelectedTableId(null);
+        // else if the selected tab is the last one to the right, select the tab to its left
+        else if (positiondIdx === openedTableIds.length - 1)
+          setSelectedTableId(openedTableIds[positiondIdx - 1]);
+        // else select the tab to its right
+        else setSelectedTableId(openedTableIds[positiondIdx + 1]);
+      }
+
+      setOpenedTableIds((tableIds) => [
+        ...tableIds.slice(0, positiondIdx),
+        ...tableIds.slice(positiondIdx + 1),
+      ]);
+    }
+  };
+
   const getTableMetadata = (tableId: string): TableMetadata | undefined => {
     return repositoryStatus?.tables.find((table) => table.id === tableId);
   };
@@ -86,7 +108,14 @@ export function RepositoryWorkspace({
                 <Tab.List className="tab-list">
                   {openedTableIds.map((tableId) => (
                     <Tab key={tableId} className="tab-label">
-                      {getTableMetadata(tableId)?.name}
+                      <IconAndText
+                        text={getTableMetadata(tableId)?.name}
+                        materialSymbol="table"
+                      />
+                      <MaterialSymbol
+                        symbol="close"
+                        onClick={() => closeTable(tableId)}
+                      />
                     </Tab>
                   ))}
                 </Tab.List>
