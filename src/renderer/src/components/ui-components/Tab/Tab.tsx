@@ -25,17 +25,26 @@ function Label({ children }: TabLabelProps): JSX.Element {
   return <div className="tab-label">{children}</div>;
 }
 
+export type TabPanelsProps = {
+  children: React.ReactNode;
+};
+
+function Panels({ children }: TabPanelsProps): JSX.Element {
+  return <div className="tab-panels">{children}</div>;
+}
+
 export type TabPanelProps = {
   children: React.ReactNode;
 };
 
 function Panel({ children }: TabPanelProps): JSX.Element {
-  return <div className="tab-Panel">{children}</div>;
+  return <div className="tab-panel">{children}</div>;
 }
 
 export const Tab = {
   Group,
   List,
   Label,
+  Panels,
   Panel,
 };

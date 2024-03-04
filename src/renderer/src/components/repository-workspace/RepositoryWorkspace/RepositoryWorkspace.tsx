@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Repository, RepositoryStatus } from "@sharedTypes/index";
-import "./RepositoryWorkspace.css";
+import type {
+  Repository,
+  RepositoryStatus,
+  TableMetadata,
+} from "@sharedTypes/index";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { TableWorkspace } from "../TableWorkspace";
+import { Tab } from "@headlessui/react";
+
+import "./RepositoryWorkspace.css";
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -15,7 +21,9 @@ export function RepositoryWorkspace({
 }: RepositoryWorkspaceProps): JSX.Element {
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
-  const [openedTableId, setOpenedTableId] = useState<string | null>(null);
+
+  const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
@@ -50,10 +58,16 @@ export function RepositoryWorkspace({
     fetchRepositoryStatus();
   };
 
-  const openedTable =
-    openedTableId != null
-      ? repositoryStatus?.tables.find((table) => table.id === openedTableId)
-      : null;
+  const openTable = (tableId: string): void => {
+    if (!openedTableIds.includes(tableId)) {
+      setOpenedTableIds((tableIds) => [...tableIds, tableId]);
+    }
+    setSelectedTableId(tableId);
+  };
+
+  const getTableMetadata = (tableId: string): TableMetadata | undefined => {
+    return repositoryStatus?.tables.find((table) => table.id === tableId);
+  };
 
   return (
     <div className="repository-workspace">
@@ -64,13 +78,27 @@ export function RepositoryWorkspace({
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
             onRepositoryChange={onRepositoryChange}
-            onTableSelect={(tableId) => setOpenedTableId(tableId)}
+            onTableSelect={(tableId) => openTable(tableId)}
           />
-          {openedTable && (
-            <TableWorkspace
-              repositoryId={repository.id}
-              tableMetadata={openedTable}
-            />
+          {openedTableIds.length > 0 && (
+            <div className="tab-group">
+              <Tab.Group>
+                <Tab.List className="tab-list">
+                  {openedTableIds.map((tableId) => (
+                    <Tab key={tableId} className="tab-label">
+                      {getTableMetadata(tableId)?.name}
+                    </Tab>
+                  ))}
+                </Tab.List>
+                <Tab.Panels className="tab-panels">
+                  {openedTableIds.map((tableId) => (
+                    <Tab.Panel key={tableId}>
+                      {getTableMetadata(tableId)?.name}
+                    </Tab.Panel>
+                  ))}
+                </Tab.Panels>
+              </Tab.Group>
+            </div>
           )}
         </>
       )}
