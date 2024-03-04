@@ -21,6 +21,8 @@
   align-content: stretch;
 
   width: 100%;
+
+  --material-symbol-color-hover: var(--color-secondary-hover);
 }
 
 .tab-group .tab-list {
@@ -44,9 +46,11 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 20px;
 }
 
 .tab-group .tab-label[data-headlessui-state="selected"] {
   background-color: white;
   color: var(--color-primary);
+  border-bottom: none;
 }
