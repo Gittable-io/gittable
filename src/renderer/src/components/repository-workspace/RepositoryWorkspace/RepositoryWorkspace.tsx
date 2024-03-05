@@ -131,11 +131,14 @@ export function RepositoryWorkspace({
                 <Tab.Panels className="tab-panels">
                   {openedTableIds.map((tableId) => (
                     <Tab.Panel key={tableId} unmount={false}>
-                      <TableWorkspace
-                        key={tableId}
-                        repositoryId={repository.id}
-                        tableMetadata={getTableMetadata(tableId)!}
-                      />
+                      {({ selected }) => (
+                        <TableWorkspace
+                          key={tableId}
+                          repositoryId={repository.id}
+                          tableMetadata={getTableMetadata(tableId)!}
+                          hidden={!selected}
+                        />
+                      )}
                     </Tab.Panel>
                   ))}
                 </Tab.Panels>
