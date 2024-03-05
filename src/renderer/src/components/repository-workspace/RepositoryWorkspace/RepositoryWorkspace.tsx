@@ -121,8 +121,12 @@ export function RepositoryWorkspace({
                 </Tab.List>
                 <Tab.Panels className="tab-panels">
                   {openedTableIds.map((tableId) => (
-                    <Tab.Panel key={tableId}>
-                      {getTableMetadata(tableId)?.name}
+                    <Tab.Panel key={tableId} unmount={false}>
+                      <TableWorkspace
+                        key={tableId}
+                        repositoryId={repository.id}
+                        tableMetadata={getTableMetadata(tableId)!}
+                      />
                     </Tab.Panel>
                   ))}
                 </Tab.Panels>
