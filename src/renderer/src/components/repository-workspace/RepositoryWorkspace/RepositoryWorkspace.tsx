@@ -91,6 +91,10 @@ export function RepositoryWorkspace({
     return repositoryStatus?.tables.find((table) => table.id === tableId);
   };
 
+  const selectedTableIdx = openedTableIds.findIndex(
+    (tableId) => tableId === selectedTableId,
+  );
+
   return (
     <div className="repository-workspace">
       {repositoryStatus && (
@@ -104,7 +108,12 @@ export function RepositoryWorkspace({
           />
           {openedTableIds.length > 0 && (
             <div className="tab-group">
-              <Tab.Group>
+              <Tab.Group
+                selectedIndex={selectedTableIdx}
+                onChange={(tabIdx) =>
+                  setSelectedTableId(openedTableIds[tabIdx])
+                }
+              >
                 <Tab.List className="tab-list">
                   {openedTableIds.map((tableId) => (
                     <Tab key={tableId} className="tab-label">

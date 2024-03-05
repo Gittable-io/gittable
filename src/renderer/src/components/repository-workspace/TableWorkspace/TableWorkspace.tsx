@@ -50,7 +50,7 @@ export function TableWorkspace({
         key={tableMetadata.id}
         fetchTable={fetchTable}
         saveTable={saveTable}
-        // watchExternalChanges
+        watchExternalChanges
       />
     </div>
   );
