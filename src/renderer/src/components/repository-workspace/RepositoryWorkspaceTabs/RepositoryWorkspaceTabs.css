@@ -49,6 +49,7 @@
 .repository-workspace-tabs .tab-panel {
   display: flex;
   overflow: hidden;
+  flex-grow: 1;
 }
 
 /* The react-headless-tabs library adds a "hidden" attribute to tab panels. However, it causes problems as it interfers with display:flex that I'm using
