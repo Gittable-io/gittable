@@ -48,7 +48,7 @@
   gap: 20px;
 }
 
-.tab-group .tab-label[data-headlessui-state="selected"] {
+.tab-group .tab-label.selected {
   background-color: white;
   color: var(--color-primary);
   border-bottom: none;
@@ -60,7 +60,15 @@
   flex-grow: 1;
 }
 
-.tab-group [id^="headlessui-tabs-panel"] {
+.tab-group .tab-panel {
   display: flex;
   overflow: hidden;
+}
+
+/* The react-headless-tabs library adds a "hidden" attribute to tab panels. However, it causes problems as it interfers with display:flex that I'm using
+ In addition, the react-headless-tabs library should be using "display:none;" for hidden panels as recommended here : https://stackoverflow.com/a/6708403/471461
+ This is also the approach taken by the headlessUI library
+*/
+.tab-group .tab-panel[hidden] {
+  display: none;
 }

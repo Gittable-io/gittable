@@ -6,8 +6,8 @@ import type {
 } from "@sharedTypes/index";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { TableWorkspace } from "../TableWorkspace";
-import { Tab } from "@headlessui/react";
 import { IconAndText, MaterialSymbol } from "gittable-editor";
+import { TabPanel, useTabs } from "react-headless-tabs";
 
 import "./RepositoryWorkspace.css";
 
@@ -24,7 +24,7 @@ export function RepositoryWorkspace({
     useState<RepositoryStatus | null>(null);
 
   const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [selectedTableId, setSelectedTableId] = useTabs(openedTableIds);
 
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
@@ -91,10 +91,6 @@ export function RepositoryWorkspace({
     return repositoryStatus?.tables.find((table) => table.id === tableId);
   };
 
-  const selectedTableIdx = openedTableIds.findIndex(
-    (tableId) => tableId === selectedTableId,
-  );
-
   return (
     <div className="repository-workspace">
       {repositoryStatus && (
@@ -108,41 +104,45 @@ export function RepositoryWorkspace({
           />
           {openedTableIds.length > 0 && (
             <div className="tab-group">
-              <Tab.Group
-                selectedIndex={selectedTableIdx}
-                onChange={(tabIdx) =>
-                  setSelectedTableId(openedTableIds[tabIdx])
-                }
-              >
-                <Tab.List className="tab-list">
-                  {openedTableIds.map((tableId) => (
-                    <Tab key={tableId} className="tab-label">
-                      <IconAndText
-                        text={getTableMetadata(tableId)?.name}
-                        materialSymbol="table"
-                      />
-                      <MaterialSymbol
-                        symbol="close"
-                        onClick={() => closeTable(tableId)}
-                      />
-                    </Tab>
-                  ))}
-                </Tab.List>
-                <Tab.Panels className="tab-panels">
-                  {openedTableIds.map((tableId) => (
-                    <Tab.Panel key={tableId} unmount={false}>
-                      {({ selected }) => (
-                        <TableWorkspace
-                          key={tableId}
-                          repositoryId={repository.id}
-                          tableMetadata={getTableMetadata(tableId)!}
-                          hidden={!selected}
-                        />
-                      )}
-                    </Tab.Panel>
-                  ))}
-                </Tab.Panels>
-              </Tab.Group>
+              <div className="tab-list" role="tablist">
+                {openedTableIds.map((tableId) => (
+                  <div
+                    key={tableId}
+                    role="tab"
+                    className={`tab-label ${tableId === selectedTableId ? "selected" : ""}`}
+                    data-tab-name={getTableMetadata(tableId)?.name}
+                    onClick={() => setSelectedTableId(tableId)}
+                  >
+                    <IconAndText
+                      text={getTableMetadata(tableId)?.name}
+                      materialSymbol="table"
+                    />
+                    <MaterialSymbol
+                      symbol="close"
+                      label="Close tab"
+                      onClick={() => closeTable(tableId)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="tab-panels">
+                {openedTableIds.map((tableId) => (
+                  <TabPanel
+                    key={tableId}
+                    className="tab-panel"
+                    role="tabpanel"
+                    hidden={tableId !== selectedTableId}
+                    unmount="never"
+                  >
+                    <TableWorkspace
+                      key={tableId}
+                      repositoryId={repository.id}
+                      tableMetadata={getTableMetadata(tableId)!}
+                      hidden={tableId !== selectedTableId}
+                    />
+                  </TabPanel>
+                ))}
+              </div>
             </div>
           )}
         </>
