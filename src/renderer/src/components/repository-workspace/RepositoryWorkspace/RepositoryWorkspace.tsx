@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Repository, RepositoryStatus } from "@sharedTypes/index";
-import "./RepositoryWorkspace.css";
+import type {
+  Repository,
+  RepositoryStatus,
+  TableMetadata,
+} from "@sharedTypes/index";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
-import { TableWorkspace } from "../TableWorkspace";
+import { useTabs } from "react-headless-tabs";
+
+import "./RepositoryWorkspace.css";
+import { RepositoryWorkspaceTabs } from "../RepositoryWorkspaceTabs";
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -15,7 +21,12 @@ export function RepositoryWorkspace({
 }: RepositoryWorkspaceProps): JSX.Element {
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
-  const [openedTableId, setOpenedTableId] = useState<string | null>(null);
+
+  const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
+  const [selectedTableId, setSelectedTableId]: [
+    string | null,
+    (tableId: string | null) => void,
+  ] = useTabs(openedTableIds);
 
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
@@ -50,10 +61,40 @@ export function RepositoryWorkspace({
     fetchRepositoryStatus();
   };
 
-  const openedTable =
-    openedTableId != null
-      ? repositoryStatus?.tables.find((table) => table.id === openedTableId)
-      : null;
+  const openTable = (tableId: string): void => {
+    if (!openedTableIds.includes(tableId)) {
+      setOpenedTableIds((tableIds) => [...tableIds, tableId]);
+    }
+    setSelectedTableId(tableId);
+  };
+
+  const closeTable = (tableId: string): void => {
+    const positiondIdx = openedTableIds.findIndex((id) => id === tableId);
+    if (positiondIdx !== -1) {
+      // If we're closing the selected tab
+      if (selectedTableId === tableId) {
+        // If it's the last tab, set selection to null
+        if (openedTableIds.length === 1) setSelectedTableId(null);
+        // else if the selected tab is the last one to the right, select the tab to its left
+        else if (positiondIdx === openedTableIds.length - 1)
+          setSelectedTableId(openedTableIds[positiondIdx - 1]);
+        // else select the tab to its right
+        else setSelectedTableId(openedTableIds[positiondIdx + 1]);
+      }
+
+      setOpenedTableIds((tableIds) => [
+        ...tableIds.slice(0, positiondIdx),
+        ...tableIds.slice(positiondIdx + 1),
+      ]);
+    }
+  };
+
+  const openedTables: TableMetadata[] = repositoryStatus
+    ? openedTableIds.map(
+        (tableId) =>
+          repositoryStatus.tables.find((table) => table.id === tableId)!,
+      )
+    : [];
 
   return (
     <div className="repository-workspace">
@@ -64,14 +105,15 @@ export function RepositoryWorkspace({
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
             onRepositoryChange={onRepositoryChange}
-            onTableSelect={(tableId) => setOpenedTableId(tableId)}
+            onTableSelect={(tableId) => openTable(tableId)}
           />
-          {openedTable && (
-            <TableWorkspace
-              repositoryId={repository.id}
-              tableMetadata={openedTable}
-            />
-          )}
+          <RepositoryWorkspaceTabs
+            repositoryId={repository.id}
+            openedTables={openedTables}
+            selectedTableId={selectedTableId}
+            onSelectTab={(tableId) => setSelectedTableId(tableId)}
+            onCloseTab={closeTable}
+          />
         </>
       )}
     </div>

@@ -6,11 +6,13 @@ import type { TableMetadata } from "@sharedTypes/index";
 type TableWorkspaceProps = {
   repositoryId: string;
   tableMetadata: TableMetadata;
+  hidden?: boolean;
 };
 
 export function TableWorkspace({
   repositoryId,
   tableMetadata,
+  hidden,
 }: TableWorkspaceProps): JSX.Element {
   const fetchTable = useCallback(async () => {
     const response = await window.api.get_table_data({
@@ -51,6 +53,7 @@ export function TableWorkspace({
         fetchTable={fetchTable}
         saveTable={saveTable}
         watchExternalChanges
+        hidden={hidden}
       />
     </div>
   );

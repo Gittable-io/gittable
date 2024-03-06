@@ -28,6 +28,7 @@
     "isomorphic-git": "^1.25.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-headless-tabs": "^6.0.4",
     "react-modal": "^3.16.1",
     "react-modal-hook": "^3.0.2"
   },

@@ -10,7 +10,3 @@
   flex-shrink: 0;
   flex-basis: 250px;
 }
-
-.repository-workspace .table-workspace {
-  flex-grow: 1;
-}
