@@ -5,11 +5,10 @@ import type {
   TableMetadata,
 } from "@sharedTypes/index";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
-import { TableWorkspace } from "../TableWorkspace";
-import { IconAndText, MaterialSymbol } from "gittable-editor";
-import { TabPanel, useTabs } from "react-headless-tabs";
+import { useTabs } from "react-headless-tabs";
 
 import "./RepositoryWorkspace.css";
+import { RepositoryWorkspaceTabs } from "../RepositoryWorkspaceTabs";
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -24,7 +23,10 @@ export function RepositoryWorkspace({
     useState<RepositoryStatus | null>(null);
 
   const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
-  const [selectedTableId, setSelectedTableId] = useTabs(openedTableIds);
+  const [selectedTableId, setSelectedTableId]: [
+    string | null,
+    (tableId: string | null) => void,
+  ] = useTabs(openedTableIds);
 
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
@@ -87,9 +89,12 @@ export function RepositoryWorkspace({
     }
   };
 
-  const getTableMetadata = (tableId: string): TableMetadata | undefined => {
-    return repositoryStatus?.tables.find((table) => table.id === tableId);
-  };
+  const openedTables: TableMetadata[] = repositoryStatus
+    ? openedTableIds.map(
+        (tableId) =>
+          repositoryStatus.tables.find((table) => table.id === tableId)!,
+      )
+    : [];
 
   return (
     <div className="repository-workspace">
@@ -102,49 +107,13 @@ export function RepositoryWorkspace({
             onRepositoryChange={onRepositoryChange}
             onTableSelect={(tableId) => openTable(tableId)}
           />
-          {openedTableIds.length > 0 && (
-            <div className="tab-group">
-              <div className="tab-list" role="tablist">
-                {openedTableIds.map((tableId) => (
-                  <div
-                    key={tableId}
-                    role="tab"
-                    className={`tab-label ${tableId === selectedTableId ? "selected" : ""}`}
-                    data-tab-name={getTableMetadata(tableId)?.name}
-                    onClick={() => setSelectedTableId(tableId)}
-                  >
-                    <IconAndText
-                      text={getTableMetadata(tableId)?.name}
-                      materialSymbol="table"
-                    />
-                    <MaterialSymbol
-                      symbol="close"
-                      label="Close tab"
-                      onClick={() => closeTable(tableId)}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="tab-panels">
-                {openedTableIds.map((tableId) => (
-                  <TabPanel
-                    key={tableId}
-                    className="tab-panel"
-                    role="tabpanel"
-                    hidden={tableId !== selectedTableId}
-                    unmount="never"
-                  >
-                    <TableWorkspace
-                      key={tableId}
-                      repositoryId={repository.id}
-                      tableMetadata={getTableMetadata(tableId)!}
-                      hidden={tableId !== selectedTableId}
-                    />
-                  </TabPanel>
-                ))}
-              </div>
-            </div>
-          )}
+          <RepositoryWorkspaceTabs
+            repositoryId={repository.id}
+            openedTables={openedTables}
+            selectedTableId={selectedTableId}
+            onSelectTab={(tableId) => setSelectedTableId(tableId)}
+            onCloseTab={closeTable}
+          />
         </>
       )}
     </div>
