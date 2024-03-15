@@ -7,6 +7,7 @@ import {
 } from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
 import { SourceControl } from "../SourceControl";
+import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
 
 export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
@@ -14,12 +15,14 @@ export type RepositoryWorkspaceSidebarProps = {
   onRepositoryClose: () => void;
   onRepositoryChange: () => void;
   onTableSelect: (tableMetadata: TableMetadata) => void;
+  onDiffSelect: (diff: DiffDescription) => void;
 };
 
 export function RepositoryWorkspaceSidebar({
   repository,
   repositoryStatus,
   onTableSelect,
+  onDiffSelect,
   onRepositoryChange,
   onRepositoryClose,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
@@ -42,6 +45,7 @@ export function RepositoryWorkspaceSidebar({
         repository={repository}
         repositoryStatus={repositoryStatus}
         onRepositoryChange={onRepositoryChange}
+        onDiffSelect={onDiffSelect}
       />
     </div>
   );

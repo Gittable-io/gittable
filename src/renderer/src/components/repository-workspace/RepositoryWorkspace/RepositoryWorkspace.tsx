@@ -9,6 +9,7 @@ import { useTabs } from "react-headless-tabs";
 
 import "./RepositoryWorkspace.css";
 import {
+  DiffDescription,
   EditorPanel,
   EditorPanelDescription,
   EditorPanelGroup,
@@ -110,6 +111,9 @@ export function RepositoryWorkspace({
             onRepositoryChange={onRepositoryChange}
             onTableSelect={(tableMetadata: TableMetadata) =>
               openEditorPanel({ type: "table", table: tableMetadata })
+            }
+            onDiffSelect={(diff: DiffDescription) =>
+              openEditorPanel({ type: "diff", ...diff })
             }
           />
           <EditorPanelGroup

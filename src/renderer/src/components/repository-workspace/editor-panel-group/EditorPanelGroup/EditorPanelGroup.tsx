@@ -1,39 +1,46 @@
 import "./EditorPanelGroup.css";
 import { IconAndText, MaterialSymbol } from "gittable-editor";
 import { TabPanel } from "react-headless-tabs";
-import { TableWorkspace } from "../../TableWorkspace";
+import { TableEditorPanel } from "../TableEditorPanel";
 import { TableMetadata } from "@sharedTypes/index";
+import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 
-export type EditorPanelDescription = {
-  type: "table";
+export type DiffDescription = {
   table: TableMetadata;
+  from: "HEAD";
+  to: "WorkingDir";
 };
 
-//   type EditorPanelDescription =
-// | {
-//     type: "table";
-//     tableId: string;
-//   }
-// | {
-//     type: "diff";
-//     tableId: string;
-//     from: "HEAD";
-//     to: "WorkingDir";
-//   };
+export type EditorPanelDescription =
+  | {
+      type: "table";
+      table: TableMetadata;
+    }
+  | ({
+      type: "diff";
+    } & DiffDescription);
 
-export type EditorPanel = { id: string } & EditorPanelDescription;
+export type EditorPanel = {
+  id: string;
+  title: string;
+} & EditorPanelDescription;
 
 export const createEditorPanel = (
   panel: EditorPanelDescription,
 ): EditorPanel => {
-  const id = `${panel.type}_${panel.table.id}`;
-  // const id =
-  //   panel.type === "table"
-  //     ? `${panel.type}_${panel.tableId}`
-  //     : `${panel.type}_${panel.tableId}_${panel.from}_${panel.to}`;
+  const id =
+    panel.type === "table"
+      ? `${panel.type}_${panel.table.id}`
+      : `${panel.type}_${panel.table.id}_${panel.from}_${panel.to}`;
+
+  const title =
+    panel.type === "table"
+      ? `${panel.table.name}`
+      : `${panel.table.name} (diff)`;
 
   return {
     id,
+    title,
     ...panel,
   };
 };
@@ -64,10 +71,10 @@ export function EditorPanelGroup({
                 role="tab"
                 className={`tab-label ${panel.id === selectedEditorPanelId ? "selected" : ""}`}
                 data-tab-id={panel.id}
-                data-tab-title={panel.table.name}
+                data-tab-title={panel.title}
                 onClick={() => onSelectEditorPanel(panel.id)}
               >
-                <IconAndText text={panel.table.name} materialSymbol="table" />
+                <IconAndText text={panel.title} materialSymbol="table" />
                 <MaterialSymbol
                   symbol="close"
                   label="Close tab"
@@ -85,12 +92,16 @@ export function EditorPanelGroup({
                 hidden={panel.id !== selectedEditorPanelId}
                 unmount="never"
               >
-                <TableWorkspace
-                  key={panel.table.id}
-                  repositoryId={repositoryId}
-                  tableMetadata={panel.table}
-                  hidden={panel.id !== selectedEditorPanelId}
-                />
+                {panel.type === "table" ? (
+                  <TableEditorPanel
+                    key={panel.table.id}
+                    repositoryId={repositoryId}
+                    tableMetadata={panel.table}
+                    hidden={panel.id !== selectedEditorPanelId}
+                  />
+                ) : (
+                  <TableDiffViewerPanel />
+                )}
               </TabPanel>
             ))}
           </div>

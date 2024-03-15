@@ -1,19 +1,19 @@
 import { useCallback } from "react";
 import { TableEditor, type Table } from "gittable-editor";
-import "./TableWorkspace.css";
+import "./TableEditorPanel.css";
 import type { TableMetadata } from "@sharedTypes/index";
 
-type TableWorkspaceProps = {
+type TableEditorPanelProps = {
   repositoryId: string;
   tableMetadata: TableMetadata;
   hidden?: boolean;
 };
 
-export function TableWorkspace({
+export function TableEditorPanel({
   repositoryId,
   tableMetadata,
   hidden,
-}: TableWorkspaceProps): JSX.Element {
+}: TableEditorPanelProps): JSX.Element {
   const fetchTable = useCallback(async () => {
     const response = await window.api.get_table_data({
       repositoryId,
@@ -47,7 +47,7 @@ export function TableWorkspace({
   );
 
   return (
-    <div className="table-workspace">
+    <div className="table-editor-panel">
       <TableEditor
         key={tableMetadata.id}
         fetchTable={fetchTable}
