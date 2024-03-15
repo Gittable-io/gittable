@@ -1,6 +1,10 @@
 import { TitleBar } from "../../ui-components/TitleBar";
 import "./RepositoryWorkspaceSidebar.css";
-import { Repository, RepositoryStatus } from "@sharedTypes/index";
+import {
+  Repository,
+  RepositoryStatus,
+  TableMetadata,
+} from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
 import { SourceControl } from "../SourceControl";
 
@@ -9,7 +13,7 @@ export type RepositoryWorkspaceSidebarProps = {
   repositoryStatus: RepositoryStatus;
   onRepositoryClose: () => void;
   onRepositoryChange: () => void;
-  onTableSelect: (tableId: string) => void;
+  onTableSelect: (tableMetadata: TableMetadata) => void;
 };
 
 export function RepositoryWorkspaceSidebar({

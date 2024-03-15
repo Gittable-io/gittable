@@ -8,7 +8,39 @@ import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { useTabs } from "react-headless-tabs";
 
 import "./RepositoryWorkspace.css";
-import { RepositoryWorkspaceTabs } from "../RepositoryWorkspaceTabs";
+import { EditorPanelGroup } from "../EditorPanelGroup";
+
+type EditorPanelDescription = {
+  type: "table";
+  table: TableMetadata;
+};
+
+//   type EditorPanelDescription =
+// | {
+//     type: "table";
+//     tableId: string;
+//   }
+// | {
+//     type: "diff";
+//     tableId: string;
+//     from: "HEAD";
+//     to: "WorkingDir";
+//   };
+
+export type EditorPanel = { id: string } & EditorPanelDescription;
+
+const createEditorPanel = (panel: EditorPanelDescription): EditorPanel => {
+  const id = `${panel.type}_${panel.table.id}`;
+  // const id =
+  //   panel.type === "table"
+  //     ? `${panel.type}_${panel.tableId}`
+  //     : `${panel.type}_${panel.tableId}_${panel.from}_${panel.to}`;
+
+  return {
+    id,
+    ...panel,
+  };
+};
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -22,12 +54,15 @@ export function RepositoryWorkspace({
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
 
-  const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
-  const [selectedTableId, setSelectedTableId]: [
-    string | null,
-    (tableId: string | null) => void,
-  ] = useTabs(openedTableIds);
+  const [openedEditorPanels, setOpenedEditorPanels] = useState<EditorPanel[]>(
+    [],
+  );
+  const openedEditorPanelIds = openedEditorPanels.map((p) => p.id);
 
+  const [selectedEditorPanelId, setSelectedEditorPanelId] =
+    useTabs(openedEditorPanelIds);
+
+  /* Helper functions */
   const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
     const response = await window.api.get_repository_status({
       repositoryId: repository.id,
@@ -38,6 +73,15 @@ export function RepositoryWorkspace({
       console.error("[RepositoryWorkspace] Couldn't retrieve last commit id");
     }
   }, [repository]);
+
+  /* Function called by child components when they change the repository */
+  // TODO: rename to onRepositoryStatusChange
+  const onRepositoryChange = (): void => {
+    console.debug(
+      "[RepositoryWorkspace] Notified that repository status changed",
+    );
+    fetchRepositoryStatus();
+  };
 
   /**
    * @sideeffect: at mount and each 5s, update Repository status
@@ -53,48 +97,34 @@ export function RepositoryWorkspace({
     return () => clearInterval(intervalId);
   }, [fetchRepositoryStatus]);
 
-  /* Function called by child components when they change the repository */
-  const onRepositoryChange = (): void => {
-    console.debug(
-      "[RepositoryWorkspace] Notified that repository status changed",
-    );
-    fetchRepositoryStatus();
-  };
-
-  const openTable = (tableId: string): void => {
-    if (!openedTableIds.includes(tableId)) {
-      setOpenedTableIds((tableIds) => [...tableIds, tableId]);
+  const openEditorPanel = (panelDesc: EditorPanelDescription): void => {
+    const panel = createEditorPanel(panelDesc);
+    if (!openedEditorPanelIds.includes(panel.id)) {
+      setOpenedEditorPanels([...openedEditorPanels, panel]);
     }
-    setSelectedTableId(tableId);
+    setSelectedEditorPanelId(panel.id);
   };
 
-  const closeTable = (tableId: string): void => {
-    const positiondIdx = openedTableIds.findIndex((id) => id === tableId);
+  const closeEditorPanel = (panelId: string): void => {
+    const positiondIdx = openedEditorPanelIds.findIndex((id) => id === panelId);
     if (positiondIdx !== -1) {
       // If we're closing the selected tab
-      if (selectedTableId === tableId) {
+      if (selectedEditorPanelId === panelId) {
         // If it's the last tab, set selection to null
-        if (openedTableIds.length === 1) setSelectedTableId(null);
+        if (openedEditorPanelIds.length === 1) setSelectedEditorPanelId(null);
         // else if the selected tab is the last one to the right, select the tab to its left
-        else if (positiondIdx === openedTableIds.length - 1)
-          setSelectedTableId(openedTableIds[positiondIdx - 1]);
+        else if (positiondIdx === openedEditorPanelIds.length - 1)
+          setSelectedEditorPanelId(openedEditorPanelIds[positiondIdx - 1]);
         // else select the tab to its right
-        else setSelectedTableId(openedTableIds[positiondIdx + 1]);
+        else setSelectedEditorPanelId(openedEditorPanelIds[positiondIdx + 1]);
       }
 
-      setOpenedTableIds((tableIds) => [
+      setOpenedEditorPanels((tableIds) => [
         ...tableIds.slice(0, positiondIdx),
         ...tableIds.slice(positiondIdx + 1),
       ]);
     }
   };
-
-  const openedTables: TableMetadata[] = repositoryStatus
-    ? openedTableIds.map(
-        (tableId) =>
-          repositoryStatus.tables.find((table) => table.id === tableId)!,
-      )
-    : [];
 
   return (
     <div className="repository-workspace">
@@ -105,14 +135,18 @@ export function RepositoryWorkspace({
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
             onRepositoryChange={onRepositoryChange}
-            onTableSelect={(tableId) => openTable(tableId)}
+            onTableSelect={(tableMetadata: TableMetadata) =>
+              openEditorPanel({ type: "table", table: tableMetadata })
+            }
           />
-          <RepositoryWorkspaceTabs
+          <EditorPanelGroup
             repositoryId={repository.id}
-            openedTables={openedTables}
-            selectedTableId={selectedTableId}
-            onSelectTab={(tableId) => setSelectedTableId(tableId)}
-            onCloseTab={closeTable}
+            openedEditorPanels={openedEditorPanels}
+            selectedEditorPanelId={selectedEditorPanelId ?? null}
+            onSelectEditorPanel={(editorPanelId) =>
+              setSelectedEditorPanelId(editorPanelId)
+            }
+            onCloseEditorPanel={closeEditorPanel}
           />
         </>
       )}
