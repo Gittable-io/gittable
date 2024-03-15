@@ -25,6 +25,7 @@ export function RepositoryWorkspace({
   repository,
   onRepositoryClose,
 }: RepositoryWorkspaceProps): JSX.Element {
+  //#region State & Derived state
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
 
@@ -36,39 +37,44 @@ export function RepositoryWorkspace({
   const [selectedEditorPanelId, setSelectedEditorPanelId] =
     useTabs(openedEditorPanelIds);
 
-  /* Helper functions */
-  const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
-    const response = await window.api.get_repository_status({
-      repositoryId: repository.id,
-    });
-    if (response.status === "success") {
-      setRepositoryStatus(response.repositoryStatus);
-    } else {
-      console.error("[RepositoryWorkspace] Couldn't retrieve last commit id");
-    }
-  }, [repository]);
+  //#endregion
 
-  /* Function called by child components when they change the repository */
+  //#region Helper functions
+
+  /**
+   * Fetches the repository status and updates the state
+   *
+   * @return {RepositoryStatus} Returns the repository status
+   */
+  const fetchRepositoryStatus =
+    useCallback(async (): Promise<RepositoryStatus> => {
+      const response = await window.api.get_repository_status({
+        repositoryId: repository.id,
+      });
+      if (response.status === "success") {
+        return response.repositoryStatus;
+      } else {
+        throw new Error(
+          "[RepositoryWorkspace] Couldn't retrieve last commit id",
+        );
+      }
+    }, [repository]);
+
+  const fetchAndUpdateRepositoryStatus =
+    useCallback(async (): Promise<void> => {
+      // Fetch repository status
+      const repositoryStatus = await fetchRepositoryStatus();
+
+      // Update the state with the repository status
+      setRepositoryStatus(repositoryStatus);
+    }, [fetchRepositoryStatus]);
+
   const onRepositoryStatusChange = (): void => {
     console.debug(
       "[RepositoryWorkspace] Notified that repository status changed",
     );
-    fetchRepositoryStatus();
+    fetchAndUpdateRepositoryStatus();
   };
-
-  /**
-   * @sideeffect: at mount and each 5s, update Repository status
-   */
-  useEffect(() => {
-    fetchRepositoryStatus();
-
-    /*
-    ? Why do I need to poll the repository status. We can argue that it is not needed, if every child component that does changes notifies it with onRepositoryChange()
-    ? But I argue that we need to poll, as we can have a user that externally changes files outside of the application (using a Git GUI for exemple)
-    */
-    const intervalId = setInterval(fetchRepositoryStatus, 5000);
-    return () => clearInterval(intervalId);
-  }, [fetchRepositoryStatus]);
 
   const openEditorPanel = (panelDesc: EditorPanelDescription): void => {
     const panel = createEditorPanel(panelDesc);
@@ -98,6 +104,23 @@ export function RepositoryWorkspace({
       ]);
     }
   };
+  //#endregion
+
+  //#region Side effects
+  /**
+   * @sideeffect: at mount and each 5s, update Repository status
+   */
+  useEffect(() => {
+    fetchAndUpdateRepositoryStatus();
+
+    /*
+    ? Why do I need to poll the repository status. We can argue that it is not needed, if every child component that does changes notifies it with onRepositoryChange()
+    ? But I argue that we need to poll, as we can have a user that externally changes files outside of the application (using a Git GUI for exemple)
+    */
+    const intervalId = setInterval(fetchAndUpdateRepositoryStatus, 5000);
+    return () => clearInterval(intervalId);
+  }, [fetchAndUpdateRepositoryStatus]);
+  //#endregion
 
   return (
     <div className="repository-workspace">
