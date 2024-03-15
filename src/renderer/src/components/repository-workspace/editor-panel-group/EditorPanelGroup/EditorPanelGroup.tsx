@@ -1,8 +1,42 @@
 import "./EditorPanelGroup.css";
 import { IconAndText, MaterialSymbol } from "gittable-editor";
 import { TabPanel } from "react-headless-tabs";
-import { TableWorkspace } from "../TableWorkspace";
-import { EditorPanel } from "../RepositoryWorkspace";
+import { TableWorkspace } from "../../TableWorkspace";
+import { TableMetadata } from "@sharedTypes/index";
+
+export type EditorPanelDescription = {
+  type: "table";
+  table: TableMetadata;
+};
+
+//   type EditorPanelDescription =
+// | {
+//     type: "table";
+//     tableId: string;
+//   }
+// | {
+//     type: "diff";
+//     tableId: string;
+//     from: "HEAD";
+//     to: "WorkingDir";
+//   };
+
+export type EditorPanel = { id: string } & EditorPanelDescription;
+
+export const createEditorPanel = (
+  panel: EditorPanelDescription,
+): EditorPanel => {
+  const id = `${panel.type}_${panel.table.id}`;
+  // const id =
+  //   panel.type === "table"
+  //     ? `${panel.type}_${panel.tableId}`
+  //     : `${panel.type}_${panel.tableId}_${panel.from}_${panel.to}`;
+
+  return {
+    id,
+    ...panel,
+  };
+};
 
 export type EditorPanelGroupProps = {
   repositoryId: string;
