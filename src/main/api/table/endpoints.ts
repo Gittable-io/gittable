@@ -5,7 +5,8 @@ import { Table, tableToJsonString } from "gittable-editor";
 import {
   getRepositoryPath,
   getTableNameFromFileName,
-  getTablePath,
+  getAbsoluteTablePath,
+  getRepositoryRelativeTablePath,
 } from "../../utils/utils";
 import { getConfig } from "../../config";
 import {
@@ -63,6 +64,7 @@ export async function list_tables({
 
 export type GetTableParameters = {
   repositoryId: string;
+  ref?: "HEAD" | "WorkingDir";
   tableId: string;
 };
 
@@ -79,17 +81,42 @@ export type GetTableResponse =
 
 export async function get_table_data({
   repositoryId,
+  ref = "WorkingDir",
   tableId,
 }: GetTableParameters): Promise<GetTableResponse> {
-  console.debug(`[API/table] get_table_data: tableId=${tableId}`);
+  console.debug(
+    `[API/table] get_table_data: repositoryId=${repositoryId} ref=${ref} tableId=${tableId}`,
+  );
 
-  const tablePath = getTablePath(repositoryId, tableId);
   try {
-    const data = await fs.readFile(tablePath, {
-      encoding: "utf8",
-    });
-    const tableContent = JSON.parse(data) as Table;
-    return { status: "success", tableData: tableContent };
+    if (ref === "WorkingDir") {
+      const data = await fs.readFile(
+        getAbsoluteTablePath(repositoryId, tableId),
+        {
+          encoding: "utf8",
+        },
+      );
+      const tableContent = JSON.parse(data) as Table;
+      return { status: "success", tableData: tableContent };
+    } else {
+      const commitOid = await git.resolveRef({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: "HEAD",
+      });
+
+      const { blob } = await git.readBlob({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        oid: commitOid,
+        filepath: getRepositoryRelativeTablePath(tableId),
+      });
+
+      const tableContent = JSON.parse(
+        Buffer.from(blob).toString("utf8"),
+      ) as Table;
+      return { status: "success", tableData: tableContent };
+    }
   } catch (err: unknown) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
@@ -121,7 +148,7 @@ export async function save_table({
   );
 
   try {
-    const tablePath = getTablePath(repositoryId, tableId);
+    const tablePath = getAbsoluteTablePath(repositoryId, tableId);
     const tableDataJson = tableToJsonString(tableData);
     await fs.writeFile(tablePath, tableDataJson, { encoding: "utf8" });
     return { status: "success" };

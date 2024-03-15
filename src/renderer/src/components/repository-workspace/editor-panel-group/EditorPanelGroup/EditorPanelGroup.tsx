@@ -100,7 +100,10 @@ export function EditorPanelGroup({
                     hidden={panel.id !== selectedEditorPanelId}
                   />
                 ) : (
-                  <TableDiffViewerPanel />
+                  <TableDiffViewerPanel
+                    repositoryId={repositoryId}
+                    diffDescription={panel}
+                  />
                 )}
               </TabPanel>
             ))}
