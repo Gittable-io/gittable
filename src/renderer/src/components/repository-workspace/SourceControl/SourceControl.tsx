@@ -10,14 +10,14 @@ export type SourceControlProps = {
   repository: Repository;
   repositoryStatus: RepositoryStatus;
   onDiffSelect: (diff: DiffDescription) => void;
-  onRepositoryChange: () => void;
+  onRepositoryStatusChange: () => void;
 };
 
 export function SourceControl({
   repository,
   repositoryStatus,
   onDiffSelect,
-  onRepositoryChange,
+  onRepositoryStatusChange,
 }: SourceControlProps): JSX.Element {
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
     <ConfirmationModal
@@ -39,7 +39,7 @@ export function SourceControl({
     });
     if (response.status === "success") {
       hideDiscardChangesModal();
-      onRepositoryChange();
+      onRepositoryStatusChange();
     } else {
       console.warn(`[SourceControl] Error discarding changes`);
     }

@@ -13,7 +13,7 @@ export type RepositoryWorkspaceSidebarProps = {
   repository: Repository;
   repositoryStatus: RepositoryStatus;
   onRepositoryClose: () => void;
-  onRepositoryChange: () => void;
+  onRepositoryStatusChange: () => void;
   onTableSelect: (tableMetadata: TableMetadata) => void;
   onDiffSelect: (diff: DiffDescription) => void;
 };
@@ -23,7 +23,7 @@ export function RepositoryWorkspaceSidebar({
   repositoryStatus,
   onTableSelect,
   onDiffSelect,
-  onRepositoryChange,
+  onRepositoryStatusChange,
   onRepositoryClose,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   return (
@@ -44,7 +44,7 @@ export function RepositoryWorkspaceSidebar({
       <SourceControl
         repository={repository}
         repositoryStatus={repositoryStatus}
-        onRepositoryChange={onRepositoryChange}
+        onRepositoryStatusChange={onRepositoryStatusChange}
         onDiffSelect={onDiffSelect}
       />
     </div>

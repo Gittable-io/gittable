@@ -49,8 +49,7 @@ export function RepositoryWorkspace({
   }, [repository]);
 
   /* Function called by child components when they change the repository */
-  // TODO: rename to onRepositoryStatusChange
-  const onRepositoryChange = (): void => {
+  const onRepositoryStatusChange = (): void => {
     console.debug(
       "[RepositoryWorkspace] Notified that repository status changed",
     );
@@ -108,7 +107,7 @@ export function RepositoryWorkspace({
             repository={repository}
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
-            onRepositoryChange={onRepositoryChange}
+            onRepositoryStatusChange={onRepositoryStatusChange}
             onTableSelect={(tableMetadata: TableMetadata) =>
               openEditorPanel({ type: "table", table: tableMetadata })
             }
