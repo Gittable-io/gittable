@@ -19,24 +19,24 @@ export function TableDiffViewerPanel({
     const responseFrom = await window.api.get_table_data({
       repositoryId,
       tableId: diffDescription.table.id,
-      ref: diffDescription.from,
+      ref: diffDescription.fromRef,
     });
 
     if (responseFrom.status !== "success") {
       throw new Error(
-        `Error loading table data. repositoryId = ${repositoryId}, tableId=${diffDescription.table.id}, ref=${diffDescription.from}`,
+        `Error loading table data. repositoryId = ${repositoryId}, tableId=${diffDescription.table.id}, ref=${diffDescription.fromRef}`,
       );
     }
 
     const responseTo = await window.api.get_table_data({
       repositoryId,
       tableId: diffDescription.table.id,
-      ref: diffDescription.to,
+      ref: diffDescription.toRef,
     });
 
     if (responseTo.status !== "success") {
       throw new Error(
-        `Error loading table data. repositoryId = ${repositoryId}, tableId=${diffDescription.table.id}, ref=${diffDescription.to}`,
+        `Error loading table data. repositoryId = ${repositoryId}, tableId=${diffDescription.table.id}, ref=${diffDescription.toRef}`,
       );
     }
 

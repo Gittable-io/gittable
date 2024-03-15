@@ -112,7 +112,7 @@ export function RepositoryWorkspace({
               openEditorPanel({ type: "table", table: tableMetadata })
             }
             onDiffSelect={(diff: DiffDescription) =>
-              openEditorPanel({ type: "diff", ...diff })
+              openEditorPanel({ type: "diff", diff })
             }
           />
           <EditorPanelGroup

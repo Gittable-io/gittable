@@ -71,7 +71,7 @@ export function SourceControl({
               text={table.name}
               materialSymbol="table"
               onClick={() =>
-                onDiffSelect({ table, from: "HEAD", to: "WorkingDir" })
+                onDiffSelect({ table, fromRef: "HEAD", toRef: "WorkingDir" })
               }
             ></ListItem>
           ))}

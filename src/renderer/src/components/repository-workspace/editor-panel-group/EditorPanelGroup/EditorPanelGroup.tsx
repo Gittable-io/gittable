@@ -7,8 +7,8 @@ import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 
 export type DiffDescription = {
   table: TableMetadata;
-  from: "HEAD";
-  to: "WorkingDir";
+  fromRef: "HEAD";
+  toRef: "WorkingDir";
 };
 
 export type EditorPanelDescription =
@@ -16,9 +16,10 @@ export type EditorPanelDescription =
       type: "table";
       table: TableMetadata;
     }
-  | ({
+  | {
       type: "diff";
-    } & DiffDescription);
+      diff: DiffDescription;
+    };
 
 export type EditorPanel = {
   id: string;
@@ -31,12 +32,12 @@ export const createEditorPanel = (
   const id =
     panel.type === "table"
       ? `${panel.type}_${panel.table.id}`
-      : `${panel.type}_${panel.table.id}_${panel.from}_${panel.to}`;
+      : `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`;
 
   const title =
     panel.type === "table"
       ? `${panel.table.name}`
-      : `${panel.table.name} (diff)`;
+      : `${panel.diff.table.name} (diff)`;
 
   return {
     id,
@@ -102,7 +103,7 @@ export function EditorPanelGroup({
                 ) : (
                   <TableDiffViewerPanel
                     repositoryId={repositoryId}
-                    diffDescription={panel}
+                    diffDescription={panel.diff}
                   />
                 )}
               </TabPanel>
