@@ -1,4 +1,4 @@
-.repository-workspace-tabs {
+.editor-panel-group {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -10,14 +10,14 @@
   overflow: hidden;
 }
 
-.repository-workspace-tabs .tab-list {
+.editor-panel-group .tab-list {
   display: flex;
   flex-direction: row;
 
   background-color: var(--color-secondary);
 }
 
-.repository-workspace-tabs .tab-label {
+.editor-panel-group .tab-label {
   padding: 10px;
   border: none;
   border-bottom: 1px solid var(--color-borders);
@@ -34,19 +34,19 @@
   gap: 20px;
 }
 
-.repository-workspace-tabs .tab-label.selected {
+.editor-panel-group .tab-label.selected {
   background-color: white;
   color: var(--color-primary);
   border-bottom: none;
 }
 
-.repository-workspace-tabs .tab-panels {
+.editor-panel-group .tab-panels {
   display: flex;
   overflow: hidden;
   flex-grow: 1;
 }
 
-.repository-workspace-tabs .tab-panel {
+.editor-panel-group .tab-panel {
   display: flex;
   overflow: hidden;
   flex-grow: 1;
@@ -56,6 +56,6 @@
    In addition, the react-headless-tabs library should be using "display:none;" for hidden panels as recommended here : https://stackoverflow.com/a/6708403/471461
    This is also the approach taken by the headlessUI library
   */
-.repository-workspace-tabs .tab-panel[hidden] {
+.editor-panel-group .tab-panel[hidden] {
   display: none;
 }

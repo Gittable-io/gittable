@@ -4,7 +4,7 @@
 ! I also think they should not have height: 100%
 */
 
-.table-workspace {
+.table-editor-panel {
   display: flex;
   flex-direction: row;
   justify-content: center;

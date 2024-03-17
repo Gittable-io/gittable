@@ -45,11 +45,23 @@ export const getRepositoryPath = (repositoryId: string): string => {
  *
  * @param repositoryId
  * @param tableId
- * @returns the path to the table file
+ * @returns the absolute path to the table file
  */
-export const getTablePath = (repositoryId: string, tableId: string): string => {
+export const getAbsoluteTablePath = (
+  repositoryId: string,
+  tableId: string,
+): string => {
   const repositoryPath = getRepositoryPath(repositoryId);
   return path.join(repositoryPath, tableId);
+};
+
+export const getRepositoryRelativeTablePath = (tableId: string): string => {
+  /**
+   * Since currently :
+   * - Table ID = table file name
+   * - We do not support folders in repositories : all tables are in the repository root folder, just return tableId
+   */
+  return tableId;
 };
 
 /**

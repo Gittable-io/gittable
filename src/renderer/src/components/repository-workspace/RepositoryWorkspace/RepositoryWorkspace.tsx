@@ -8,7 +8,13 @@ import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { useTabs } from "react-headless-tabs";
 
 import "./RepositoryWorkspace.css";
-import { RepositoryWorkspaceTabs } from "../RepositoryWorkspaceTabs";
+import {
+  DiffDescription,
+  EditorPanel,
+  EditorPanelDescription,
+  EditorPanelGroup,
+  createEditorPanel,
+} from "../editor-panel-group/EditorPanelGroup";
 
 type RepositoryWorkspaceProps = {
   repository: Repository;
@@ -19,82 +25,102 @@ export function RepositoryWorkspace({
   repository,
   onRepositoryClose,
 }: RepositoryWorkspaceProps): JSX.Element {
+  //#region State & Derived state
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
 
-  const [openedTableIds, setOpenedTableIds] = useState<string[]>([]);
-  const [selectedTableId, setSelectedTableId]: [
-    string | null,
-    (tableId: string | null) => void,
-  ] = useTabs(openedTableIds);
+  const [openedEditorPanels, setOpenedEditorPanels] = useState<EditorPanel[]>(
+    [],
+  );
+  const openedEditorPanelIds = openedEditorPanels.map((p) => p.id);
 
-  const fetchRepositoryStatus = useCallback(async (): Promise<void> => {
-    const response = await window.api.get_repository_status({
-      repositoryId: repository.id,
-    });
-    if (response.status === "success") {
-      setRepositoryStatus(response.repositoryStatus);
-    } else {
-      console.error("[RepositoryWorkspace] Couldn't retrieve last commit id");
-    }
-  }, [repository]);
+  const [selectedEditorPanelId, setSelectedEditorPanelId] =
+    useTabs(openedEditorPanelIds);
+
+  //#endregion
+
+  //#region Helper functions
 
   /**
-   * @sideeffect: at mount and each 5s, update Repository status
+   * Fetches the repository status and updates the state
+   *
+   * @return {RepositoryStatus} Returns the repository status
    */
-  useEffect(() => {
-    fetchRepositoryStatus();
+  const fetchRepositoryStatus =
+    useCallback(async (): Promise<RepositoryStatus> => {
+      const response = await window.api.get_repository_status({
+        repositoryId: repository.id,
+      });
+      if (response.status === "success") {
+        return response.repositoryStatus;
+      } else {
+        throw new Error(
+          "[RepositoryWorkspace] Couldn't retrieve last commit id",
+        );
+      }
+    }, [repository]);
 
-    /*
-    ? Why do I need to poll the repository status. We can argue that it is not needed, if every child component that does changes notifies it with onRepositoryChange()
-    ? But I argue that we need to poll, as we can have a user that externally changes files outside of the application (using a Git GUI for exemple)
-    */
-    const intervalId = setInterval(fetchRepositoryStatus, 5000);
-    return () => clearInterval(intervalId);
-  }, [fetchRepositoryStatus]);
+  const fetchAndUpdateRepositoryStatus =
+    useCallback(async (): Promise<void> => {
+      // Fetch repository status
+      const repositoryStatus = await fetchRepositoryStatus();
 
-  /* Function called by child components when they change the repository */
-  const onRepositoryChange = (): void => {
+      // Update the state with the repository status
+      setRepositoryStatus(repositoryStatus);
+    }, [fetchRepositoryStatus]);
+
+  const onRepositoryStatusChange = (): void => {
     console.debug(
       "[RepositoryWorkspace] Notified that repository status changed",
     );
-    fetchRepositoryStatus();
+    fetchAndUpdateRepositoryStatus();
   };
 
-  const openTable = (tableId: string): void => {
-    if (!openedTableIds.includes(tableId)) {
-      setOpenedTableIds((tableIds) => [...tableIds, tableId]);
+  const openEditorPanel = (panelDesc: EditorPanelDescription): void => {
+    const panel = createEditorPanel(panelDesc);
+    if (!openedEditorPanelIds.includes(panel.id)) {
+      setOpenedEditorPanels([...openedEditorPanels, panel]);
     }
-    setSelectedTableId(tableId);
+    setSelectedEditorPanelId(panel.id);
   };
 
-  const closeTable = (tableId: string): void => {
-    const positiondIdx = openedTableIds.findIndex((id) => id === tableId);
+  const closeEditorPanel = (panelId: string): void => {
+    const positiondIdx = openedEditorPanelIds.findIndex((id) => id === panelId);
     if (positiondIdx !== -1) {
       // If we're closing the selected tab
-      if (selectedTableId === tableId) {
+      if (selectedEditorPanelId === panelId) {
         // If it's the last tab, set selection to null
-        if (openedTableIds.length === 1) setSelectedTableId(null);
+        if (openedEditorPanelIds.length === 1) setSelectedEditorPanelId(null);
         // else if the selected tab is the last one to the right, select the tab to its left
-        else if (positiondIdx === openedTableIds.length - 1)
-          setSelectedTableId(openedTableIds[positiondIdx - 1]);
+        else if (positiondIdx === openedEditorPanelIds.length - 1)
+          setSelectedEditorPanelId(openedEditorPanelIds[positiondIdx - 1]);
         // else select the tab to its right
-        else setSelectedTableId(openedTableIds[positiondIdx + 1]);
+        else setSelectedEditorPanelId(openedEditorPanelIds[positiondIdx + 1]);
       }
 
-      setOpenedTableIds((tableIds) => [
+      setOpenedEditorPanels((tableIds) => [
         ...tableIds.slice(0, positiondIdx),
         ...tableIds.slice(positiondIdx + 1),
       ]);
     }
   };
+  //#endregion
 
-  const openedTables: TableMetadata[] = repositoryStatus
-    ? openedTableIds.map(
-        (tableId) =>
-          repositoryStatus.tables.find((table) => table.id === tableId)!,
-      )
-    : [];
+  //#region Side effects
+  /**
+   * @sideeffect: at mount and each 5s, update Repository status
+   */
+  useEffect(() => {
+    fetchAndUpdateRepositoryStatus();
+
+    /*
+    ? Why do I need to poll the repository status. We can argue that it is not needed, if every child component that does changes notifies it with onRepositoryChange()
+    ? But I argue that we need to poll, as we can have a user that externally changes files outside of the application (using a Git GUI for exemple)
+    */
+    const intervalId = setInterval(fetchAndUpdateRepositoryStatus, 5000);
+    return () => clearInterval(intervalId);
+  }, [fetchAndUpdateRepositoryStatus]);
+  //#endregion
 
   return (
     <div className="repository-workspace">
@@ -104,15 +130,22 @@ export function RepositoryWorkspace({
             repository={repository}
             repositoryStatus={repositoryStatus}
             onRepositoryClose={onRepositoryClose}
-            onRepositoryChange={onRepositoryChange}
-            onTableSelect={(tableId) => openTable(tableId)}
+            onRepositoryStatusChange={onRepositoryStatusChange}
+            onTableSelect={(tableMetadata: TableMetadata) =>
+              openEditorPanel({ type: "table", table: tableMetadata })
+            }
+            onDiffSelect={(diff: DiffDescription) =>
+              openEditorPanel({ type: "diff", diff })
+            }
           />
-          <RepositoryWorkspaceTabs
+          <EditorPanelGroup
             repositoryId={repository.id}
-            openedTables={openedTables}
-            selectedTableId={selectedTableId}
-            onSelectTab={(tableId) => setSelectedTableId(tableId)}
-            onCloseTab={closeTable}
+            openedEditorPanels={openedEditorPanels}
+            selectedEditorPanelId={selectedEditorPanelId ?? null}
+            onSelectEditorPanel={(editorPanelId) =>
+              setSelectedEditorPanelId(editorPanelId)
+            }
+            onCloseEditorPanel={closeEditorPanel}
           />
         </>
       )}

@@ -4,17 +4,20 @@ import type { Repository, RepositoryStatus } from "@sharedTypes/index";
 import { List, ListItem } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
+import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
 
 export type SourceControlProps = {
   repository: Repository;
   repositoryStatus: RepositoryStatus;
-  onRepositoryChange: () => void;
+  onDiffSelect: (diff: DiffDescription) => void;
+  onRepositoryStatusChange: () => void;
 };
 
 export function SourceControl({
   repository,
   repositoryStatus,
-  onRepositoryChange,
+  onDiffSelect,
+  onRepositoryStatusChange,
 }: SourceControlProps): JSX.Element {
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
     <ConfirmationModal
@@ -36,7 +39,7 @@ export function SourceControl({
     });
     if (response.status === "success") {
       hideDiscardChangesModal();
-      onRepositoryChange();
+      onRepositoryStatusChange();
     } else {
       console.warn(`[SourceControl] Error discarding changes`);
     }
@@ -67,6 +70,9 @@ export function SourceControl({
               key={table.id}
               text={table.name}
               materialSymbol="table"
+              onClick={() =>
+                onDiffSelect({ table, fromRef: "HEAD", toRef: "WorkingDir" })
+              }
             ></ListItem>
           ))}
         </List>
