@@ -6,11 +6,13 @@ import { Table, TableDiffViewer } from "gittable-editor";
 type TableDiffViewerPanelProps = {
   repositoryId: string;
   diffDescription: DiffDescription;
+  hidden?: boolean;
 };
 
 export function TableDiffViewerPanel({
   repositoryId,
   diffDescription,
+  hidden,
 }: TableDiffViewerPanelProps): JSX.Element {
   const fetchFromTable = useCallback(async (): Promise<Table> => {
     const response = await window.api.get_table_data({
@@ -48,6 +50,8 @@ export function TableDiffViewerPanel({
       <TableDiffViewer
         fetchFromTable={fetchFromTable}
         fetchToTable={fetchToTable}
+        watchExternalChanges
+        hidden={hidden}
       />
     </div>
   );
