@@ -1,0 +1,8 @@
+.table-diff-viewer-panel {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+
+  flex-grow: 1;
+  overflow: hidden;
+}
