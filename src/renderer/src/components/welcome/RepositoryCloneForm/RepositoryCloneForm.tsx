@@ -43,7 +43,7 @@ export function RepositoryCloneForm({
 
   return (
     <div className="repository-clone-form">
-      <h2>Connect to an existing database</h2>
+      <h2>Clone a remote repository</h2>
       <InputAndValidation
         placeholder="Repository URL"
         value={url}
