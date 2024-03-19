@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { WelcomePage } from "../welcome/WelcomePage";
+import { WelcomePage } from "../welcome-page/WelcomePage";
 import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
