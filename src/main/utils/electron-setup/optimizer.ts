@@ -1,3 +1,6 @@
+// * THIS CODE WAS COPIED FROM https://github.com/alex8088/electron-toolkit/blob/master/packages/utils/src/optimizer.ts
+// * AND MODIFIED SO THAT WE CAN ACCESS DEVELOPER TOOLS IN A PACKAGED APP
+
 import { app, BrowserWindow, ipcMain } from "electron";
 
 export interface Is {
@@ -63,17 +66,20 @@ export const optimizer: Optimizer = {
           // Ignore CommandOrControl + R
           if (input.code === "KeyR" && (input.control || input.meta))
             event.preventDefault();
-        } else {
-          // Toggle devtool(F12)
-          if (input.code === "F12") {
-            if (webContents.isDevToolsOpened()) {
-              webContents.closeDevTools();
-            } else {
-              webContents.openDevTools({ mode: "undocked" });
-              console.log("Open dev tool...");
-            }
+        }
+        // Toggle devtool(F12)
+        //* HERE I MODIFIED THE CODE SO THAT WE CAN ACCESS DEVELOPER TOOLS IN A PACKAGED APP
+        // TODO: find a system so that we have 2 packages app versions: QA version that allowed devtools, and a PROD version where devtools are deactivated
+        // TODO: See https://stackoverflow.com/a/45487191/471461 for solutions
+        if (input.code === "F12") {
+          if (webContents.isDevToolsOpened()) {
+            webContents.closeDevTools();
+          } else {
+            webContents.openDevTools({ mode: "undocked" });
+            console.log("Open dev tool...");
           }
         }
+
         if (escToCloseWindow) {
           if (input.code === "Escape" && input.key !== "Process") {
             window.close();
