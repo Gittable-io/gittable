@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from "electron";
 import { join } from "path";
-import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { electronApp, is } from "@electron-toolkit/utils";
+import { optimizer } from "./utils/electron-setup/optimizer";
 import icon from "../../resources/icon.png?asset";
 import { addHandlesForGittableElectronAPICall } from "./api";
 import installExtension, {
