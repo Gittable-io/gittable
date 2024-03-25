@@ -11,6 +11,10 @@
   font-size: var(--font-size-h2);
 }
 
+#app h3 {
+  font-size: var(--font-size-h3);
+}
+
 #app {
   height: 100vh;
   display: flex;
