@@ -247,3 +247,48 @@ export async function get_repository_status({
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }
+
+export type CommitParameters = {
+  repositoryId: string;
+};
+
+export type CommitResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "NOTHING_TO_COMMIT";
+      message: "There's nothing to commit";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function commit({
+  repositoryId,
+}: CommitParameters): Promise<CommitResponse> {
+  const repositoryStatusResponse = await get_repository_status({
+    repositoryId,
+  });
+
+  if (repositoryStatusResponse.status === "error") {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+
+  const repositoryStatus = repositoryStatusResponse.repositoryStatus;
+  if (repositoryStatus.tables.every((table) => !table.modified)) {
+    return {
+      status: "error",
+      type: "NOTHING_TO_COMMIT",
+      message: "There's nothing to commit",
+    };
+  }
+
+  try {
+    await git.commit()
+  }
+
+}
