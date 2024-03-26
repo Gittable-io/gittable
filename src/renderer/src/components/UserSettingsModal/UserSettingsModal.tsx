@@ -58,6 +58,7 @@ export function UserSettingsModal({
                 <InputAndValidation
                   value={gitUserName}
                   onChange={setGitUserName}
+                  label="User name"
                   {...(gitUserNameError != null
                     ? { error: gitUserNameError }
                     : {})}
@@ -67,6 +68,7 @@ export function UserSettingsModal({
                 <label>User email</label>
                 <InputAndValidation
                   value={gitUserEmail}
+                  label="User email"
                   onChange={setGitUserEmail}
                   {...(gitUserEmailError != null
                     ? { error: gitUserEmailError }
