@@ -28,13 +28,17 @@ function App(): JSX.Element {
     gitUserEmail != null &&
     gitUserEmail.trim() !== "";
 
-  useEffect(() => {
-    const fetchGitConfig = async (): Promise<void> => {
-      const response = await window.api.get_git_config();
-      setGitUserName(response.gitConfig.user.name);
-      setGitUserEmail(response.gitConfig.user.email);
-    };
+  const fetchGitConfig = async (): Promise<void> => {
+    const response = await window.api.get_git_config();
+    setGitUserName(response.gitConfig.user.name);
+    setGitUserEmail(response.gitConfig.user.email);
+  };
 
+  const onGitConfigChange = async (): Promise<void> => {
+    fetchGitConfig();
+  };
+
+  useEffect(() => {
     fetchGitConfig();
   }, []);
 
@@ -52,6 +56,7 @@ function App(): JSX.Element {
               setCurrentRepository(repository)
             }
             gitReady={gitReady}
+            onGitConfigChange={onGitConfigChange}
           />
         )}
       </div>

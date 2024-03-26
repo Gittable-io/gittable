@@ -8,13 +8,18 @@ import { UserSettingsModal } from "@renderer/components/UserSettingsModal";
 
 type WelcomeSidebarProps = {
   onRepositorySelect: (repository: Repository) => void;
+  onGitConfigChange: () => Promise<void>;
 };
 
 export function WelcomeSidebar({
   onRepositorySelect,
+  onGitConfigChange,
 }: WelcomeSidebarProps): JSX.Element {
   const [showUserSettingsModal, hideUserSettingsModal] = useModal(() => (
-    <UserSettingsModal onClose={hideUserSettingsModal} />
+    <UserSettingsModal
+      onClose={hideUserSettingsModal}
+      onGitConfigChange={onGitConfigChange}
+    />
   ));
 
   return (

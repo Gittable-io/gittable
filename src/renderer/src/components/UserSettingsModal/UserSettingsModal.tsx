@@ -1,19 +1,38 @@
 import { Button, InputAndValidation } from "gittable-editor";
 import { Modal } from "../ui-components/Modal";
 import "./UserSettingsModal.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type UserSettingsModalProps = {
   onClose: () => void;
+  onGitConfigChange: () => Promise<void>;
 };
 
 export function UserSettingsModal({
   onClose,
+  onGitConfigChange,
 }: UserSettingsModalProps): JSX.Element {
   const [gitUserName, setGitUserName] = useState("");
   const [gitUserEmail, setGitUserEmail] = useState("");
 
-  const saveUserSettings = (): void => {};
+  const saveUserSettings = async (): Promise<void> => {
+    await window.api.save_git_config({
+      gitConfig: { user: { name: gitUserName, email: gitUserEmail } },
+    });
+
+    onGitConfigChange();
+    onClose();
+  };
+
+  const fetchGitConfig = async (): Promise<void> => {
+    const response = await window.api.get_git_config();
+    setGitUserName(response.gitConfig.user.name);
+    setGitUserEmail(response.gitConfig.user.email);
+  };
+
+  useEffect(() => {
+    fetchGitConfig();
+  }, []);
 
   return (
     <Modal>

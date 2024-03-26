@@ -7,15 +7,20 @@ import { InformationPanel } from "../InformationPanel";
 type WelcomePageProps = {
   onRepositorySelect: (repository: Repository) => void;
   gitReady: boolean;
+  onGitConfigChange: () => Promise<void>;
 };
 
 export function WelcomePage({
   onRepositorySelect,
   gitReady,
+  onGitConfigChange,
 }: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <WelcomeSidebar onRepositorySelect={onRepositorySelect} />
+      <WelcomeSidebar
+        onRepositorySelect={onRepositorySelect}
+        onGitConfigChange={onGitConfigChange}
+      />
       {gitReady && (
         <NewRepositorySection
           onRepositoryClone={(repository) => onRepositorySelect(repository)}
