@@ -2,6 +2,7 @@ import { Button, InputAndValidation } from "gittable-editor";
 import { Modal } from "../ui-components/Modal";
 import "./UserSettingsModal.css";
 import { useEffect, useState } from "react";
+import * as EmailValidator from "email-validator";
 
 export type UserSettingsModalProps = {
   onClose: () => void;
@@ -18,7 +19,11 @@ export function UserSettingsModal({
   const gitUserNameError: string | null =
     gitUserName.trim() === "" ? "Name should not be empty" : null;
   const gitUserEmailError: string | null =
-    gitUserEmail.trim() === "" ? "Email should not be empty" : null;
+    gitUserEmail.trim() === ""
+      ? "Email should not be empty"
+      : !EmailValidator.validate(gitUserEmail)
+        ? "Email is invalid"
+        : null;
   const canSave: boolean =
     gitUserNameError == null && gitUserEmailError == null;
 

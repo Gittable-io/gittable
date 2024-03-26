@@ -3,6 +3,7 @@ import git from "isomorphic-git";
 import { UserDataStore } from "../../db";
 import { list_repositories } from "../repository";
 import { getRepositoryPath } from "../../utils/utils";
+import * as EmailValidator from "email-validator";
 
 export type GetGitConfigReponse = {
   status: "success";
@@ -56,7 +57,10 @@ export async function save_git_config({
       type: "Invalid user.name",
       message: "Git config user.name is empty or invalid",
     };
-  } else if (gitConfig.user.email.trim() === "") {
+  } else if (
+    gitConfig.user.email.trim() === "" ||
+    !EmailValidator.validate(gitConfig.user.email)
+  ) {
     return {
       status: "error",
       type: "Invalid user.email",
