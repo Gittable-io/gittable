@@ -29,7 +29,7 @@ export function WelcomeSidebar({
         action={{
           materialSymbol: "settings",
           onClick: showUserSettingsModal,
-          testId: "Open User Settings",
+          label: "Open User Settings",
         }}
       />
       <RepositoryList onRepositorySelect={onRepositorySelect} />
