@@ -1,6 +1,6 @@
-import ReactModal from "react-modal";
 import "./ConfirmationModal.css";
 import { Button } from "gittable-editor";
+import { Modal } from "../Modal";
 
 export type ConfirmationModalProps = {
   title: string;
@@ -18,12 +18,8 @@ export function ConfirmationModal({
   onCancel,
 }: ConfirmationModalProps): JSX.Element {
   return (
-    <ReactModal
-      className="confirmation-modal"
-      overlayClassName="backdrop-modal"
-      isOpen
-    >
-      <div className="modal-content">
+    <Modal>
+      <div className="confirmation-modal">
         <h1>{title}</h1>
         <p>{text}</p>
         <div className="button-group">
@@ -35,6 +31,6 @@ export function ConfirmationModal({
           />
         </div>
       </div>
-    </ReactModal>
+    </Modal>
   );
 }
