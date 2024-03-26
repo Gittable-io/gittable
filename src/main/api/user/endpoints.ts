@@ -1,4 +1,8 @@
+import fs from "node:fs/promises";
+import git from "isomorphic-git";
 import { UserDataStore } from "../../db";
+import { list_repositories } from "../repository";
+import { getRepositoryPath } from "../../utils/utils";
 
 export type GetGitConfigReponse = {
   status: "success";
@@ -26,6 +30,16 @@ export type SaveGitConfigResponse =
     }
   | {
       status: "error";
+      type: "Invalid user.name";
+      message: "Git config user.name is empty or invalid";
+    }
+  | {
+      status: "error";
+      type: "Invalid user.email";
+      message: "Git config user.email is empty or invalid";
+    }
+  | {
+      status: "error";
       type: "unknown";
       message: "Unknown error";
     };
@@ -35,12 +49,51 @@ export async function save_git_config({
 }: SaveGitConfigParameters): Promise<SaveGitConfigResponse> {
   console.debug(`[API/user] save_git_config: gitConfig=${gitConfig}`);
 
-  try {
-    await UserDataStore.setGitUserConfig(
-      gitConfig.user.name,
-      gitConfig.user.email,
-    );
+  // Validation
+  if (gitConfig.user.name.trim() === "") {
+    return {
+      status: "error",
+      type: "Invalid user.name",
+      message: "Git config user.name is empty or invalid",
+    };
+  } else if (gitConfig.user.email.trim() === "") {
+    return {
+      status: "error",
+      type: "Invalid user.email",
+      message: "Git config user.email is empty or invalid",
+    };
+  }
 
+  const currentGitConfig = (await UserDataStore.getUserData()).git;
+
+  try {
+    if (
+      gitConfig.user.name !== currentGitConfig.user.name ||
+      gitConfig.user.email !== currentGitConfig.user.email
+    ) {
+      await UserDataStore.setGitUserConfig(
+        gitConfig.user.name,
+        gitConfig.user.email,
+      );
+
+      // Modify the Git config of all existing local repositories
+      const repositories = (await list_repositories()).repositories;
+      for (const repo of repositories) {
+        const repositoryPath = getRepositoryPath(repo.id);
+        await git.setConfig({
+          fs,
+          dir: repositoryPath,
+          path: "user.name",
+          value: gitConfig.user.name,
+        });
+        await git.setConfig({
+          fs,
+          dir: repositoryPath,
+          path: "user.email",
+          value: gitConfig.user.email,
+        });
+      }
+    }
     return { status: "success" };
   } catch (error) {
     return {
