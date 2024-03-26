@@ -15,6 +15,13 @@ export function UserSettingsModal({
   const [gitUserName, setGitUserName] = useState("");
   const [gitUserEmail, setGitUserEmail] = useState("");
 
+  const gitUserNameError: string | null =
+    gitUserName.trim() === "" ? "Name should not be empty" : null;
+  const gitUserEmailError: string | null =
+    gitUserEmail.trim() === "" ? "Email should not be empty" : null;
+  const canSave: boolean =
+    gitUserNameError == null && gitUserEmailError == null;
+
   const saveUserSettings = async (): Promise<void> => {
     await window.api.save_git_config({
       gitConfig: { user: { name: gitUserName, email: gitUserEmail } },
@@ -46,6 +53,9 @@ export function UserSettingsModal({
                 <InputAndValidation
                   value={gitUserName}
                   onChange={setGitUserName}
+                  {...(gitUserNameError != null
+                    ? { error: gitUserNameError }
+                    : {})}
                 />
               </div>
               <div className="label-and-input">
@@ -53,6 +63,9 @@ export function UserSettingsModal({
                 <InputAndValidation
                   value={gitUserEmail}
                   onChange={setGitUserEmail}
+                  {...(gitUserEmailError != null
+                    ? { error: gitUserEmailError }
+                    : {})}
                 />
               </div>
             </div>
@@ -80,7 +93,12 @@ export function UserSettingsModal({
         </div>
         <div className="button-group">
           <Button text="Cancel" variant="outlined" onClick={onClose} />
-          <Button text="Save" variant="contained" onClick={saveUserSettings} />
+          <Button
+            text="Save"
+            variant="contained"
+            onClick={saveUserSettings}
+            disabled={!canSave}
+          />
         </div>
       </div>
     </Modal>
