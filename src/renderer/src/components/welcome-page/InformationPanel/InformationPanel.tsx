@@ -26,9 +26,24 @@ export function InformationPanel({
           <p>
             <em>Still uncertain?</em>
             <br />
-            Consult you Git administrator or IT department for the recommended{" "}
+            Consult you Git administrator or IT department for the recommended
             <code>user.name</code> and &nbsp;
             <code>user.email</code> Git configuration.
+          </p>
+        </div>
+      )}
+      {gitReady && (
+        <div className="required-action">
+          <h3>
+            Setup is done! You&apos;re ready to start working on your documents
+          </h3>
+          <p>
+            Ask your Git administrator or IT department to create the Git
+            Repository where your documents will be saved.
+          </p>
+          <p>
+            Once it&apos;s done, ask them to provide you with the&nbsp;
+            <code>Repository URL</code>&nbsp; to clone it.
           </p>
         </div>
       )}
