@@ -39,6 +39,8 @@ const mockUserDataStoreFs = (initialUserData: UserData | null = null): void => {
 };
 
 describe("Test UserDataStore", () => {
+  const gitConfig = { user: { name: "Mary", email: "email@exemple.com" } };
+
   const mockRepository1 = {
     id: "1706889976_myrepo1",
     name: "myrepo1",
@@ -53,14 +55,17 @@ describe("Test UserDataStore", () => {
 
   const mockUserData_0repo: UserData = {
     repositories: [],
+    git: gitConfig,
   };
 
   const mockUserData_1repo: UserData = {
     repositories: [mockRepository1],
+    git: gitConfig,
   };
 
   const mockUserData_2repo: UserData = {
     repositories: [mockRepository1, mockRepository2],
+    git: gitConfig,
   };
 
   beforeEach(() => {
@@ -78,7 +83,10 @@ describe("Test UserDataStore", () => {
     mockUserDataStoreFs(null);
 
     const userData = await UserDataStore.getUserData();
-    expect(userData).toEqual({ repositories: [] });
+    expect(userData).toEqual({
+      repositories: [],
+      git: { user: { name: "", email: "" } },
+    });
   });
 
   test("Add repository to an empty repository list", async () => {
