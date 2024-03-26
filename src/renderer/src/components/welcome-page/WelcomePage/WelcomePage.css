@@ -14,7 +14,3 @@
   flex-grow: 0;
   flex-basis: 800px;
 }
-
-.welcome-page .information-panel {
-  flex-grow: 1;
-}

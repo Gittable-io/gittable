@@ -26,7 +26,10 @@ export function WelcomePage({
           onRepositoryClone={(repository) => onRepositorySelect(repository)}
         />
       )}
-      <InformationPanel gitReady={gitReady} />
+      <InformationPanel
+        gitReady={gitReady}
+        onGitConfigChange={onGitConfigChange}
+      />
     </div>
   );
 }

@@ -1,12 +1,24 @@
+import { UserSettingsModal } from "@renderer/components/UserSettingsModal";
 import "./InformationPanel.css";
+import { useModal } from "react-modal-hook";
+import { Button } from "gittable-editor";
 
 export type InformationPanelProps = {
   gitReady: boolean;
+  onGitConfigChange: () => Promise<void>;
 };
 
 export function InformationPanel({
   gitReady,
+  onGitConfigChange,
 }: InformationPanelProps): JSX.Element {
+  const [showUserSettingsModal, hideUserSettingsModal] = useModal(() => (
+    <UserSettingsModal
+      onClose={hideUserSettingsModal}
+      onGitConfigChange={onGitConfigChange}
+    />
+  ));
+
   return (
     <div className="information-panel">
       {!gitReady && (
@@ -16,6 +28,12 @@ export function InformationPanel({
             You need to setup your user name and email to identify you correctly
             as the author of your contributions and facilitate collaboration
             with your team.
+            <br />
+            <Button
+              text="Modify your user settings"
+              variant="outlined"
+              onClick={showUserSettingsModal}
+            />
           </p>
           <p>
             <em>Unsure about which name and email to use?</em>
