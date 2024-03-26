@@ -1,0 +1,16 @@
+.information-panel {
+  padding: var(--padding);
+}
+
+.information-panel .required-action {
+  background-color: var(--color-primary-shadow);
+  padding: var(--padding);
+}
+
+.information-panel .required-action button {
+  margin-top: 10px;
+}
+
+.information-panel .required-action p {
+  margin-top: var(--padding);
+}

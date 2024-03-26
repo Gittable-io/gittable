@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { WelcomePage } from "../welcome-page/WelcomePage";
 import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
@@ -19,6 +19,29 @@ function App(): JSX.Element {
     null,
   );
 
+  const [gitUserName, setGitUserName] = useState<string>("");
+  const [gitUserEmail, setGitUserEmail] = useState<string>("");
+
+  const gitReady: boolean =
+    gitUserName != null &&
+    gitUserName.trim() !== "" &&
+    gitUserEmail != null &&
+    gitUserEmail.trim() !== "";
+
+  const fetchGitConfig = async (): Promise<void> => {
+    const response = await window.api.get_git_config();
+    setGitUserName(response.gitConfig.user.name);
+    setGitUserEmail(response.gitConfig.user.email);
+  };
+
+  const onGitConfigChange = async (): Promise<void> => {
+    fetchGitConfig();
+  };
+
+  useEffect(() => {
+    fetchGitConfig();
+  }, []);
+
   return (
     <div id="app">
       <div className="main-container">
@@ -32,6 +55,8 @@ function App(): JSX.Element {
             onRepositorySelect={(repository) =>
               setCurrentRepository(repository)
             }
+            gitReady={gitReady}
+            onGitConfigChange={onGitConfigChange}
           />
         )}
       </div>

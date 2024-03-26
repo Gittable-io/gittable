@@ -33,7 +33,7 @@ export function RepositoryWorkspaceSidebar({
         action={{
           materialSymbol: "close",
           onClick: onRepositoryClose,
-          testId: "close repository",
+          label: "close repository",
         }}
       />
       <RepositoryContent

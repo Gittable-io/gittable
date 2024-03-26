@@ -21,6 +21,11 @@ export type CloneRepositoryResponse =
   | { status: "success"; type: "already cloned"; repository: Repository }
   | { status: "error"; type: "malformed url"; message: string }
   | { status: "error"; type: "connection error"; message: string }
+  | {
+      status: "error";
+      type: "git user name & email not configured ";
+      message: string;
+    }
   | { status: "error"; type: "unknown"; message: string };
 
 /**
@@ -57,7 +62,16 @@ export async function clone_repository({
 
   const trimmedRemoteUrl = remoteUrl.trim();
 
-  // First, check that we didn't already clone this repository
+  // First, check that the git config: user name and email are configured
+  const gitConfig = (await UserDataStore.getUserData()).git;
+  if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
+    return {
+      status: "error",
+      type: "git user name & email not configured ",
+      message: "Git user name and email are not configured",
+    };
+  }
+  // Second, check that we didn't already clone this repository
   const repositories = (await UserDataStore.getUserData()).repositories;
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
@@ -76,8 +90,9 @@ export async function clone_repository({
 
   let response: CloneRepositoryResponse | null = null;
 
-  //* it seems that the git.clone() creates the dir if it doesn't exist. So no need to create the folder beforehand
+  //* it seems that the git.clone() creates the dir if it doesn't exist. So we don't need to create the folder beforehand
   try {
+    // Clone the repository
     await git.clone({
       fs,
       http,
@@ -94,6 +109,20 @@ export async function clone_repository({
         console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
       onAuthSuccess: (url: string, auth: GitAuth) =>
         console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
+    });
+
+    // Configure the user name and email
+    await git.setConfig({
+      fs,
+      dir: repositoryPath,
+      path: "user.name",
+      value: gitConfig.user.name,
+    });
+    await git.setConfig({
+      fs,
+      dir: repositoryPath,
+      path: "user.email",
+      value: gitConfig.user.email,
     });
   } catch (error) {
     if (error instanceof Error) {
