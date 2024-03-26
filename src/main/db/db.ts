@@ -4,6 +4,12 @@ import { getConfig } from "../config";
 
 export type UserData = {
   repositories: Repository[];
+  git: {
+    user: {
+      name: string;
+      email: string;
+    };
+  };
 };
 
 /*
@@ -27,6 +33,12 @@ export class UserDataStore {
   private static initializeUserData(): UserData {
     return {
       repositories: [],
+      git: {
+        user: {
+          name: "",
+          email: "",
+        },
+      },
     };
   }
 
@@ -62,7 +74,6 @@ export class UserDataStore {
     );
   }
 
-  /* Public methods */
   // Get user data
   static async getUserData(): Promise<UserData> {
     if (await UserDataStore.userDataFileExists()) {
@@ -77,8 +88,8 @@ export class UserDataStore {
     }
   }
 
-  // Get repository from ID
-  static async getRepository(repositoryId): Promise<Repository> {
+  //#region repositories
+  static async getRepository(repositoryId: string): Promise<Repository> {
     const userData = await UserDataStore.getUserData();
 
     const repository = userData.repositories.find(
@@ -89,7 +100,6 @@ export class UserDataStore {
     else throw new Error(`There's no repository with id : ${repositoryId}`);
   }
 
-  // Methods to modify and save the user data back to the file
   static async addRepository(repository: Repository): Promise<void> {
     const userData = await UserDataStore.getUserData();
 
@@ -127,4 +137,24 @@ export class UserDataStore {
 
     await UserDataStore.save(newUserData);
   }
+  //#endregion
+
+  //#region git config
+  static async setGitUserConfig(name: string, email: string): Promise<void> {
+    const userData = await UserDataStore.getUserData();
+
+    const newUserData = {
+      ...userData,
+      git: {
+        user: {
+          name,
+          email,
+        },
+      },
+    };
+
+    await UserDataStore.save(newUserData);
+  }
+
+  //#endregion
 }
