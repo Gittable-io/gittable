@@ -13,3 +13,7 @@
 
   --material-symbol-color-hover: var(--color-primary-hover);
 }
+
+.title-bar .material-symbol {
+  font-size: 1em;
+}
