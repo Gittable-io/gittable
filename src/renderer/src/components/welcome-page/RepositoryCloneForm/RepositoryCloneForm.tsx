@@ -51,7 +51,7 @@ export function RepositoryCloneForm({
         {...(error != null ? { error } : {})}
       />
       <Button
-        text="Connect"
+        text="Clone"
         variant="contained"
         onClick={handleValidate}
         disabled={url.length === 0}
