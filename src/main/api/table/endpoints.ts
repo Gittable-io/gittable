@@ -270,6 +270,9 @@ export type CommitResponse =
 export async function commit({
   repositoryId,
 }: CommitParameters): Promise<CommitResponse> {
+  console.debug(`[API/commit] Called with repositoryId=${repositoryId}`);
+
+  // First check that there's something to commit (there's a change in the working dir)
   const repositoryStatusResponse = await get_repository_status({
     repositoryId,
   });
@@ -287,8 +290,29 @@ export async function commit({
     };
   }
 
+  // If there's a change in the working dir => stage each file and then commit it
   try {
-    await git.commit()
-  }
+    // 1. Add each file to the staging area
+    const modifiedTables = repositoryStatus.tables.filter(
+      (table) => table.modified,
+    );
 
+    for (const table of modifiedTables) {
+      await git.add({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        filepath: getRepositoryRelativeTablePath(table.id),
+      });
+    }
+
+    // 1. And then commit
+    await git.commit({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      message: "New commit",
+    });
+    return { status: "success" };
+  } catch (error) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
 }

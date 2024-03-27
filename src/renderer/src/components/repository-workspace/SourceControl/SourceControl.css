@@ -20,6 +20,10 @@
   border-bottom: 1px solid var(--color-borders);
 }
 
+#source-control .working-dir-changes {
+  flex-grow: 1;
+}
+
 #source-control .working-dir-changes .current-changes-title {
   padding: 0 10px;
 }
@@ -27,4 +31,11 @@
 #source-control .working-dir-changes .no-changes-text {
   padding: 0 10px;
   font-style: italic;
+}
+
+#source-control .commit-section {
+  display: flex;
+  flex-direction: column;
+
+  padding: 10px;
 }

@@ -1,7 +1,7 @@
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import "./SourceControl.css";
 import type { Repository, RepositoryStatus } from "@sharedTypes/index";
-import { List, ListItem, MaterialSymbolButton } from "gittable-editor";
+import { Button, List, ListItem, MaterialSymbolButton } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
@@ -24,14 +24,10 @@ export function SourceControl({
       title="Discarding changes"
       text={`Are you sure you want to discard all changes to ${repository.name} ?`}
       confirmButtonLabel="Discard changes"
-      onConfirm={handleDiscardChangesConfirm}
+      onConfirm={discardChanges}
       onCancel={hideDiscardChangesModal}
     />
   ));
-
-  const handleDiscardChangesConfirm = async (): Promise<void> => {
-    discardChanges();
-  };
 
   const discardChanges = async (): Promise<void> => {
     const response = await window.api.discard_changes({
@@ -45,9 +41,20 @@ export function SourceControl({
     }
   };
 
+  const commit = async (): Promise<void> => {
+    const response = await window.api.commit({ repositoryId: repository.id });
+    if (response.status === "success") {
+      onRepositoryStatusChange();
+    } else {
+      console.warn(`[SourceControl] Error committing`);
+    }
+  };
+
   const modifiedTables = repositoryStatus.tables.filter(
     (tableStatus) => tableStatus.modified === true,
   );
+
+  const workingDirChanged: boolean = modifiedTables.length > 0;
 
   return (
     <SidebarSection id="source-control" title="Source control">
@@ -57,13 +64,13 @@ export function SourceControl({
           label="Discard all changes"
           onClick={showDiscardChangesModal}
           tooltip
-          disabled={modifiedTables.length === 0}
+          disabled={!workingDirChanged}
         />
       </div>
       <div className="working-dir-changes">
         <p className="current-changes-title">Current changes</p>
         <List label="Working dir changes">
-          {modifiedTables.length > 0 ? (
+          {workingDirChanged ? (
             modifiedTables.map((table) => (
               <ListItem
                 key={table.id}
@@ -84,6 +91,14 @@ export function SourceControl({
             </div>
           )}
         </List>
+      </div>
+      <div className="commit-section">
+        <Button
+          text="Commit"
+          variant="outlined"
+          onClick={commit}
+          disabled={!workingDirChanged}
+        />
       </div>
     </SidebarSection>
   );
