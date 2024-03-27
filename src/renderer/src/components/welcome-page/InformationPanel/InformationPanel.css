@@ -1,5 +1,7 @@
 .information-panel {
-  padding: var(--padding);
+  padding-top: var(--padding);
+  padding-bottom: var(--padding);
+  padding-right: var(--padding);
 }
 
 .information-panel .required-action {
