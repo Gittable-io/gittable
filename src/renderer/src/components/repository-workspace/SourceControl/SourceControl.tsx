@@ -1,7 +1,13 @@
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import "./SourceControl.css";
 import type { Repository, RepositoryStatus } from "@sharedTypes/index";
-import { Button, List, ListItem, MaterialSymbolButton } from "gittable-editor";
+import {
+  Button,
+  InputAndValidation,
+  List,
+  ListItem,
+  MaterialSymbolButton,
+} from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
@@ -31,6 +37,7 @@ export function SourceControl({
   ));
 
   const [commitInProgress, setCommitInProgress] = useState<boolean>(false);
+  const [commitMessage, setCommitMessage] = useState<string>("");
 
   const discardChanges = async (): Promise<void> => {
     const response = await window.api.discard_changes({
@@ -46,9 +53,13 @@ export function SourceControl({
 
   const commit = async (): Promise<void> => {
     setCommitInProgress(true);
-    const response = await window.api.commit({ repositoryId: repository.id });
+    const response = await window.api.commit({
+      repositoryId: repository.id,
+      message: commitMessage,
+    });
     if (response.status === "success") {
       onRepositoryStatusChange();
+      setCommitMessage("");
     } else {
       console.warn(`[SourceControl] Error committing`);
     }
@@ -60,6 +71,7 @@ export function SourceControl({
   );
 
   const workingDirChanged: boolean = modifiedTables.length > 0;
+  const canCommit = workingDirChanged && commitMessage !== "";
 
   return (
     <SidebarSection id="source-control" title="Source control">
@@ -98,11 +110,17 @@ export function SourceControl({
         </List>
       </div>
       <div className="commit-section">
+        <InputAndValidation
+          value={commitMessage}
+          onChange={setCommitMessage}
+          placeholder="Describe your commit"
+          maxLength={72}
+        />
         <Button
           text="Commit"
           variant="outlined"
           onClick={commit}
-          disabled={!workingDirChanged}
+          disabled={!canCommit}
           loading={commitInProgress}
         />
       </div>
