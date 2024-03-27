@@ -23,3 +23,8 @@
 #source-control .working-dir-changes .current-changes-title {
   padding: 0 10px;
 }
+
+#source-control .working-dir-changes .no-changes-text {
+  padding: 0 10px;
+  font-style: italic;
+}

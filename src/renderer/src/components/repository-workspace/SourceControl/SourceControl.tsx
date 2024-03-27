@@ -63,16 +63,26 @@ export function SourceControl({
       <div className="working-dir-changes">
         <p className="current-changes-title">Current changes</p>
         <List label="Working dir changes">
-          {modifiedTables.map((table) => (
-            <ListItem
-              key={table.id}
-              text={table.name}
-              materialSymbol="table"
-              onClick={() =>
-                onDiffSelect({ table, fromRef: "HEAD", toRef: "WorkingDir" })
-              }
-            ></ListItem>
-          ))}
+          {modifiedTables.length > 0 ? (
+            modifiedTables.map((table) => (
+              <ListItem
+                key={table.id}
+                text={table.name}
+                materialSymbol="table"
+                onClick={() =>
+                  onDiffSelect({
+                    table,
+                    fromRef: "HEAD",
+                    toRef: "WorkingDir",
+                  })
+                }
+              ></ListItem>
+            ))
+          ) : (
+            <div className="no-changes-text">
+              You didn&apos;t make any changes to your tables
+            </div>
+          )}
         </List>
       </div>
     </SidebarSection>
