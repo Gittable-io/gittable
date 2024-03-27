@@ -1,5 +1,5 @@
 import "./EditorPanelGroup.css";
-import { IconAndText, MaterialSymbol } from "gittable-editor";
+import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TabPanel } from "react-headless-tabs";
 import { TableEditorPanel } from "../TableEditorPanel";
 import { TableMetadata } from "@sharedTypes/index";
@@ -76,7 +76,7 @@ export function EditorPanelGroup({
                 onClick={() => onSelectEditorPanel(panel.id)}
               >
                 <IconAndText text={panel.title} materialSymbol="table" />
-                <MaterialSymbol
+                <MaterialSymbolButton
                   symbol="close"
                   label="Close tab"
                   onClick={() => onCloseEditorPanel(panel.id)}

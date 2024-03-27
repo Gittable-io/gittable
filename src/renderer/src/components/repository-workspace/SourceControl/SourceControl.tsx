@@ -1,7 +1,7 @@
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import "./SourceControl.css";
 import type { Repository, RepositoryStatus } from "@sharedTypes/index";
-import { List, ListItem } from "gittable-editor";
+import { List, ListItem, MaterialSymbolButton } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
@@ -51,20 +51,18 @@ export function SourceControl({
 
   return (
     <SidebarSection id="source-control" title="Source control">
-      <List>
-        <ListItem
-          text="Changes"
-          {...(modifiedTables.length > 0
-            ? {
-                secondaryAction: {
-                  label: "Discard all changes",
-                  materialSymbol: "undo",
-                  onClick: showDiscardChangesModal,
-                },
-              }
-            : {})}
+      <div className="action-bar">
+        <MaterialSymbolButton
+          symbol="undo"
+          label="Discard all changes"
+          onClick={showDiscardChangesModal}
+          tooltip
+          disabled={modifiedTables.length === 0}
         />
-        <List subList label="Changed table list">
+      </div>
+      <div className="working-dir-changes">
+        <p className="current-changes-title">Current changes</p>
+        <List label="Working dir changes">
           {modifiedTables.map((table) => (
             <ListItem
               key={table.id}
@@ -76,7 +74,7 @@ export function SourceControl({
             ></ListItem>
           ))}
         </List>
-      </List>
+      </div>
     </SidebarSection>
   );
 }

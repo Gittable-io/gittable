@@ -6,7 +6,7 @@
 
   width: 100%;
 
-  --material-symbol-color-hover: var(--color-secondary-hover);
+  --material-symbol-button-color-hover: var(--color-secondary-hover);
 
   overflow: hidden;
 }
