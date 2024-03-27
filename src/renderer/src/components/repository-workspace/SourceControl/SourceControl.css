@@ -22,6 +22,8 @@
 
 #source-control .working-dir-changes {
   flex-grow: 1;
+
+  border-bottom: 1px solid var(--color-borders);
 }
 
 #source-control .working-dir-changes .current-changes-title {
@@ -36,6 +38,7 @@
 #source-control .commit-section {
   display: flex;
   flex-direction: column;
+  gap: 10px;
 
   padding: 10px;
 }

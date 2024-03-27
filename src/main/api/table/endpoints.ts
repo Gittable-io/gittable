@@ -250,6 +250,7 @@ export async function get_repository_status({
 
 export type CommitParameters = {
   repositoryId: string;
+  message: string;
 };
 
 export type CommitResponse =
@@ -269,6 +270,7 @@ export type CommitResponse =
 
 export async function commit({
   repositoryId,
+  message,
 }: CommitParameters): Promise<CommitResponse> {
   console.debug(`[API/commit] Called with repositoryId=${repositoryId}`);
 
@@ -309,7 +311,7 @@ export async function commit({
     await git.commit({
       fs,
       dir: getRepositoryPath(repositoryId),
-      message: "New commit",
+      message,
     });
     return { status: "success" };
   } catch (error) {
