@@ -5,6 +5,7 @@ import { Button, List, ListItem, MaterialSymbolButton } from "gittable-editor";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
+import { useState } from "react";
 
 export type SourceControlProps = {
   repository: Repository;
@@ -29,6 +30,8 @@ export function SourceControl({
     />
   ));
 
+  const [commitInProgress, setCommitInProgress] = useState<boolean>(false);
+
   const discardChanges = async (): Promise<void> => {
     const response = await window.api.discard_changes({
       repositoryId: repository.id,
@@ -42,12 +45,14 @@ export function SourceControl({
   };
 
   const commit = async (): Promise<void> => {
+    setCommitInProgress(true);
     const response = await window.api.commit({ repositoryId: repository.id });
     if (response.status === "success") {
       onRepositoryStatusChange();
     } else {
       console.warn(`[SourceControl] Error committing`);
     }
+    setCommitInProgress(false);
   };
 
   const modifiedTables = repositoryStatus.tables.filter(
@@ -98,6 +103,7 @@ export function SourceControl({
           variant="outlined"
           onClick={commit}
           disabled={!workingDirChanged}
+          loading={commitInProgress}
         />
       </div>
     </SidebarSection>
