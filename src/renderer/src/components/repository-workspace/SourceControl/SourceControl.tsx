@@ -40,6 +40,7 @@ export function SourceControl({
 
   const [commitInProgress, setCommitInProgress] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>("");
+  const [pushInProgress, setPushInProgress] = useState<boolean>(false);
 
   const discardChanges = async (): Promise<void> => {
     const response = await window.api.discard_changes({
@@ -66,6 +67,19 @@ export function SourceControl({
       console.warn(`[SourceControl] Error committing`);
     }
     setCommitInProgress(false);
+  };
+
+  const push = async (): Promise<void> => {
+    setPushInProgress(true);
+    const response = await window.api.push({
+      repositoryId: repository.id,
+    });
+    if (response.status === "success") {
+      onRepositoryStatusChange();
+    } else {
+      console.warn(`[SourceControl] Error pushing to remote`);
+    }
+    setPushInProgress(false);
   };
 
   const modifiedTables = repositoryStatus.tables.filter(
@@ -138,8 +152,9 @@ export function SourceControl({
           <Button
             text="Share"
             variant="outlined"
-            onClick={() => {}}
+            onClick={push}
             disabled={!canPush}
+            loading={pushInProgress}
           />
         ) : (
           <p className="no-action">

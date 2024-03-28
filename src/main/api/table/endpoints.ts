@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import git, { ReadCommitResult } from "isomorphic-git";
+import http from "isomorphic-git/http/node";
 
 import { Table, tableToJsonString } from "gittable-editor";
 import {
@@ -236,9 +237,6 @@ export async function get_repository_status({
     ! For now, the features of this app doesn't allow those states. so I'm considering that git.currentBranch() will
     ! always return a string
     */
-    console.debug(
-      `[API/get_repository_status] currentBranch is: ${currentBranch}`,
-    );
 
     // 3. Check if the current checked out branch is ahead of remote
     // 3.1 Get the remote name
@@ -248,27 +246,22 @@ export async function get_repository_status({
         dir: getRepositoryPath(repositoryId),
       })
     )[0].remote;
-    console.debug(`[API/get_repository_status] remote is: ${remote}`);
     //! We assume that there's always a single remote. We don't handle multiple remotes
 
     // 3.2 Get the commit SHA of the local branch and the remote branch
     const localBranchRef = `refs/heads/${currentBranch}`;
     const remoteBranchRef = `refs/remotes/${remote}/${currentBranch}`;
 
-    const localCommit = await git.resolveRef({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: localBranchRef,
-    });
+    // const localCommit = await git.resolveRef({
+    //   fs,
+    //   dir: getRepositoryPath(repositoryId),
+    //   ref: localBranchRef,
+    // });
     const remoteCommit = await git.resolveRef({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: remoteBranchRef,
     });
-
-    console.debug(
-      `[API/get_repository_status] localCommit = ${localCommit}, remoteCommit = ${remoteCommit}`,
-    );
 
     // 3.3 Get the commit logs for the local and remote branches
     const localLog = await git.log({
@@ -286,10 +279,6 @@ export async function get_repository_status({
     // 3.4 Check if the local branch is ahead by comparing commit logs
     const isAheadOfRemote =
       localLog.findIndex((commit) => commit.oid === remoteCommit) > 0;
-
-    console.debug(
-      `[API/get_repository_status] isAheadOfRemote = ${isAheadOfRemote}`,
-    );
 
     // 4. For each table, check if it's version in the Working dir is different than the Local repository
     const [FILE, HEAD, WORKDIR] = [0, 1, 2];
@@ -314,7 +303,6 @@ export async function get_repository_status({
       },
     };
   } catch (err) {
-    console.log(`[API/get_last_commit] Error calling git.log: ${err}`);
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }
@@ -410,4 +398,38 @@ export async function get_history({
   });
 
   return { status: "success", history };
+}
+
+export type PushParameters = {
+  repositoryId: string;
+};
+
+export type PushResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function push({
+  repositoryId,
+}: PushParameters): Promise<PushResponse> {
+  console.debug(`[API/push] Called with repositoryId=${repositoryId}`);
+
+  try {
+    const pushResult = await git.push({
+      fs,
+      http,
+      dir: getRepositoryPath(repositoryId),
+    });
+
+    if (pushResult.error != null) {
+      return { status: "error", type: "unknown", message: "Unknown error" };
+    } else return { status: "success" };
+  } catch (error) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
 }
