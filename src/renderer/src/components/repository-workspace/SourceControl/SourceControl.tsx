@@ -74,6 +74,7 @@ export function SourceControl({
 
   const workingDirChanged: boolean = modifiedTables.length > 0;
   const canCommit = workingDirChanged && commitMessage !== "";
+  const canPush = repositoryStatus.currentBranch.isAheadOfRemote;
 
   return (
     <SidebarSection id="source-control" title="Source control">
@@ -111,9 +112,9 @@ export function SourceControl({
               ></ListItem>
             ))
           ) : (
-            <div className="no-changes-text">
+            <p className="no-action">
               You didn&apos;t make any changes to your tables
-            </div>
+            </p>
           )}
         </List>
       </div>
@@ -131,6 +132,20 @@ export function SourceControl({
           disabled={!canCommit}
           loading={commitInProgress}
         />
+      </div>
+      <div className="push-section">
+        {canPush ? (
+          <Button
+            text="Share"
+            variant="outlined"
+            onClick={() => {}}
+            disabled={!canPush}
+          />
+        ) : (
+          <p className="no-action">
+            You have no changes to share with your team
+          </p>
+        )}
       </div>
     </SidebarSection>
   );

@@ -225,6 +225,73 @@ export async function get_repository_status({
     });
     const lastCommitId = log[0].oid;
 
+    // 2. Get the current branch name
+    const currentBranch = (await git.currentBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+    })) as string;
+    /*
+    ! Here I'm assuming that there's always a current branch. But git.currentBranch() will return void if
+    ! there's no branch (the git repo has just been init) or the HEAD is detached
+    ! For now, the features of this app doesn't allow those states. so I'm considering that git.currentBranch() will
+    ! always return a string
+    */
+    console.debug(
+      `[API/get_repository_status] currentBranch is: ${currentBranch}`,
+    );
+
+    // 3. Check if the current checked out branch is ahead of remote
+    // 3.1 Get the remote name
+    const remote = (
+      await git.listRemotes({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+      })
+    )[0].remote;
+    console.debug(`[API/get_repository_status] remote is: ${remote}`);
+    //! We assume that there's always a single remote. We don't handle multiple remotes
+
+    // 3.2 Get the commit SHA of the local branch and the remote branch
+    const localBranchRef = `refs/heads/${currentBranch}`;
+    const remoteBranchRef = `refs/remotes/${remote}/${currentBranch}`;
+
+    const localCommit = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: localBranchRef,
+    });
+    const remoteCommit = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: remoteBranchRef,
+    });
+
+    console.debug(
+      `[API/get_repository_status] localCommit = ${localCommit}, remoteCommit = ${remoteCommit}`,
+    );
+
+    // 3.3 Get the commit logs for the local and remote branches
+    const localLog = await git.log({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: localBranchRef,
+    });
+    // ! I'll need this code below when I handle the case of the local branch being behind the remote
+    // const remoteLog = await git.log({
+    //   fs,
+    //   dir: getRepositoryPath(repositoryId),
+    //   ref: remoteBranchRef,
+    // });
+
+    // 3.4 Check if the local branch is ahead by comparing commit logs
+    const isAheadOfRemote =
+      localLog.findIndex((commit) => commit.oid === remoteCommit) > 0;
+
+    console.debug(
+      `[API/get_repository_status] isAheadOfRemote = ${isAheadOfRemote}`,
+    );
+
+    // 4. For each table, check if it's version in the Working dir is different than the Local repository
     const [FILE, HEAD, WORKDIR] = [0, 1, 2];
     const tablesStatuses: TableStatus[] = (
       await git.statusMatrix({
@@ -240,7 +307,11 @@ export async function get_repository_status({
 
     return {
       status: "success",
-      repositoryStatus: { lastCommitId, tables: tablesStatuses },
+      repositoryStatus: {
+        lastCommitId,
+        tables: tablesStatuses,
+        currentBranch: { name: currentBranch, isAheadOfRemote },
+      },
     };
   } catch (err) {
     console.log(`[API/get_last_commit] Error calling git.log: ${err}`);

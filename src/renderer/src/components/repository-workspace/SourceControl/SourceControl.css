@@ -31,12 +31,21 @@
   padding: 0 10px;
 }
 
-#source-control .working-dir-changes .no-changes-text {
+#source-control .no-action {
   padding: 0 10px;
   font-style: italic;
 }
 
 #source-control .commit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 10px;
+  border-bottom: 1px solid var(--color-borders);
+}
+
+#source-control .push-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
