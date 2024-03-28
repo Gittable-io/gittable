@@ -13,6 +13,12 @@
   position: relative;
 }
 
+.repository-clone-form .credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .repository-clone-form button {
   align-self: flex-end;
 }
