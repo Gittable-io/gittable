@@ -2,7 +2,7 @@
 // I Disabled warning on using any, to be able to mock private methods
 
 import { Repository } from "@sharedTypes/index";
-import { UserDataStore, type UserData } from "./db";
+import { UserDataStore, type UserData, RepositoryCredentials } from "./db";
 
 /**
  * @param initialUserData: the userData that is "present" on the file system
@@ -55,19 +55,25 @@ describe("Test UserDataStore", () => {
 
   const mockUserData_0repo: UserData = {
     repositories: [],
-    credentials: [],
+    credentials: {},
     git: gitConfig,
   };
 
   const mockUserData_1repo: UserData = {
     repositories: [mockRepository1],
-    credentials: [],
+    credentials: {},
+    git: gitConfig,
+  };
+
+  const mockUserData_1repo_credentials: UserData = {
+    repositories: [mockRepository1],
+    credentials: { [mockRepository1.id]: { username: "uuu", password: "ppp" } },
     git: gitConfig,
   };
 
   const mockUserData_2repo: UserData = {
     repositories: [mockRepository1, mockRepository2],
-    credentials: [],
+    credentials: {},
     git: gitConfig,
   };
 
@@ -116,6 +122,52 @@ describe("Test UserDataStore", () => {
     expect(repositories).toContainEqual(newRepository);
   });
 
+  test("Add a repository with credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo);
+
+    const newRepository: Repository = {
+      id: "1706892481_myrepo2",
+      name: "myrepo2",
+      remoteUrl: "http://gitserver.com/user/myrepo2.git",
+    };
+    const newCredentials: RepositoryCredentials = {
+      username: "username",
+      password: "password",
+    };
+
+    await UserDataStore.addRepository(newRepository, newCredentials);
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
+
+    const repositoryCredentials =
+      await UserDataStore.getRepositoryCredentials("1706892481_myrepo2");
+    expect(repositoryCredentials).toEqual(newCredentials);
+  });
+
+  test("Add a repository without credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo);
+
+    const newRepository: Repository = {
+      id: "1706892481_myrepo2",
+      name: "myrepo2",
+      remoteUrl: "http://gitserver.com/user/myrepo2.git",
+    };
+
+    await UserDataStore.addRepository(newRepository);
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
+
+    const repositoryCredentials =
+      await UserDataStore.getRepositoryCredentials("1706892481_myrepo2");
+    expect(repositoryCredentials).toBeNull();
+  });
+
   test("Adding an existing repository throws an error", async () => {
     mockUserDataStoreFs(mockUserData_1repo);
 
@@ -138,6 +190,19 @@ describe("Test UserDataStore", () => {
     const repositories = await UserDataStore.getRepositories();
     expect(repositories).toHaveLength(1);
     expect(repositories).toContainEqual(mockRepository2);
+  });
+
+  test("Delete a repository with credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo_credentials);
+
+    await UserDataStore.deleteRepository("1706889976_myrepo1");
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(0);
+
+    await expect(
+      UserDataStore.getRepositoryCredentials("1706889976_myrepo1"),
+    ).rejects.toThrow(Error);
   });
 
   test("Delete the last repository", async () => {

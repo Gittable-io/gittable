@@ -1,9 +1,9 @@
 import { Repository } from "@sharedTypes/index";
 import fs from "node:fs/promises";
 import { getConfig } from "../config";
+import { produce } from "immer";
 
 export type RepositoryCredentials = {
-  repositoryId: string;
   username: string;
   password: string;
 };
@@ -14,7 +14,7 @@ export type GitConfig = {
 
 export type UserData = {
   repositories: Repository[];
-  credentials: RepositoryCredentials[];
+  credentials: { [key: string]: RepositoryCredentials };
   git: GitConfig;
 };
 
@@ -39,7 +39,7 @@ export class UserDataStore {
   private static initializeUserData(): UserData {
     return {
       repositories: [],
-      credentials: [],
+      credentials: {},
       git: {
         user: {
           name: "",
@@ -111,7 +111,26 @@ export class UserDataStore {
     else throw new Error(`There's no repository with id : ${repositoryId}`);
   }
 
-  static async addRepository(repository: Repository): Promise<void> {
+  static async getRepositoryCredentials(
+    repositoryId: string,
+  ): Promise<RepositoryCredentials | null> {
+    const userData = await UserDataStore.getUserData();
+
+    const repository = userData.repositories.find(
+      (repo) => repo.id === repositoryId,
+    );
+
+    if (repository) {
+      return repositoryId in userData.credentials
+        ? userData.credentials[repositoryId]
+        : null;
+    } else throw new Error(`There's no repository with id : ${repositoryId}`);
+  }
+
+  static async addRepository(
+    repository: Repository,
+    credentials?: RepositoryCredentials,
+  ): Promise<void> {
     const userData = await UserDataStore.getUserData();
 
     // If a repository with the same ID already exists, throw an error
@@ -121,10 +140,12 @@ export class UserDataStore {
       );
     }
 
-    const newUserData = {
-      ...userData,
-      repositories: [...userData.repositories, repository],
-    };
+    const newUserData = produce(userData, (draft) => {
+      draft.repositories.push(repository);
+      if (credentials) {
+        draft.credentials[repository.id] = credentials;
+      }
+    });
 
     await UserDataStore.save(newUserData);
   }
@@ -139,12 +160,12 @@ export class UserDataStore {
       );
     }
 
-    const newUserData = {
-      ...userData,
-      repositories: userData.repositories.filter(
+    const newUserData = produce(userData, (draft) => {
+      draft.repositories = draft.repositories.filter(
         (repo) => repo.id !== repositoryId,
-      ),
-    };
+      );
+      delete draft.credentials[repositoryId];
+    });
 
     await UserDataStore.save(newUserData);
   }
