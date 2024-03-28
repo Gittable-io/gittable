@@ -2,14 +2,20 @@ import { Repository } from "@sharedTypes/index";
 import fs from "node:fs/promises";
 import { getConfig } from "../config";
 
+export type RepositoryCredentials = {
+  repositoryId: string;
+  username: string;
+  password: string;
+};
+
+export type GitConfig = {
+  user: { name: string; email: string };
+};
+
 export type UserData = {
   repositories: Repository[];
-  git: {
-    user: {
-      name: string;
-      email: string;
-    };
-  };
+  credentials: RepositoryCredentials[];
+  git: GitConfig;
 };
 
 /*
@@ -33,6 +39,7 @@ export class UserDataStore {
   private static initializeUserData(): UserData {
     return {
       repositories: [],
+      credentials: [],
       git: {
         user: {
           name: "",
@@ -74,8 +81,7 @@ export class UserDataStore {
     );
   }
 
-  // Get user data
-  static async getUserData(): Promise<UserData> {
+  private static async getUserData(): Promise<UserData> {
     if (await UserDataStore.userDataFileExists()) {
       const userData = await UserDataStore.fetchUserData();
       return userData;
@@ -89,6 +95,11 @@ export class UserDataStore {
   }
 
   //#region repositories
+  static async getRepositories(): Promise<Repository[]> {
+    const userData = await UserDataStore.getUserData();
+    return userData.repositories;
+  }
+
   static async getRepository(repositoryId: string): Promise<Repository> {
     const userData = await UserDataStore.getUserData();
 
@@ -140,6 +151,11 @@ export class UserDataStore {
   //#endregion
 
   //#region git config
+  static async getGitConfig(): Promise<GitConfig> {
+    const userData = await UserDataStore.getUserData();
+    return userData.git;
+  }
+
   static async setGitUserConfig(name: string, email: string): Promise<void> {
     const userData = await UserDataStore.getUserData();
 

@@ -63,7 +63,7 @@ export async function clone_repository({
   const trimmedRemoteUrl = remoteUrl.trim();
 
   // First, check that the git config: user name and email are configured
-  const gitConfig = (await UserDataStore.getUserData()).git;
+  const gitConfig = await UserDataStore.getGitConfig();
   if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
     return {
       status: "error",
@@ -72,7 +72,7 @@ export async function clone_repository({
     };
   }
   // Second, check that we didn't already clone this repository
-  const repositories = (await UserDataStore.getUserData()).repositories;
+  const repositories = await UserDataStore.getRepositories();
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
   );
@@ -202,7 +202,7 @@ export type ListRepositoriesReponse = {
 export async function list_repositories(): Promise<ListRepositoriesReponse> {
   console.debug(`[API/list_repositories] Called`);
 
-  const repositories = (await UserDataStore.getUserData()).repositories;
+  const repositories = await UserDataStore.getRepositories();
   return { status: "success", repositories: repositories };
 }
 

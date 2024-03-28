@@ -1,21 +1,19 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
-import { UserDataStore } from "../../db";
+import { GitConfig, UserDataStore } from "../../db";
 import { list_repositories } from "../repository";
 import { getRepositoryPath } from "../../utils/utils";
 import * as EmailValidator from "email-validator";
 
 export type GetGitConfigReponse = {
   status: "success";
-  gitConfig: {
-    user: { name: string; email: string };
-  };
+  gitConfig: GitConfig;
 };
 
 export async function get_git_config(): Promise<GetGitConfigReponse> {
   console.debug(`[API/user] get_git_config Called`);
 
-  const gitConfig = (await UserDataStore.getUserData()).git;
+  const gitConfig = await UserDataStore.getGitConfig();
   return { status: "success", gitConfig };
 }
 
@@ -68,7 +66,7 @@ export async function save_git_config({
     };
   }
 
-  const currentGitConfig = (await UserDataStore.getUserData()).git;
+  const currentGitConfig = await UserDataStore.getGitConfig();
 
   try {
     if (

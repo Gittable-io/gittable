@@ -39,7 +39,7 @@ const mockUserDataStoreFs = (initialUserData: UserData | null = null): void => {
 };
 
 describe("Test UserDataStore", () => {
-  const gitConfig = { user: { name: "Mary", email: "email@exemple.com" } };
+  const gitConfig = { user: { name: "Mary", email: "mary@exemple.com" } };
 
   const mockRepository1 = {
     id: "1706889976_myrepo1",
@@ -55,16 +55,19 @@ describe("Test UserDataStore", () => {
 
   const mockUserData_0repo: UserData = {
     repositories: [],
+    credentials: [],
     git: gitConfig,
   };
 
   const mockUserData_1repo: UserData = {
     repositories: [mockRepository1],
+    credentials: [],
     git: gitConfig,
   };
 
   const mockUserData_2repo: UserData = {
     repositories: [mockRepository1, mockRepository2],
+    credentials: [],
     git: gitConfig,
   };
 
@@ -72,20 +75,12 @@ describe("Test UserDataStore", () => {
     jest.clearAllMocks();
   });
 
-  test("Test getUserData() when user data file exists", async () => {
-    mockUserDataStoreFs(mockUserData_1repo);
-
-    const userData = await UserDataStore.getUserData();
-    expect(userData).toEqual(mockUserData_1repo);
-  });
-
-  test("Test getUserData() when user data file doesn't exist", async () => {
+  test("Test user data file doesn't exist", async () => {
     mockUserDataStoreFs(null);
 
-    const userData = await UserDataStore.getUserData();
+    const userData = await UserDataStore.getGitConfig();
     expect(userData).toEqual({
-      repositories: [],
-      git: { user: { name: "", email: "" } },
+      user: { name: "", email: "" },
     });
   });
 
@@ -99,10 +94,10 @@ describe("Test UserDataStore", () => {
     };
     await UserDataStore.addRepository(newRepository);
 
-    const userData = await UserDataStore.getUserData();
+    const repositories = await UserDataStore.getRepositories();
 
-    expect(userData.repositories).toHaveLength(1);
-    expect(userData.repositories[0]).toEqual(newRepository);
+    expect(repositories).toHaveLength(1);
+    expect(repositories[0]).toEqual(newRepository);
   });
 
   test("Add a repository to a non-empty repository list", async () => {
@@ -115,10 +110,10 @@ describe("Test UserDataStore", () => {
     };
     await UserDataStore.addRepository(newRepository);
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(2);
-    expect(userData.repositories).toContainEqual(mockRepository1);
-    expect(userData.repositories).toContainEqual(newRepository);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
   });
 
   test("Adding an existing repository throws an error", async () => {
@@ -140,9 +135,9 @@ describe("Test UserDataStore", () => {
 
     await UserDataStore.deleteRepository("1706889976_myrepo1");
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(1);
-    expect(userData.repositories).toContainEqual(mockRepository2);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(1);
+    expect(repositories).toContainEqual(mockRepository2);
   });
 
   test("Delete the last repository", async () => {
@@ -150,8 +145,8 @@ describe("Test UserDataStore", () => {
 
     await UserDataStore.deleteRepository("1706889976_myrepo1");
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(0);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(0);
   });
 
   test("Deleting a non-existing repository throws an error", async () => {
