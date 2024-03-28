@@ -38,6 +38,17 @@ const mockUserDataStoreFs = (initialUserData: UserData | null = null): void => {
   });
 };
 
+jest.mock("electron", () => {
+  const originalModule = jest.requireActual("electron");
+  return {
+    ...originalModule,
+    safeStorage: {
+      encryptString: jest.fn((text) => Buffer.from(text, "base64")),
+      decryptString: jest.fn((buffer) => buffer.toString("base64")),
+    },
+  };
+});
+
 describe("Test UserDataStore", () => {
   const gitConfig = { user: { name: "Mary", email: "mary@exemple.com" } };
 

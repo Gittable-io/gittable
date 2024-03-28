@@ -2,6 +2,7 @@ import { Repository } from "@sharedTypes/index";
 import fs from "node:fs/promises";
 import { getConfig } from "../config";
 import { produce } from "immer";
+import { safeStorage } from "electron";
 
 export type RepositoryCredentials = {
   username: string;
@@ -121,9 +122,20 @@ export class UserDataStore {
     );
 
     if (repository) {
-      return repositoryId in userData.credentials
-        ? userData.credentials[repositoryId]
-        : null;
+      if (repositoryId in userData.credentials) {
+        const encryptedCredentials = userData.credentials[repositoryId];
+        const decryptedCredentials: RepositoryCredentials = {
+          username: safeStorage.decryptString(
+            Buffer.from(encryptedCredentials.username, "base64"),
+          ),
+          password: safeStorage.decryptString(
+            Buffer.from(encryptedCredentials.password, "base64"),
+          ),
+        };
+        return decryptedCredentials;
+      } else {
+        return null;
+      }
     } else throw new Error(`There's no repository with id : ${repositoryId}`);
   }
 
@@ -143,7 +155,16 @@ export class UserDataStore {
     const newUserData = produce(userData, (draft) => {
       draft.repositories.push(repository);
       if (credentials) {
-        draft.credentials[repository.id] = credentials;
+        const encryptedCredentials: RepositoryCredentials = {
+          username: safeStorage
+            .encryptString(credentials.username)
+            .toString("base64"),
+          password: safeStorage
+            .encryptString(credentials.password)
+            .toString("base64"),
+        };
+
+        draft.credentials[repository.id] = encryptedCredentials;
       }
     });
 
