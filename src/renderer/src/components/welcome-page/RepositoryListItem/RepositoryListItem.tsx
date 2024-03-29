@@ -49,6 +49,7 @@ export function RepositoryListItem({
       onClick={onRepositorySelect}
       secondaryAction={{
         materialSymbol: "delete",
+        label: "Delete repository",
         onClick: showDeleteRepositoryModal,
       }}
     />
