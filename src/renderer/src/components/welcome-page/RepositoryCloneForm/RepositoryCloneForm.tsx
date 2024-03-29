@@ -57,7 +57,11 @@ export function RepositoryCloneForm({
   };
 
   return (
-    <div className="repository-clone-form">
+    <div
+      className="repository-clone-form"
+      role="form"
+      aria-label="Repository clone form"
+    >
       <h2>Clone a remote repository</h2>
       <InputAndValidation
         placeholder="Repository URL"
