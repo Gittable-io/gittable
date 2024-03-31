@@ -14,12 +14,21 @@ import { UserDataStore } from "../../db";
 
 export type CloneRepositoryParameters = {
   remoteUrl: string;
+  credentials?: {
+    username: string;
+    password: string;
+  };
 };
 
 export type CloneRepositoryResponse =
   | { status: "success"; type: "cloned"; repository: Repository }
   | { status: "success"; type: "already cloned"; repository: Repository }
   | { status: "error"; type: "malformed url"; message: string }
+  | {
+      status: "error";
+      type: "auth required no credentials provided";
+      message: "Authentication is required but no credentials were provided";
+    }
   | { status: "error"; type: "connection error"; message: string }
   | {
       status: "error";
@@ -57,13 +66,14 @@ export type CloneRepositoryResponse =
  */
 export async function clone_repository({
   remoteUrl,
+  credentials,
 }: CloneRepositoryParameters): Promise<CloneRepositoryResponse> {
   console.debug(`[API/clone_repository] Called with remoteUrl=${remoteUrl}`);
 
   const trimmedRemoteUrl = remoteUrl.trim();
 
   // First, check that the git config: user name and email are configured
-  const gitConfig = (await UserDataStore.getUserData()).git;
+  const gitConfig = await UserDataStore.getGitConfig();
   if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
     return {
       status: "error",
@@ -72,7 +82,7 @@ export async function clone_repository({
     };
   }
   // Second, check that we didn't already clone this repository
-  const repositories = (await UserDataStore.getUserData()).repositories;
+  const repositories = await UserDataStore.getRepositories();
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
   );
@@ -88,7 +98,7 @@ export async function clone_repository({
   const repositoryId = generateRepositoryId(remoteUrl);
   const repositoryPath = getRepositoryPath(repositoryId);
 
-  let response: CloneRepositoryResponse | null = null;
+  let errorResponse: CloneRepositoryResponse | null = null;
 
   //* it seems that the git.clone() creates the dir if it doesn't exist. So we don't need to create the folder beforehand
   try {
@@ -103,8 +113,23 @@ export async function clone_repository({
       },
       onProgress: (progress: GitProgressEvent) =>
         console.log(`onProgress: ${JSON.stringify(progress)}`),
-      onAuth: (url: string, auth: GitAuth) =>
-        console.log(`onAuth: url=${url}, auth=${JSON.stringify(auth)}`),
+      onAuth: () => {
+        console.debug(`[API/clone_repository] onAuth callback called`);
+        if (!credentials) {
+          errorResponse = {
+            status: "error",
+            type: "auth required no credentials provided",
+            message:
+              "Authentication is required but no credentials were provided",
+          };
+          return { cancel: true };
+        } else {
+          return {
+            username: credentials.username,
+            password: credentials.password,
+          };
+        }
+      },
       onAuthFailure: (url: string, auth: GitAuth) =>
         console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
       onAuthSuccess: (url: string, auth: GitAuth) =>
@@ -130,21 +155,23 @@ export async function clone_repository({
         `[API/clone_repository] error.name=${error.name}, error.message=${error.message}`,
       );
 
-      if (error.name === "UrlParseError") {
-        response = {
+      if (error.name === "UserCanceledError") {
+        // I canceled the operation myself, and the response is already set
+      } else if (error.name === "UrlParseError") {
+        errorResponse = {
           status: "error",
           type: "malformed url",
           message: "URL is not valid",
         };
       } else {
-        response = {
+        errorResponse = {
           status: "error",
           type: "connection error",
           message: "Error connecting to Git repository",
         };
       }
     } else {
-      response = {
+      errorResponse = {
         status: "error",
         type: "unknown",
         message: "Unknown error",
@@ -152,7 +179,7 @@ export async function clone_repository({
     }
   } finally {
     // If there was an error, delete the repository folder that was created by git.clone()
-    if (response) {
+    if (errorResponse) {
       // If I used fs.rm({force:true}) (force:true silences exceptions if folder doesn't exist), I would not need to check if folder exist,
       // but it seems that force:true have different behavior in each OS (see https://github.com/nodejs/node/issues/45253)
       console.debug(
@@ -162,7 +189,7 @@ export async function clone_repository({
         try {
           await fs.rm(repositoryPath, { recursive: true });
         } catch (error) {
-          response = {
+          errorResponse = {
             status: "error",
             type: "unknown",
             message: "Unknown error",
@@ -172,7 +199,7 @@ export async function clone_repository({
     }
   }
 
-  if (response === null) {
+  if (errorResponse == null) {
     // If cloning was a success
     // 1. Save the repository in user data
     const newRepository = {
@@ -180,18 +207,23 @@ export async function clone_repository({
       remoteUrl: trimmedRemoteUrl,
       name: getRepositoryNameFromRemoteUrl(remoteUrl),
     };
-    await UserDataStore.addRepository(newRepository);
+    if (credentials) {
+      await UserDataStore.addRepository(newRepository, credentials);
+    } else {
+      await UserDataStore.addRepository(newRepository);
+    }
 
     // 2. Send the response
-    response = {
+    const successResponse: CloneRepositoryResponse = {
       status: "success",
       type: "cloned",
       repository: newRepository,
     };
     console.debug(`[API/clone_repository] Finished cloning in ${repositoryId}`);
+    return successResponse;
+  } else {
+    return errorResponse;
   }
-
-  return response;
 }
 
 export type ListRepositoriesReponse = {
@@ -202,7 +234,7 @@ export type ListRepositoriesReponse = {
 export async function list_repositories(): Promise<ListRepositoriesReponse> {
   console.debug(`[API/list_repositories] Called`);
 
-  const repositories = (await UserDataStore.getUserData()).repositories;
+  const repositories = await UserDataStore.getRepositories();
   return { status: "success", repositories: repositories };
 }
 

@@ -27,9 +27,13 @@ export function RepositoryWorkspaceSidebar({
   onRepositoryClose,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   return (
-    <div className="repository-workspace-sidebar">
+    <div
+      className="repository-workspace-sidebar"
+      aria-label="Repository workspace sidebar"
+    >
       <TitleBar
         title={repository.name}
+        aria-label="Title"
         action={{
           materialSymbol: "close",
           onClick: onRepositoryClose,

@@ -1,15 +1,22 @@
 import { Repository } from "@sharedTypes/index";
 import fs from "node:fs/promises";
 import { getConfig } from "../config";
+import { produce } from "immer";
+import { safeStorage } from "electron";
+
+export type RepositoryCredentials = {
+  username: string;
+  password: string;
+};
+
+export type GitConfig = {
+  user: { name: string; email: string };
+};
 
 export type UserData = {
   repositories: Repository[];
-  git: {
-    user: {
-      name: string;
-      email: string;
-    };
-  };
+  credentials: { [key: string]: RepositoryCredentials };
+  git: GitConfig;
 };
 
 /*
@@ -33,6 +40,7 @@ export class UserDataStore {
   private static initializeUserData(): UserData {
     return {
       repositories: [],
+      credentials: {},
       git: {
         user: {
           name: "",
@@ -74,8 +82,7 @@ export class UserDataStore {
     );
   }
 
-  // Get user data
-  static async getUserData(): Promise<UserData> {
+  private static async getUserData(): Promise<UserData> {
     if (await UserDataStore.userDataFileExists()) {
       const userData = await UserDataStore.fetchUserData();
       return userData;
@@ -89,6 +96,11 @@ export class UserDataStore {
   }
 
   //#region repositories
+  static async getRepositories(): Promise<Repository[]> {
+    const userData = await UserDataStore.getUserData();
+    return userData.repositories;
+  }
+
   static async getRepository(repositoryId: string): Promise<Repository> {
     const userData = await UserDataStore.getUserData();
 
@@ -100,7 +112,37 @@ export class UserDataStore {
     else throw new Error(`There's no repository with id : ${repositoryId}`);
   }
 
-  static async addRepository(repository: Repository): Promise<void> {
+  static async getRepositoryCredentials(
+    repositoryId: string,
+  ): Promise<RepositoryCredentials | null> {
+    const userData = await UserDataStore.getUserData();
+
+    const repository = userData.repositories.find(
+      (repo) => repo.id === repositoryId,
+    );
+
+    if (repository) {
+      if (repositoryId in userData.credentials) {
+        const encryptedCredentials = userData.credentials[repositoryId];
+        const decryptedCredentials: RepositoryCredentials = {
+          username: safeStorage.decryptString(
+            Buffer.from(encryptedCredentials.username, "base64"),
+          ),
+          password: safeStorage.decryptString(
+            Buffer.from(encryptedCredentials.password, "base64"),
+          ),
+        };
+        return decryptedCredentials;
+      } else {
+        return null;
+      }
+    } else throw new Error(`There's no repository with id : ${repositoryId}`);
+  }
+
+  static async addRepository(
+    repository: Repository,
+    credentials?: RepositoryCredentials,
+  ): Promise<void> {
     const userData = await UserDataStore.getUserData();
 
     // If a repository with the same ID already exists, throw an error
@@ -110,10 +152,21 @@ export class UserDataStore {
       );
     }
 
-    const newUserData = {
-      ...userData,
-      repositories: [...userData.repositories, repository],
-    };
+    const newUserData = produce(userData, (draft) => {
+      draft.repositories.push(repository);
+      if (credentials) {
+        const encryptedCredentials: RepositoryCredentials = {
+          username: safeStorage
+            .encryptString(credentials.username)
+            .toString("base64"),
+          password: safeStorage
+            .encryptString(credentials.password)
+            .toString("base64"),
+        };
+
+        draft.credentials[repository.id] = encryptedCredentials;
+      }
+    });
 
     await UserDataStore.save(newUserData);
   }
@@ -128,18 +181,23 @@ export class UserDataStore {
       );
     }
 
-    const newUserData = {
-      ...userData,
-      repositories: userData.repositories.filter(
+    const newUserData = produce(userData, (draft) => {
+      draft.repositories = draft.repositories.filter(
         (repo) => repo.id !== repositoryId,
-      ),
-    };
+      );
+      delete draft.credentials[repositoryId];
+    });
 
     await UserDataStore.save(newUserData);
   }
   //#endregion
 
   //#region git config
+  static async getGitConfig(): Promise<GitConfig> {
+    const userData = await UserDataStore.getUserData();
+    return userData.git;
+  }
+
   static async setGitUserConfig(name: string, email: string): Promise<void> {
     const userData = await UserDataStore.getUserData();
 
