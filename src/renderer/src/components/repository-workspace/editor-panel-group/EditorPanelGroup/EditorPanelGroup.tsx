@@ -127,7 +127,7 @@ export function EditorPanelGroup({
                     hidden={panel.id !== selectedEditorPanelId}
                   />
                 ) : (
-                  <HistoryPanel />
+                  <HistoryPanel repositoryId={repositoryId} />
                 )}
               </TabPanel>
             ))}

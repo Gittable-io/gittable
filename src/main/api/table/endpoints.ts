@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import git from "isomorphic-git";
+import git, { ReadCommitResult } from "isomorphic-git";
 
 import { Table, tableToJsonString } from "gittable-editor";
 import {
@@ -317,4 +317,26 @@ export async function commit({
   } catch (error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
+}
+
+export type GetHistoryParameters = {
+  repositoryId: string;
+};
+
+export type GetHistoryResponse = {
+  status: "success";
+  history: ReadCommitResult[];
+};
+
+export async function get_history({
+  repositoryId,
+}: GetHistoryParameters): Promise<GetHistoryResponse> {
+  console.debug(`[API/get_history] Called with repositoryId=${repositoryId}`);
+
+  const history = await git.log({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+  });
+
+  return { status: "success", history };
 }
