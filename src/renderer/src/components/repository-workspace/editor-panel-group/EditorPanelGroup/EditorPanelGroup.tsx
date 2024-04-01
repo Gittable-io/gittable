@@ -4,6 +4,7 @@ import { TabPanel } from "react-headless-tabs";
 import { TableEditorPanel } from "../TableEditorPanel";
 import { TableMetadata } from "@sharedTypes/index";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
+import { HistoryPanel } from "../HistoryPanel";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -19,6 +20,9 @@ export type EditorPanelDescription =
   | {
       type: "diff";
       diff: DiffDescription;
+    }
+  | {
+      type: "history";
     };
 
 export type EditorPanel = {
@@ -32,12 +36,16 @@ export const createEditorPanel = (
   const id =
     panel.type === "table"
       ? `${panel.type}_${panel.table.id}`
-      : `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`;
+      : panel.type === "diff"
+        ? `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`
+        : "history";
 
   const title =
     panel.type === "table"
       ? `${panel.table.name}`
-      : `${panel.diff.table.name} (diff)`;
+      : panel.type === "diff"
+        ? `${panel.diff.table.name} (diff)`
+        : "History";
 
   return {
     id,
@@ -100,12 +108,14 @@ export function EditorPanelGroup({
                     tableMetadata={panel.table}
                     hidden={panel.id !== selectedEditorPanelId}
                   />
-                ) : (
+                ) : panel.type === "diff" ? (
                   <TableDiffViewerPanel
                     repositoryId={repositoryId}
                     diffDescription={panel.diff}
                     hidden={panel.id !== selectedEditorPanelId}
                   />
+                ) : (
+                  <HistoryPanel />
                 )}
               </TabPanel>
             ))}

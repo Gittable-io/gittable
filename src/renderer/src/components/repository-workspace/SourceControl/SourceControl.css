@@ -9,13 +9,14 @@
   --list-item-secondary-action-color-hover: var(--color-secondary-hover-darker);
 }
 
-#source-control .section-content .action-bar {
+#source-control .action-bar {
   padding: 10px var(--padding);
 
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
   align-items: center;
+  gap: 10px;
 
   border-bottom: 1px solid var(--color-borders);
 }
