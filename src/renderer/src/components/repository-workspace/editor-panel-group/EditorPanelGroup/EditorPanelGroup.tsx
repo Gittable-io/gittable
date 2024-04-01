@@ -28,6 +28,7 @@ export type EditorPanelDescription =
 export type EditorPanel = {
   id: string;
   title: string;
+  materialSymbol: string;
 } & EditorPanelDescription;
 
 export const createEditorPanel = (
@@ -47,9 +48,17 @@ export const createEditorPanel = (
         ? `${panel.diff.table.name} (diff)`
         : "History";
 
+  const materialSymbol =
+    panel.type === "table"
+      ? "table"
+      : panel.type === "diff"
+        ? "table"
+        : "history";
+
   return {
     id,
     title,
+    materialSymbol,
     ...panel,
   };
 };
@@ -83,7 +92,10 @@ export function EditorPanelGroup({
                 data-tab-title={panel.title}
                 onClick={() => onSelectEditorPanel(panel.id)}
               >
-                <IconAndText text={panel.title} materialSymbol="table" />
+                <IconAndText
+                  text={panel.title}
+                  materialSymbol={panel.materialSymbol}
+                />
                 <MaterialSymbolButton
                   symbol="close"
                   label="Close tab"
