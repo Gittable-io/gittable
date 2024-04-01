@@ -78,7 +78,7 @@ export function RepositoryCloneForm({
         />
         <InputAndValidation
           type="password"
-          placeholder="Password"
+          placeholder="Password or Personal Access Token"
           value={password}
           onChange={handlePasswordChange}
         />
