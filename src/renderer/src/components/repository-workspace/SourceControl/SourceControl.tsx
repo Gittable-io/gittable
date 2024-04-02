@@ -18,12 +18,14 @@ export type SourceControlProps = {
   repositoryStatus: RepositoryStatus;
   onDiffSelect: (diff: DiffDescription) => void;
   onRepositoryStatusChange: () => void;
+  onHistorySelect: () => void;
 };
 
 export function SourceControl({
   repository,
   repositoryStatus,
   onDiffSelect,
+  onHistorySelect,
   onRepositoryStatusChange,
 }: SourceControlProps): JSX.Element {
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
@@ -76,6 +78,12 @@ export function SourceControl({
   return (
     <SidebarSection id="source-control" title="Source control">
       <div className="action-bar">
+        <MaterialSymbolButton
+          symbol="history"
+          label="View history"
+          onClick={onHistorySelect}
+          tooltip
+        />
         <MaterialSymbolButton
           symbol="undo"
           label="Discard all changes"

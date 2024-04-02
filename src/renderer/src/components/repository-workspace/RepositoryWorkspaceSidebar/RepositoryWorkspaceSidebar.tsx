@@ -16,6 +16,7 @@ export type RepositoryWorkspaceSidebarProps = {
   onRepositoryStatusChange: () => void;
   onTableSelect: (tableMetadata: TableMetadata) => void;
   onDiffSelect: (diff: DiffDescription) => void;
+  onHistorySelect: () => void;
 };
 
 export function RepositoryWorkspaceSidebar({
@@ -25,6 +26,7 @@ export function RepositoryWorkspaceSidebar({
   onDiffSelect,
   onRepositoryStatusChange,
   onRepositoryClose,
+  onHistorySelect,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   return (
     <div
@@ -50,6 +52,7 @@ export function RepositoryWorkspaceSidebar({
         repositoryStatus={repositoryStatus}
         onRepositoryStatusChange={onRepositoryStatusChange}
         onDiffSelect={onDiffSelect}
+        onHistorySelect={onHistorySelect}
       />
     </div>
   );
