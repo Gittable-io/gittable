@@ -1,0 +1,22 @@
+.history-panel {
+  padding: var(--padding);
+  width: 100%;
+}
+
+.history-panel table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-panel tr {
+  border-bottom: 1px solid var(--color-borders);
+}
+
+.history-panel td,
+.history-panel th {
+  padding: 10px;
+}
+
+.history-panel th {
+  text-align: left;
+}

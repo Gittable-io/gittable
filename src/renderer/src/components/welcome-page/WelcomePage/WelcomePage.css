@@ -1,20 +1,24 @@
 .welcome-page {
   display: flex;
   flex-direction: row;
+  gap: var(--padding);
+
   width: 100%;
   height: 100%;
 }
 
 .welcome-page .welcome-sidebar {
   flex-grow: 0;
+  flex-shrink: 0;
   flex-basis: 250px;
 }
 
 .welcome-page .new-repository-section {
   flex-grow: 0;
+  flex-shrink: 0;
   flex-basis: 800px;
 }
 
-.welcome-page .help-section {
+.welcome-page .information-panel {
   flex-grow: 1;
 }

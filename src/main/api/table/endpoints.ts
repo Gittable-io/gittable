@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import git from "isomorphic-git";
+import git, { ReadCommitResult } from "isomorphic-git";
 
 import { Table, tableToJsonString } from "gittable-editor";
 import {
@@ -246,4 +246,97 @@ export async function get_repository_status({
     console.log(`[API/get_last_commit] Error calling git.log: ${err}`);
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
+}
+
+export type CommitParameters = {
+  repositoryId: string;
+  message: string;
+};
+
+export type CommitResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "NOTHING_TO_COMMIT";
+      message: "There's nothing to commit";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function commit({
+  repositoryId,
+  message,
+}: CommitParameters): Promise<CommitResponse> {
+  console.debug(`[API/commit] Called with repositoryId=${repositoryId}`);
+
+  // First check that there's something to commit (there's a change in the working dir)
+  const repositoryStatusResponse = await get_repository_status({
+    repositoryId,
+  });
+
+  if (repositoryStatusResponse.status === "error") {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+
+  const repositoryStatus = repositoryStatusResponse.repositoryStatus;
+  if (repositoryStatus.tables.every((table) => !table.modified)) {
+    return {
+      status: "error",
+      type: "NOTHING_TO_COMMIT",
+      message: "There's nothing to commit",
+    };
+  }
+
+  // If there's a change in the working dir => stage each file and then commit it
+  try {
+    // 1. Add each file to the staging area
+    const modifiedTables = repositoryStatus.tables.filter(
+      (table) => table.modified,
+    );
+
+    for (const table of modifiedTables) {
+      await git.add({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        filepath: getRepositoryRelativeTablePath(table.id),
+      });
+    }
+
+    // 1. And then commit
+    await git.commit({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      message,
+    });
+    return { status: "success" };
+  } catch (error) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+}
+
+export type GetHistoryParameters = {
+  repositoryId: string;
+};
+
+export type GetHistoryResponse = {
+  status: "success";
+  history: ReadCommitResult[];
+};
+
+export async function get_history({
+  repositoryId,
+}: GetHistoryParameters): Promise<GetHistoryResponse> {
+  console.debug(`[API/get_history] Called with repositoryId=${repositoryId}`);
+
+  const history = await git.log({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+  });
+
+  return { status: "success", history };
 }

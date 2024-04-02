@@ -137,6 +137,7 @@ export function RepositoryWorkspace({
             onDiffSelect={(diff: DiffDescription) =>
               openEditorPanel({ type: "diff", diff })
             }
+            onHistorySelect={() => openEditorPanel({ type: "history" })}
           />
           <EditorPanelGroup
             repositoryId={repository.id}

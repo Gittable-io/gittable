@@ -11,5 +11,9 @@
   font-weight: 500;
   font-size: 18px;
 
-  --material-symbol-color-hover: var(--color-primary-hover);
+  --material-symbol-button-color-hover: var(--color-primary-hover);
+}
+
+.title-bar .material-symbol {
+  font-size: 1em;
 }

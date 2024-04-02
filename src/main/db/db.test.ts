@@ -2,7 +2,7 @@
 // I Disabled warning on using any, to be able to mock private methods
 
 import { Repository } from "@sharedTypes/index";
-import { UserDataStore, type UserData } from "./db";
+import { UserDataStore, type UserData, RepositoryCredentials } from "./db";
 
 /**
  * @param initialUserData: the userData that is "present" on the file system
@@ -38,7 +38,20 @@ const mockUserDataStoreFs = (initialUserData: UserData | null = null): void => {
   });
 };
 
+jest.mock("electron", () => {
+  const originalModule = jest.requireActual("electron");
+  return {
+    ...originalModule,
+    safeStorage: {
+      encryptString: jest.fn((text) => Buffer.from(text, "base64")),
+      decryptString: jest.fn((buffer) => buffer.toString("base64")),
+    },
+  };
+});
+
 describe("Test UserDataStore", () => {
+  const gitConfig = { user: { name: "Mary", email: "mary@exemple.com" } };
+
   const mockRepository1 = {
     id: "1706889976_myrepo1",
     name: "myrepo1",
@@ -53,32 +66,39 @@ describe("Test UserDataStore", () => {
 
   const mockUserData_0repo: UserData = {
     repositories: [],
+    credentials: {},
+    git: gitConfig,
   };
 
   const mockUserData_1repo: UserData = {
     repositories: [mockRepository1],
+    credentials: {},
+    git: gitConfig,
+  };
+
+  const mockUserData_1repo_credentials: UserData = {
+    repositories: [mockRepository1],
+    credentials: { [mockRepository1.id]: { username: "uuu", password: "ppp" } },
+    git: gitConfig,
   };
 
   const mockUserData_2repo: UserData = {
     repositories: [mockRepository1, mockRepository2],
+    credentials: {},
+    git: gitConfig,
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test("Test getUserData() when user data file exists", async () => {
-    mockUserDataStoreFs(mockUserData_1repo);
-
-    const userData = await UserDataStore.getUserData();
-    expect(userData).toEqual(mockUserData_1repo);
-  });
-
-  test("Test getUserData() when user data file doesn't exist", async () => {
+  test("Test user data file doesn't exist", async () => {
     mockUserDataStoreFs(null);
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData).toEqual({ repositories: [] });
+    const userData = await UserDataStore.getGitConfig();
+    expect(userData).toEqual({
+      user: { name: "", email: "" },
+    });
   });
 
   test("Add repository to an empty repository list", async () => {
@@ -91,10 +111,10 @@ describe("Test UserDataStore", () => {
     };
     await UserDataStore.addRepository(newRepository);
 
-    const userData = await UserDataStore.getUserData();
+    const repositories = await UserDataStore.getRepositories();
 
-    expect(userData.repositories).toHaveLength(1);
-    expect(userData.repositories[0]).toEqual(newRepository);
+    expect(repositories).toHaveLength(1);
+    expect(repositories[0]).toEqual(newRepository);
   });
 
   test("Add a repository to a non-empty repository list", async () => {
@@ -107,10 +127,56 @@ describe("Test UserDataStore", () => {
     };
     await UserDataStore.addRepository(newRepository);
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(2);
-    expect(userData.repositories).toContainEqual(mockRepository1);
-    expect(userData.repositories).toContainEqual(newRepository);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
+  });
+
+  test("Add a repository with credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo);
+
+    const newRepository: Repository = {
+      id: "1706892481_myrepo2",
+      name: "myrepo2",
+      remoteUrl: "http://gitserver.com/user/myrepo2.git",
+    };
+    const newCredentials: RepositoryCredentials = {
+      username: "username",
+      password: "password",
+    };
+
+    await UserDataStore.addRepository(newRepository, newCredentials);
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
+
+    const repositoryCredentials =
+      await UserDataStore.getRepositoryCredentials("1706892481_myrepo2");
+    expect(repositoryCredentials).toEqual(newCredentials);
+  });
+
+  test("Add a repository without credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo);
+
+    const newRepository: Repository = {
+      id: "1706892481_myrepo2",
+      name: "myrepo2",
+      remoteUrl: "http://gitserver.com/user/myrepo2.git",
+    };
+
+    await UserDataStore.addRepository(newRepository);
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(2);
+    expect(repositories).toContainEqual(mockRepository1);
+    expect(repositories).toContainEqual(newRepository);
+
+    const repositoryCredentials =
+      await UserDataStore.getRepositoryCredentials("1706892481_myrepo2");
+    expect(repositoryCredentials).toBeNull();
   });
 
   test("Adding an existing repository throws an error", async () => {
@@ -132,9 +198,22 @@ describe("Test UserDataStore", () => {
 
     await UserDataStore.deleteRepository("1706889976_myrepo1");
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(1);
-    expect(userData.repositories).toContainEqual(mockRepository2);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(1);
+    expect(repositories).toContainEqual(mockRepository2);
+  });
+
+  test("Delete a repository with credentials", async () => {
+    mockUserDataStoreFs(mockUserData_1repo_credentials);
+
+    await UserDataStore.deleteRepository("1706889976_myrepo1");
+
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(0);
+
+    await expect(
+      UserDataStore.getRepositoryCredentials("1706889976_myrepo1"),
+    ).rejects.toThrow(Error);
   });
 
   test("Delete the last repository", async () => {
@@ -142,8 +221,8 @@ describe("Test UserDataStore", () => {
 
     await UserDataStore.deleteRepository("1706889976_myrepo1");
 
-    const userData = await UserDataStore.getUserData();
-    expect(userData.repositories).toHaveLength(0);
+    const repositories = await UserDataStore.getRepositories();
+    expect(repositories).toHaveLength(0);
   });
 
   test("Deleting a non-existing repository throws an error", async () => {
