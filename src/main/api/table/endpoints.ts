@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import git, { ReadCommitResult } from "isomorphic-git";
+import git, { PushResult, ReadCommitResult } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import { Table, tableToJsonString } from "gittable-editor";
@@ -452,9 +452,10 @@ export async function push({
   }
 
   let errorResponse: PushResponse | null = null;
+  let pushResult: PushResult | null = null;
 
   try {
-    const pushResult = await git.push({
+    pushResult = await git.push({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
@@ -473,13 +474,31 @@ export async function push({
         return { cancel: true };
       },
     });
-
-    if (errorResponse) {
-      return errorResponse;
-    } else if (pushResult.error != null) {
-      return { status: "error", type: "unknown", message: "Unknown error" };
-    } else return { status: "success" };
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "UserCanceledError" && errorResponse) {
+        // I canceled the operation myself, and the response is already set
+      } else {
+        errorResponse = {
+          status: "error",
+          type: "unknown",
+          message: "Unknown error",
+        };
+      }
+    } else {
+      errorResponse = {
+        status: "error",
+        type: "unknown",
+        message: "Unknown error",
+      };
+    }
+  }
+
+  if (errorResponse) {
+    return errorResponse;
+  } else if (!pushResult || pushResult.error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
+  } else {
+    return { status: "success" };
   }
 }

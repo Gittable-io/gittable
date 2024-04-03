@@ -1,6 +1,6 @@
 import { Button } from "gittable-editor";
 import "./PushSection.css";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Repository,
   RepositoryCredentials,
@@ -21,95 +21,66 @@ export function PushSection({
   onRepositoryStatusChange,
 }: PushSectionProps): JSX.Element {
   const [pushInProgress, setPushInProgress] = useState<boolean>(false);
-  const [waitingForCredentials, _setWaitingForCredentials] =
-    useState<boolean>(false);
   const [pushError, setPushError] = useState<string | null>(null);
-  const [providedCredentials, setProvidedCredentials] =
-    useState<RepositoryCredentials | null>(null);
 
   const [showPushCredentialsModal, hidePushCredentialsModal] = useModal(
     () => (
       <CredentialsInputModal
         errorMessage={pushError}
-        onConfirm={(credentials) => {
-          setProvidedCredentials(credentials);
-          setWaitingForCredentials(false);
-        }}
+        onConfirm={(credentials) => push(credentials)}
         onCancel={cancelPush}
       />
     ),
-    [pushError, setProvidedCredentials, cancelPush],
-  );
-
-  const setWaitingForCredentials = useCallback(
-    (waitForUser: boolean): void => {
-      _setWaitingForCredentials(waitForUser);
-      if (waitForUser) {
-        showPushCredentialsModal();
-      } else {
-        hidePushCredentialsModal();
-      }
-    },
-    [hidePushCredentialsModal, showPushCredentialsModal],
+    [pushError, cancelPush, push],
   );
 
   async function cancelPush(): Promise<void> {
-    setWaitingForCredentials(false);
     setPushInProgress(false);
+    hidePushCredentialsModal();
     setPushError(null);
-    setProvidedCredentials(null);
   }
 
-  /**
-   * @side-effect: if push is in progress and we're not waiting for credentials => push
-   */
-  useEffect(() => {
-    console.debug(`[PushSection/useEffect] Entering push useEffect`);
-    const requestPush = async (): Promise<
-      ReturnType<typeof window.api.push>
-    > => {
-      if (providedCredentials)
-        return window.api.push({
-          repositoryId: repository.id,
-          credentials: providedCredentials,
-        });
-      else {
-        return window.api.push({
-          repositoryId: repository.id,
-        });
-      }
-    };
-
-    const push = async (): Promise<void> => {
-      const response = await requestPush();
-      if (response.status === "success") {
-        onRepositoryStatusChange();
-        setPushInProgress(false);
-      } else {
-        if (
-          response.type === "No credentials provided" ||
-          response.type === "Error authenticating with provided credentials"
-        ) {
-          setPushError(response.message);
-          setWaitingForCredentials(true);
-        } else {
-          console.error(`[SourceControl] Error pushing to remote`);
-        }
-      }
-    };
-
-    if (pushInProgress && !waitingForCredentials) {
-      console.debug(`[PushSection/useEffect] Pushing`);
-      push();
+  const requestPush = async (
+    credentials?: RepositoryCredentials,
+  ): Promise<ReturnType<typeof window.api.push>> => {
+    if (credentials)
+      return window.api.push({
+        repositoryId: repository.id,
+        credentials,
+      });
+    else {
+      return window.api.push({
+        repositoryId: repository.id,
+      });
     }
-  }, [
-    onRepositoryStatusChange,
-    providedCredentials,
-    pushInProgress,
-    repository.id,
-    setWaitingForCredentials,
-    waitingForCredentials,
-  ]);
+  };
+
+  async function push(credentials?: RepositoryCredentials): Promise<void> {
+    console.debug(
+      `[PushSection/push] Pushing to repository ${credentials ? "with" : "without"} credentials`,
+    );
+    hidePushCredentialsModal();
+    setPushInProgress(true);
+    const response = await requestPush(credentials);
+    if (response.status === "success") {
+      console.debug(`[PushSection/push] Push was successfull`);
+
+      onRepositoryStatusChange();
+      setPushInProgress(false);
+    } else {
+      console.debug(`[PushSection/push] Push error: ${response.type}`);
+
+      if (
+        response.type === "No credentials provided" ||
+        response.type === "Error authenticating with provided credentials"
+      ) {
+        setPushError(response.message);
+        showPushCredentialsModal();
+      } else {
+        console.error(`[SourceControl] Unhandled Push error: ${response.type}`);
+      }
+    }
+  }
 
   const canPush = repositoryStatus.currentBranch.isAheadOfRemote;
 
@@ -119,9 +90,7 @@ export function PushSection({
         <Button
           text="Share"
           variant="outlined"
-          onClick={() => {
-            setPushInProgress(true);
-          }}
+          onClick={() => push()}
           disabled={!canPush}
           loading={pushInProgress}
         />
