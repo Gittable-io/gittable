@@ -36,18 +36,27 @@ const mockUserDataStoreFs = (initialUserData: UserData | null = null): void => {
   jest.spyOn(UserDataStore as any, "fetchUserData").mockImplementation(() => {
     return fs.userData;
   });
-};
 
-jest.mock("electron", () => {
-  const originalModule = jest.requireActual("electron");
-  return {
-    ...originalModule,
-    safeStorage: {
-      encryptString: jest.fn((text) => Buffer.from(text, "base64")),
-      decryptString: jest.fn((buffer) => buffer.toString("base64")),
-    },
-  };
-});
+  jest
+    .spyOn(UserDataStore as any, "userDataFileExists")
+    .mockImplementation(() => {
+      return fs.userData !== null;
+    });
+
+  jest
+    .spyOn(UserDataStore as any, "encryptCredentials")
+    .mockImplementation((...args: unknown[]) => {
+      const credentials = args[0] as RepositoryCredentials;
+      return { ...credentials };
+    });
+
+  jest
+    .spyOn(UserDataStore as any, "decryptCredentials")
+    .mockImplementation((...args: unknown[]) => {
+      const credentials = args[0] as RepositoryCredentials;
+      return { ...credentials };
+    });
+};
 
 describe("Test UserDataStore", () => {
   const gitConfig = { user: { name: "Mary", email: "mary@exemple.com" } };

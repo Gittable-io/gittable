@@ -494,11 +494,20 @@ export async function push({
     }
   }
 
+  // In case of error
   if (errorResponse) {
     return errorResponse;
   } else if (!pushResult || pushResult.error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
-  } else {
-    return { status: "success" };
   }
+
+  // In case of success
+  // If credentials were provided, then save those credentials
+  if (providedCredentials) {
+    await UserDataStore.setRepositoryCredentials(
+      repositoryId,
+      providedCredentials,
+    );
+  }
+  return { status: "success" };
 }

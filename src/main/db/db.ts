@@ -90,6 +90,32 @@ export class UserDataStore {
     }
   }
 
+  private static encryptCredentials(
+    credentials: RepositoryCredentials,
+  ): RepositoryCredentials {
+    return {
+      username: safeStorage
+        .encryptString(credentials.username)
+        .toString("base64"),
+      password: safeStorage
+        .encryptString(credentials.password)
+        .toString("base64"),
+    };
+  }
+
+  private static decryptCredentials(
+    encryptedCredentials: RepositoryCredentials,
+  ): RepositoryCredentials {
+    return {
+      username: safeStorage.decryptString(
+        Buffer.from(encryptedCredentials.username, "base64"),
+      ),
+      password: safeStorage.decryptString(
+        Buffer.from(encryptedCredentials.password, "base64"),
+      ),
+    };
+  }
+
   //#region repositories
   static async getRepositories(): Promise<Repository[]> {
     const userData = await UserDataStore.getUserData();
@@ -124,19 +150,27 @@ export class UserDataStore {
     if (repository) {
       if (repositoryId in userData.credentials) {
         const encryptedCredentials = userData.credentials[repositoryId];
-        const decryptedCredentials: RepositoryCredentials = {
-          username: safeStorage.decryptString(
-            Buffer.from(encryptedCredentials.username, "base64"),
-          ),
-          password: safeStorage.decryptString(
-            Buffer.from(encryptedCredentials.password, "base64"),
-          ),
-        };
-        return decryptedCredentials;
+        return UserDataStore.decryptCredentials(encryptedCredentials);
       } else {
         return null;
       }
     } else throw new Error(`There's no repository with id : ${repositoryId}`);
+  }
+
+  static async setRepositoryCredentials(
+    repositoryId: string,
+    credentials: RepositoryCredentials,
+  ): Promise<void> {
+    const userData = await UserDataStore.getUserData();
+
+    const newUserData = produce(userData, (draft) => {
+      if (credentials) {
+        draft.credentials[repositoryId] =
+          UserDataStore.encryptCredentials(credentials);
+      }
+    });
+
+    await UserDataStore.save(newUserData);
   }
 
   static async addRepository(
@@ -155,16 +189,8 @@ export class UserDataStore {
     const newUserData = produce(userData, (draft) => {
       draft.repositories.push(repository);
       if (credentials) {
-        const encryptedCredentials: RepositoryCredentials = {
-          username: safeStorage
-            .encryptString(credentials.username)
-            .toString("base64"),
-          password: safeStorage
-            .encryptString(credentials.password)
-            .toString("base64"),
-        };
-
-        draft.credentials[repository.id] = encryptedCredentials;
+        draft.credentials[repository.id] =
+          UserDataStore.encryptCredentials(credentials);
       }
     });
 
