@@ -11,6 +11,7 @@ import {
 } from "../../utils/utils";
 import { getConfig } from "../../config";
 import {
+  RepositoryCredentials,
   RepositoryStatus,
   TableMetadata,
   TableStatus,
@@ -403,6 +404,7 @@ export async function get_history({
 
 export type PushParameters = {
   repositoryId: string;
+  credentials?: RepositoryCredentials;
 };
 
 export type PushResponse =
@@ -412,7 +414,12 @@ export type PushResponse =
   | {
       status: "error";
       type: "No credentials provided";
-      message: "Provide credentials to share your changes";
+      message: "Credentials are required to share your changes";
+    }
+  | {
+      status: "error";
+      type: "Error authenticating with provided credentials";
+      message: "Incorrect credentials. Please try again.";
     }
   | {
       status: "error";
@@ -422,19 +429,29 @@ export type PushResponse =
 
 export async function push({
   repositoryId,
+  credentials: providedCredentials,
 }: PushParameters): Promise<PushResponse> {
-  console.debug(`[API/push] Called with repositoryId=${repositoryId}`);
+  console.debug(
+    `[API/push] Called with repositoryId=${repositoryId} ${providedCredentials ? "with" : "without"} credentials`,
+  );
 
   // Retrieve credentials, and return error if there are no credentials
   const credentials =
-    await UserDataStore.getRepositoryCredentials(repositoryId);
+    providedCredentials ??
+    (await UserDataStore.getRepositoryCredentials(repositoryId));
   if (credentials == null) {
+    console.debug(
+      `[API/push] No credentials were provided and couldn't find credentials in db`,
+    );
+
     return {
       status: "error",
       type: "No credentials provided",
-      message: "Provide credentials to share your changes",
+      message: "Credentials are required to share your changes",
     };
   }
+
+  let errorResponse: PushResponse | null = null;
 
   try {
     const pushResult = await git.push({
@@ -444,9 +461,22 @@ export async function push({
       onAuth: () => {
         return credentials;
       },
+      onAuthFailure: () => {
+        console.debug(`[API/push] onAuthFailure`);
+
+        errorResponse = {
+          status: "error",
+          type: "Error authenticating with provided credentials",
+          message: "Incorrect credentials. Please try again.",
+        };
+
+        return { cancel: true };
+      },
     });
 
-    if (pushResult.error != null) {
+    if (errorResponse) {
+      return errorResponse;
+    } else if (pushResult.error != null) {
       return { status: "error", type: "unknown", message: "Unknown error" };
     } else return { status: "success" };
   } catch (error) {
