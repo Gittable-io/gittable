@@ -70,8 +70,10 @@ export function PushSection({
     } else {
       console.debug(`[PushSection/push] Push error: ${response.type}`);
 
-      if (
-        response.type === "No credentials provided" ||
+      if (response.type === "No credentials provided") {
+        setPushError(null);
+        showPushCredentialsModal();
+      } else if (
         response.type === "Error authenticating with provided credentials"
       ) {
         setPushError(response.message);

@@ -27,19 +27,22 @@ export function CredentialsInputModal({
   return (
     <Modal>
       <div className="credentials-input-modal">
-        <h1>Enter credentials</h1>
-        <p>{errorMessage ?? "NO MESSAGE"}</p>
-        <InputAndValidation
-          placeholder="Username"
-          value={username}
-          onChange={setUsername}
-        />
-        <InputAndValidation
-          type="password"
-          placeholder="Password or Personal Access Token"
-          value={password}
-          onChange={setPassword}
-        />
+        <h1>Credentials needed</h1>
+        <p>You need to enter your credentials to share your changes</p>
+        <div className="credentials-input-fields">
+          {errorMessage && <p className="error-message">{errorMessage}</p>}
+          <InputAndValidation
+            placeholder="Username"
+            value={username}
+            onChange={setUsername}
+          />
+          <InputAndValidation
+            type="password"
+            placeholder="Password or Personal Access Token"
+            value={password}
+            onChange={setPassword}
+          />
+        </div>
         <div className="button-group">
           <Button text="Cancel" variant="outlined" onClick={onCancel} />
           <Button
