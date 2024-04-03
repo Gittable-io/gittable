@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // I Disabled warning on using any, to be able to mock private methods
 
-import { Repository } from "@sharedTypes/index";
-import { UserDataStore, type UserData, RepositoryCredentials } from "./db";
+import { Repository, RepositoryCredentials } from "@sharedTypes/index";
+import { UserDataStore, type UserData } from "./db";
 
 /**
  * @param initialUserData: the userData that is "present" on the file system

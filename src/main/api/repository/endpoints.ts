@@ -3,7 +3,7 @@ import fsync from "node:fs";
 import git, { GitProgressEvent, GitAuth } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
-import type { Repository } from "@sharedTypes/index";
+import type { Repository, RepositoryCredentials } from "@sharedTypes/index";
 
 import {
   generateRepositoryId,
@@ -14,10 +14,7 @@ import { UserDataStore } from "../../db";
 
 export type CloneRepositoryParameters = {
   remoteUrl: string;
-  credentials?: {
-    username: string;
-    password: string;
-  };
+  credentials?: RepositoryCredentials;
 };
 
 export type CloneRepositoryResponse =

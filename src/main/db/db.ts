@@ -1,13 +1,8 @@
-import { Repository } from "@sharedTypes/index";
+import { Repository, RepositoryCredentials } from "@sharedTypes/index";
 import fs from "node:fs/promises";
 import { getConfig } from "../config";
 import { produce } from "immer";
 import { safeStorage } from "electron";
-
-export type RepositoryCredentials = {
-  username: string;
-  password: string;
-};
 
 export type GitConfig = {
   user: { name: string; email: string };

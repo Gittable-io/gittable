@@ -15,6 +15,11 @@ export type RepositoryStatus = {
   tables: TableStatus[];
 };
 
+export type RepositoryCredentials = {
+  username: string;
+  password: string;
+};
+
 /**
  * Represent information (metadata) about a Table without the table data itself
  */
