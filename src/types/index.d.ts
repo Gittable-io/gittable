@@ -7,7 +7,6 @@ export type Repository = {
 };
 
 export type RepositoryStatus = {
-  lastCommitId: string;
   currentBranch: {
     name: string;
     isAheadOfRemote: boolean;

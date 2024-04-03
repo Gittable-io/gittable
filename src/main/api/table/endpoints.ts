@@ -220,14 +220,6 @@ export async function get_repository_status({
   );
 
   try {
-    // 1. Get the last commit
-    const log = await git.log({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      depth: 1, // Just get the last commit
-    });
-    const lastCommitId = log[0].oid;
-
     // 2. Get the current branch name
     const currentBranch = (await git.currentBranch({
       fs,
@@ -299,7 +291,6 @@ export async function get_repository_status({
     return {
       status: "success",
       repositoryStatus: {
-        lastCommitId,
         tables: tablesStatuses,
         currentBranch: { name: currentBranch, isAheadOfRemote },
       },
