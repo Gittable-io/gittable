@@ -243,25 +243,25 @@ export async function get_repository_status({
     //! We assume that there's always a single remote. We don't handle multiple remotes
 
     // 3.2 Get the commit SHA of the local branch and the remote branch
-    const localBranchRef = `refs/heads/${currentBranch}`;
-    const remoteBranchRef = `refs/remotes/${remote}/${currentBranch}`;
+    const localCurrentBranchRef = `refs/heads/${currentBranch}`;
+    const remoteCurrentBranchRef = `refs/remotes/${remote}/${currentBranch}`;
 
-    // const localCommit = await git.resolveRef({
-    //   fs,
-    //   dir: getRepositoryPath(repositoryId),
-    //   ref: localBranchRef,
-    // });
-    const remoteCommit = await git.resolveRef({
+    const localCurrentBranchHeadCommitOid = await git.resolveRef({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: remoteBranchRef,
+      ref: localCurrentBranchRef,
+    });
+    const remoteCurrentBranchHeadCommitOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: remoteCurrentBranchRef,
     });
 
     // 3.3 Get the commit logs for the local and remote branches
     const localLog = await git.log({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: localBranchRef,
+      ref: localCurrentBranchRef,
     });
     // ! I'll need this code below when I handle the case of the local branch being behind the remote
     // const remoteLog = await git.log({
@@ -272,7 +272,9 @@ export async function get_repository_status({
 
     // 3.4 Check if the local branch is ahead by comparing commit logs
     const isAheadOfRemote =
-      localLog.findIndex((commit) => commit.oid === remoteCommit) > 0;
+      localLog.findIndex(
+        (commit) => commit.oid === remoteCurrentBranchHeadCommitOid,
+      ) > 0;
 
     // 4. For each table, check if it's version in the Working dir is different than the Local repository
     const [FILE, HEAD, WORKDIR] = [0, 1, 2];
@@ -292,7 +294,12 @@ export async function get_repository_status({
       status: "success",
       repositoryStatus: {
         tables: tablesStatuses,
-        currentBranch: { name: currentBranch, isAheadOfRemote },
+        currentBranch: {
+          name: currentBranch,
+          localHeadCommitOid: localCurrentBranchHeadCommitOid,
+          remoteHeadCommitOid: remoteCurrentBranchHeadCommitOid,
+          isAheadOfRemote,
+        },
       },
     };
   } catch (err) {

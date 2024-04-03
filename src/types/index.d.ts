@@ -9,6 +9,8 @@ export type Repository = {
 export type RepositoryStatus = {
   currentBranch: {
     name: string;
+    localHeadCommitOid: string;
+    remoteHeadCommitOid: string;
     isAheadOfRemote: boolean;
   };
   tables: TableStatus[];

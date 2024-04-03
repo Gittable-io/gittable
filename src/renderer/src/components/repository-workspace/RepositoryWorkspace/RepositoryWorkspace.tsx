@@ -141,6 +141,7 @@ export function RepositoryWorkspace({
           />
           <EditorPanelGroup
             repositoryId={repository.id}
+            repositoryStatus={repositoryStatus}
             openedEditorPanels={openedEditorPanels}
             selectedEditorPanelId={selectedEditorPanelId ?? null}
             onSelectEditorPanel={(editorPanelId) =>

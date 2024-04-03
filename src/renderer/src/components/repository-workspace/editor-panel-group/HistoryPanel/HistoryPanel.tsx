@@ -1,9 +1,12 @@
+import { RepositoryStatus } from "@sharedTypes/index";
 import "./HistoryPanel.css";
 import { ReadCommitResult } from "isomorphic-git";
 import { useEffect, useState } from "react";
+import { MaterialSymbol } from "gittable-editor";
 
 export type HistoryPanelProps = {
   repositoryId: string;
+  repositoryStatus: RepositoryStatus;
 };
 
 function formatTimestamp(timestamp: number, timezoneOffset: number): string {
@@ -31,17 +34,37 @@ function formatTimestamp(timestamp: number, timezoneOffset: number): string {
   return localDate.toLocaleDateString("en-GB", options).replace(",", "");
 }
 
-export function HistoryPanel({ repositoryId }: HistoryPanelProps): JSX.Element {
+function getUnpushedCommitOids(
+  commitOids: string[],
+  localHeadCommitOid: string,
+  remoteHeadCommitOid: string,
+): string[] {
+  const localIdx = commitOids.findIndex((c) => c === localHeadCommitOid);
+  const remoteIdx = commitOids.findIndex((c) => c === remoteHeadCommitOid);
+
+  return commitOids.slice(localIdx, remoteIdx);
+}
+
+export function HistoryPanel({
+  repositoryId,
+  repositoryStatus,
+}: HistoryPanelProps): JSX.Element {
   const [history, setHistory] = useState<ReadCommitResult[]>([]);
 
   useEffect(() => {
-    const fetchHistory = async (): Promise<void> => {
-      const response = await window.api.get_history({ repositoryId });
-      setHistory(response.history);
+    const fetch = async (): Promise<void> => {
+      const historyResponse = await window.api.get_history({ repositoryId });
+      setHistory(historyResponse.history);
     };
 
-    fetchHistory();
+    fetch();
   }, [repositoryId]);
+
+  const unPushedCommitOids = getUnpushedCommitOids(
+    history.map((c) => c.oid),
+    repositoryStatus.currentBranch.localHeadCommitOid,
+    repositoryStatus.currentBranch.remoteHeadCommitOid,
+  );
 
   return (
     <div className="history-panel">
@@ -51,24 +74,31 @@ export function HistoryPanel({ repositoryId }: HistoryPanelProps): JSX.Element {
             <th scope="col">Description</th>
             <th scope="col">Date</th>
             <th scope="col">Author</th>
+            <th scope="col">Shared</th>
           </tr>
         </thead>
         <tbody>
-          {history.map((c) => (
-            <tr key={c.oid}>
-              <td>{c.commit.message}</td>
-              {/*
+          {repositoryStatus &&
+            history.map((c) => (
+              <tr key={c.oid}>
+                <td>{c.commit.message}</td>
+                {/*
               // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
               */}
-              <td>
-                {formatTimestamp(
-                  c.commit.author.timestamp,
-                  c.commit.author.timezoneOffset,
-                )}
-              </td>
-              <td>{`${c.commit.author.name} (${c.commit.author.email})`}</td>
-            </tr>
-          ))}
+                <td>
+                  {formatTimestamp(
+                    c.commit.author.timestamp,
+                    c.commit.author.timezoneOffset,
+                  )}
+                </td>
+                <td>{`${c.commit.author.name} (${c.commit.author.email})`}</td>
+                <td>
+                  {unPushedCommitOids.includes(c.oid) && (
+                    <MaterialSymbol symbol="cloud_upload" />
+                  )}
+                </td>
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
