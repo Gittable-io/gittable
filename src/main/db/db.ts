@@ -112,6 +112,11 @@ export class UserDataStore {
     else throw new Error(`There's no repository with id : ${repositoryId}`);
   }
 
+  /**
+   *
+   * @param repositoryId
+   * @returns the decrypted credentials of the repository, null if there are no credentials
+   */
   static async getRepositoryCredentials(
     repositoryId: string,
   ): Promise<RepositoryCredentials | null> {

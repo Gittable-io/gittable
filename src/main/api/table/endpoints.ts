@@ -15,6 +15,7 @@ import {
   TableMetadata,
   TableStatus,
 } from "@sharedTypes/index";
+import { UserDataStore } from "../../db";
 
 /*
  TODO: Review the errors that are returned by those endpoints. Analyze different types of errors. Compare with repositories endpoint
@@ -410,6 +411,11 @@ export type PushResponse =
     }
   | {
       status: "error";
+      type: "No credentials provided";
+      message: "Provide credentials to share your changes";
+    }
+  | {
+      status: "error";
       type: "unknown";
       message: "Unknown error";
     };
@@ -419,11 +425,25 @@ export async function push({
 }: PushParameters): Promise<PushResponse> {
   console.debug(`[API/push] Called with repositoryId=${repositoryId}`);
 
+  // Retrieve credentials, and return error if there are no credentials
+  const credentials =
+    await UserDataStore.getRepositoryCredentials(repositoryId);
+  if (credentials == null) {
+    return {
+      status: "error",
+      type: "No credentials provided",
+      message: "Provide credentials to share your changes",
+    };
+  }
+
   try {
     const pushResult = await git.push({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
+      onAuth: () => {
+        return credentials;
+      },
     });
 
     if (pushResult.error != null) {
