@@ -6,7 +6,7 @@ import {
   TableMetadata,
 } from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
-import { SourceControl } from "../SourceControl";
+import { SourceControl } from "../source-control/SourceControl";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
 
 export type RepositoryWorkspaceSidebarProps = {

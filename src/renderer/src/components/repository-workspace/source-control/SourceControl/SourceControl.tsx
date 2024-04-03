@@ -9,9 +9,10 @@ import {
   MaterialSymbolButton,
 } from "gittable-editor";
 import { useModal } from "react-modal-hook";
-import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
-import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
+import { ConfirmationModal } from "../../../ui-components/ConfirmationModal";
+import { DiffDescription } from "../../editor-panel-group/EditorPanelGroup";
 import { useState } from "react";
+import { PushSection } from "../PushSection";
 
 export type SourceControlProps = {
   repository: Repository;
@@ -40,7 +41,6 @@ export function SourceControl({
 
   const [commitInProgress, setCommitInProgress] = useState<boolean>(false);
   const [commitMessage, setCommitMessage] = useState<string>("");
-  const [pushInProgress, setPushInProgress] = useState<boolean>(false);
 
   const discardChanges = async (): Promise<void> => {
     const response = await window.api.discard_changes({
@@ -69,26 +69,12 @@ export function SourceControl({
     setCommitInProgress(false);
   };
 
-  const push = async (): Promise<void> => {
-    setPushInProgress(true);
-    const response = await window.api.push({
-      repositoryId: repository.id,
-    });
-    if (response.status === "success") {
-      onRepositoryStatusChange();
-    } else {
-      console.warn(`[SourceControl] Error pushing to remote`);
-    }
-    setPushInProgress(false);
-  };
-
   const modifiedTables = repositoryStatus.tables.filter(
     (tableStatus) => tableStatus.modified === true,
   );
 
   const workingDirChanged: boolean = modifiedTables.length > 0;
   const canCommit = workingDirChanged && commitMessage !== "";
-  const canPush = repositoryStatus.currentBranch.isAheadOfRemote;
 
   return (
     <SidebarSection id="source-control" title="Source control">
@@ -147,21 +133,11 @@ export function SourceControl({
           loading={commitInProgress}
         />
       </div>
-      <div className="push-section">
-        {canPush ? (
-          <Button
-            text="Share"
-            variant="outlined"
-            onClick={push}
-            disabled={!canPush}
-            loading={pushInProgress}
-          />
-        ) : (
-          <p className="no-action">
-            You have no changes to share with your team
-          </p>
-        )}
-      </div>
+      <PushSection
+        repository={repository}
+        repositoryStatus={repositoryStatus}
+        onRepositoryStatusChange={onRepositoryStatusChange}
+      />
     </SidebarSection>
   );
 }
