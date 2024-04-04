@@ -9,9 +9,10 @@ import {
   MaterialSymbolButton,
 } from "gittable-editor";
 import { useModal } from "react-modal-hook";
-import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
-import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
+import { ConfirmationModal } from "../../../ui-components/ConfirmationModal";
+import { DiffDescription } from "../../editor-panel-group/EditorPanelGroup";
 import { useState } from "react";
+import { PushSection } from "../PushSection";
 
 export type SourceControlProps = {
   repository: Repository;
@@ -111,9 +112,9 @@ export function SourceControl({
               ></ListItem>
             ))
           ) : (
-            <div className="no-changes-text">
+            <p className="no-action">
               You didn&apos;t make any changes to your tables
-            </div>
+            </p>
           )}
         </List>
       </div>
@@ -132,6 +133,11 @@ export function SourceControl({
           loading={commitInProgress}
         />
       </div>
+      <PushSection
+        repository={repository}
+        repositoryStatus={repositoryStatus}
+        onRepositoryStatusChange={onRepositoryStatusChange}
+      />
     </SidebarSection>
   );
 }

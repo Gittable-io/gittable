@@ -2,7 +2,7 @@ import "./EditorPanelGroup.css";
 import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TabPanel } from "react-headless-tabs";
 import { TableEditorPanel } from "../TableEditorPanel";
-import { TableMetadata } from "@sharedTypes/index";
+import { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 import { HistoryPanel } from "../HistoryPanel";
 
@@ -65,6 +65,7 @@ export const createEditorPanel = (
 
 export type EditorPanelGroupProps = {
   repositoryId: string;
+  repositoryStatus: RepositoryStatus;
   openedEditorPanels: EditorPanel[];
   selectedEditorPanelId: string | null;
   onSelectEditorPanel: (editorPanelId: string) => void;
@@ -73,6 +74,7 @@ export type EditorPanelGroupProps = {
 
 export function EditorPanelGroup({
   repositoryId,
+  repositoryStatus,
   openedEditorPanels,
   selectedEditorPanelId,
   onSelectEditorPanel: onSelectEditorPanel,
@@ -127,7 +129,10 @@ export function EditorPanelGroup({
                     hidden={panel.id !== selectedEditorPanelId}
                   />
                 ) : (
-                  <HistoryPanel repositoryId={repositoryId} />
+                  <HistoryPanel
+                    repositoryId={repositoryId}
+                    repositoryStatus={repositoryStatus}
+                  />
                 )}
               </TabPanel>
             ))}

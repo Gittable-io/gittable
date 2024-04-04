@@ -32,6 +32,9 @@ import {
   get_history,
   type GetHistoryParameters,
   type GetHistoryResponse,
+  push,
+  type PushParameters,
+  type PushResponse,
 } from "./table";
 import {
   get_git_config,
@@ -80,6 +83,8 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("commit", params),
   get_history: (params: GetHistoryParameters): Promise<GetHistoryResponse> =>
     ipcRenderer.invoke("get_history", params),
+  push: (params: PushParameters): Promise<PushResponse> =>
+    ipcRenderer.invoke("push", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -114,6 +119,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   );
   ipcMain.handle("commit", (_event, params) => commit(params));
   ipcMain.handle("get_history", (_event, params) => get_history(params));
+  ipcMain.handle("push", (_event, params) => push(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>

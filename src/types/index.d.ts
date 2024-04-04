@@ -7,8 +7,18 @@ export type Repository = {
 };
 
 export type RepositoryStatus = {
-  lastCommitId: string;
+  currentBranch: {
+    name: string;
+    localHeadCommitOid: string;
+    remoteHeadCommitOid: string;
+    isAheadOfRemote: boolean;
+  };
   tables: TableStatus[];
+};
+
+export type RepositoryCredentials = {
+  username: string;
+  password: string;
 };
 
 /**
