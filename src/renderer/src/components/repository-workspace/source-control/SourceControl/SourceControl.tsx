@@ -13,6 +13,7 @@ import { ConfirmationModal } from "../../../ui-components/ConfirmationModal";
 import { DiffDescription } from "../../editor-panel-group/EditorPanelGroup";
 import { useState } from "react";
 import { PushSection } from "../PushSection";
+import { PullButton } from "../PullButton";
 
 export type SourceControlProps = {
   repository: Repository;
@@ -85,6 +86,7 @@ export function SourceControl({
           onClick={onHistorySelect}
           tooltip
         />
+        <PullButton repositoryId={repository.id} />
         <MaterialSymbolButton
           symbol="undo"
           label="Discard all changes"

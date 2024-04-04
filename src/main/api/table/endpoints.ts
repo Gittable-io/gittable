@@ -509,3 +509,61 @@ export async function push({
   }
   return { status: "success" };
 }
+
+export type PullParameters = {
+  repositoryId: string;
+};
+
+export type PullResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function pull({
+  repositoryId,
+}: PullParameters): Promise<PullResponse> {
+  console.debug(`[API/fetch] Called with repositoryId=${repositoryId}`);
+
+  try {
+    await git.fetch({
+      fs,
+      http,
+      dir: getRepositoryPath(repositoryId),
+    });
+
+    console.debug(`[API/fetch] Fetch success`);
+
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: "main",
+      theirs: "origin/main",
+    });
+
+    console.debug(`[API/fetch] Merge success`);
+
+    // see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "main",
+    });
+    console.debug(`[API/fetch] Checkout success`);
+
+    return { status: "success" };
+  } catch (error) {
+    console.debug(
+      `[API/fetch] Error fetching or merging ${error instanceof Error ? `: ${error.name}` : ""}`,
+    );
+    return {
+      status: "error",
+      type: "unknown",
+      message: "Unknown error",
+    };
+  }
+}
