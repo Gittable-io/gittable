@@ -510,11 +510,11 @@ export async function push({
   return { status: "success" };
 }
 
-export type FetchParameters = {
+export type PullParameters = {
   repositoryId: string;
 };
 
-export type FetchResponse =
+export type PullResponse =
   | {
       status: "success";
     }
@@ -524,9 +524,9 @@ export type FetchResponse =
       message: "Unknown error";
     };
 
-export async function fetch({
+export async function pull({
   repositoryId,
-}: FetchParameters): Promise<FetchResponse> {
+}: PullParameters): Promise<PullResponse> {
   console.debug(`[API/fetch] Called with repositoryId=${repositoryId}`);
 
   try {
