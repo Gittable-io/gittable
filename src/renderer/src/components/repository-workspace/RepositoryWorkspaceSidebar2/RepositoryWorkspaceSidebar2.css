@@ -1,0 +1,8 @@
+.repository-workspace-sidebar2 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+
+  background-color: var(--color-secondary);
+}

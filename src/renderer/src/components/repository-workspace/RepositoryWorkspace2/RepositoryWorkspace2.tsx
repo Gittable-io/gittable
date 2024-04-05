@@ -1,8 +1,9 @@
 import { AppDispatch, AppRootState } from "@renderer/store/store";
-import "./RepositoryWorkspace2";
+import "./RepositoryWorkspace2.css";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { repoActions } from "@renderer/store/repoSlice";
+import { RepositoryWorkspaceSidebar2 } from "../RepositoryWorkspaceSidebar2";
 
 export function RepositoryWorkspace2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -10,8 +11,6 @@ export function RepositoryWorkspace2(): JSX.Element {
   const repository = useSelector(
     (state: AppRootState) => state.repo.repository!,
   )!;
-
-  const versions = useSelector((state: AppRootState) => state.repo.versions)!;
 
   useEffect(() => {
     const initState = async (): Promise<void> => {
@@ -34,12 +33,7 @@ export function RepositoryWorkspace2(): JSX.Element {
 
   return (
     <div className="repository-workspace2">
-      <div>{`RepositoryWorkspace2 : ${repository.name}`}</div>
-      <div>
-        {versions.map((version) => (
-          <div key={version}>{version}</div>
-        ))}
-      </div>
+      <RepositoryWorkspaceSidebar2 />
     </div>
   );
 }
