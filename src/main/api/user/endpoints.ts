@@ -26,6 +26,9 @@ export type SaveGitConfigParameters = {
 export type SaveGitConfigResponse =
   | {
       status: "success";
+      gitConfig: {
+        user: { name: string; email: string };
+      };
     }
   | {
       status: "error";
@@ -96,7 +99,7 @@ export async function save_git_config({
         });
       }
     }
-    return { status: "success" };
+    return { status: "success", gitConfig };
   } catch (error) {
     return {
       status: "error",

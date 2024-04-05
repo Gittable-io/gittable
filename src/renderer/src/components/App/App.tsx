@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { WelcomePage } from "../welcome-page/WelcomePage";
 import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
@@ -23,25 +23,6 @@ function App(): JSX.Element {
     (state: RootState) => state.app.openedRepository,
   );
 
-  const [gitUserName, setGitUserName] = useState<string>("");
-  const [gitUserEmail, setGitUserEmail] = useState<string>("");
-
-  const gitReady: boolean =
-    gitUserName != null &&
-    gitUserName.trim() !== "" &&
-    gitUserEmail != null &&
-    gitUserEmail.trim() !== "";
-
-  const fetchGitConfig = async (): Promise<void> => {
-    const response = await window.api.get_git_config();
-    setGitUserName(response.gitConfig.user.name);
-    setGitUserEmail(response.gitConfig.user.email);
-  };
-
-  const onGitConfigChange = async (): Promise<void> => {
-    fetchGitConfig();
-  };
-
   useEffect(() => {
     const initState = async (): Promise<void> => {
       // Fetch repositories
@@ -51,26 +32,19 @@ function App(): JSX.Element {
       } else {
         console.error("[App/initState] Couldn't retrieve repository list");
       }
+
+      // Fetch Git Config
+      const gitConfigResponse = await window.api.get_git_config();
+      dispatch(appActions.setGitConfig(gitConfigResponse.gitConfig));
     };
 
     initState();
   }, [dispatch]);
 
-  useEffect(() => {
-    fetchGitConfig();
-  }, []);
-
   return (
     <div id="app">
       <div className="main-container">
-        {openedRepository ? (
-          <RepositoryWorkspace />
-        ) : (
-          <WelcomePage
-            gitReady={gitReady}
-            onGitConfigChange={onGitConfigChange}
-          />
-        )}
+        {openedRepository ? <RepositoryWorkspace /> : <WelcomePage />}
       </div>
       <Footer />
     </div>

@@ -5,18 +5,9 @@ import "./WelcomeSidebar.css";
 import { useModal } from "react-modal-hook";
 import { UserSettingsModal } from "@renderer/components/UserSettingsModal";
 
-type WelcomeSidebarProps = {
-  onGitConfigChange: () => Promise<void>;
-};
-
-export function WelcomeSidebar({
-  onGitConfigChange,
-}: WelcomeSidebarProps): JSX.Element {
+export function WelcomeSidebar(): JSX.Element {
   const [showUserSettingsModal, hideUserSettingsModal] = useModal(() => (
-    <UserSettingsModal
-      onClose={hideUserSettingsModal}
-      onGitConfigChange={onGitConfigChange}
-    />
+    <UserSettingsModal onClose={hideUserSettingsModal} />
   ));
 
   return (

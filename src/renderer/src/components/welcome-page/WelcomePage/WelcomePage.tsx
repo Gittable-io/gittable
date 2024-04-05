@@ -2,24 +2,20 @@ import { NewRepositorySection } from "../NewRepositorySection";
 import { WelcomeSidebar } from "../WelcomeSidebar";
 import "./WelcomePage.css";
 import { InformationPanel } from "../InformationPanel";
+import { useSelector } from "react-redux";
+import { appSelectors } from "@renderer/store/appSlice";
+import { RootState } from "@renderer/store/store";
 
-type WelcomePageProps = {
-  gitReady: boolean;
-  onGitConfigChange: () => Promise<void>;
-};
+export function WelcomePage(): JSX.Element {
+  const gitReady: boolean = useSelector((state: RootState) =>
+    appSelectors.isGitConfigured(state),
+  );
 
-export function WelcomePage({
-  gitReady,
-  onGitConfigChange,
-}: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <WelcomeSidebar onGitConfigChange={onGitConfigChange} />
+      <WelcomeSidebar />
       {gitReady && <NewRepositorySection />}
-      <InformationPanel
-        gitReady={gitReady}
-        onGitConfigChange={onGitConfigChange}
-      />
+      <InformationPanel />
     </div>
   );
 }

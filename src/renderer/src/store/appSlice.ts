@@ -2,15 +2,29 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { Repository } from "@sharedTypes/index";
 
+export type GitConfig = {
+  user: {
+    name: string;
+    email: string;
+  };
+};
+
 export type AppState = {
   repositories: Repository[];
   openedRepository: Repository | null;
+  gitConfig: GitConfig;
 };
 
 function initState(): AppState {
   return {
     repositories: [],
     openedRepository: null,
+    gitConfig: {
+      user: {
+        name: "",
+        email: "",
+      },
+    },
   };
 }
 
@@ -36,8 +50,17 @@ export const appSlice = createSlice({
     closeRepository: (state) => {
       state.openedRepository = null;
     },
+    setGitConfig: (state, action: PayloadAction<GitConfig>) => {
+      state.gitConfig = action.payload;
+    },
+  },
+  selectors: {
+    isGitConfigured: (state): boolean =>
+      state.gitConfig.user.name.trim().length > 0 &&
+      state.gitConfig.user.email.trim().length > 0,
   },
 });
 
 export const appActions = appSlice.actions;
 export const appReducer = appSlice.reducer;
+export const appSelectors = appSlice.selectors;
