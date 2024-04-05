@@ -2,18 +2,21 @@ import type { Repository } from "@sharedTypes/index";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "../../ui-components/ConfirmationModal";
 import { ListItem } from "gittable-editor";
+import { appActions } from "@renderer/store/appSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@renderer/store/store";
 
 export type RepositoryListItemProps = {
   repository: Repository;
-  onRepositorySelect: () => void;
   onRepositoryDelete: () => void;
 };
 
 export function RepositoryListItem({
   repository,
-  onRepositorySelect,
   onRepositoryDelete,
 }: RepositoryListItemProps): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const [showDeleteRepositoryModal, hideDeleteRepositoryModal] = useModal(
     () => (
       <ConfirmationModal
@@ -46,7 +49,7 @@ export function RepositoryListItem({
     <ListItem
       text={repository.name}
       materialSymbol="database"
-      onClick={onRepositorySelect}
+      onClick={() => dispatch(appActions.openRepository(repository))}
       secondaryAction={{
         materialSymbol: "delete",
         label: "Delete repository",

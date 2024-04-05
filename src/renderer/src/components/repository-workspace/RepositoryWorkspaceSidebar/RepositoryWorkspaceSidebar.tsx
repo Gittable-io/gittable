@@ -1,18 +1,15 @@
 import { TitleBar } from "../../ui-components/TitleBar";
 import "./RepositoryWorkspaceSidebar.css";
-import {
-  Repository,
-  RepositoryStatus,
-  TableMetadata,
-} from "@sharedTypes/index";
+import { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
 import { RepositoryContent } from "../RepositoryContent";
 import { SourceControl } from "../source-control/SourceControl";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@renderer/store/store";
+import { appActions } from "@renderer/store/appSlice";
 
 export type RepositoryWorkspaceSidebarProps = {
-  repository: Repository;
   repositoryStatus: RepositoryStatus;
-  onRepositoryClose: () => void;
   onRepositoryStatusChange: () => void;
   onTableSelect: (tableMetadata: TableMetadata) => void;
   onDiffSelect: (diff: DiffDescription) => void;
@@ -20,35 +17,38 @@ export type RepositoryWorkspaceSidebarProps = {
 };
 
 export function RepositoryWorkspaceSidebar({
-  repository,
   repositoryStatus,
   onTableSelect,
   onDiffSelect,
   onRepositoryStatusChange,
-  onRepositoryClose,
   onHistorySelect,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
+  const openedRepository = useSelector(
+    (state: RootState) => state.app.openedRepository,
+  )!;
+  const dispatch = useDispatch<AppDispatch>();
+
   return (
     <div
       className="repository-workspace-sidebar"
       aria-label="Repository workspace sidebar"
     >
       <TitleBar
-        title={repository.name}
+        title={openedRepository.name}
         aria-label="Title"
         action={{
           materialSymbol: "close",
-          onClick: onRepositoryClose,
+          onClick: () => dispatch(appActions.closeRepository()),
           label: "close repository",
         }}
       />
       <RepositoryContent
-        repositoryId={repository.id}
+        repositoryId={openedRepository.id}
         repositoryStatus={repositoryStatus}
         onTableSelect={onTableSelect}
       />
       <SourceControl
-        repository={repository}
+        repository={openedRepository}
         repositoryStatus={repositoryStatus}
         onRepositoryStatusChange={onRepositoryStatusChange}
         onDiffSelect={onDiffSelect}

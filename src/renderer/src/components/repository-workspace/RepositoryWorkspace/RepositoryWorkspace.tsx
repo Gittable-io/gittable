@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type {
-  Repository,
-  RepositoryStatus,
-  TableMetadata,
-} from "@sharedTypes/index";
+import type { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
 import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { useTabs } from "react-headless-tabs";
 
@@ -15,16 +11,14 @@ import {
   EditorPanelGroup,
   createEditorPanel,
 } from "../editor-panel-group/EditorPanelGroup";
+import { useSelector } from "react-redux";
+import { RootState } from "@renderer/store/store";
 
-type RepositoryWorkspaceProps = {
-  repository: Repository;
-  onRepositoryClose: () => void;
-};
+export function RepositoryWorkspace(): JSX.Element {
+  const openedRepository = useSelector(
+    (state: RootState) => state.app.openedRepository,
+  )!;
 
-export function RepositoryWorkspace({
-  repository,
-  onRepositoryClose,
-}: RepositoryWorkspaceProps): JSX.Element {
   //#region State & Derived state
   const [repositoryStatus, setRepositoryStatus] =
     useState<RepositoryStatus | null>(null);
@@ -49,7 +43,7 @@ export function RepositoryWorkspace({
   const fetchRepositoryStatus =
     useCallback(async (): Promise<RepositoryStatus> => {
       const response = await window.api.get_repository_status({
-        repositoryId: repository.id,
+        repositoryId: openedRepository.id,
       });
       if (response.status === "success") {
         return response.repositoryStatus;
@@ -58,7 +52,7 @@ export function RepositoryWorkspace({
           "[RepositoryWorkspace] Couldn't retrieve last commit id",
         );
       }
-    }, [repository]);
+    }, [openedRepository]);
 
   const fetchAndUpdateRepositoryStatus =
     useCallback(async (): Promise<void> => {
@@ -127,9 +121,7 @@ export function RepositoryWorkspace({
       {repositoryStatus && (
         <>
           <RepositoryWorkspaceSidebar
-            repository={repository}
             repositoryStatus={repositoryStatus}
-            onRepositoryClose={onRepositoryClose}
             onRepositoryStatusChange={onRepositoryStatusChange}
             onTableSelect={(tableMetadata: TableMetadata) =>
               openEditorPanel({ type: "table", table: tableMetadata })
@@ -140,7 +132,7 @@ export function RepositoryWorkspace({
             onHistorySelect={() => openEditorPanel({ type: "history" })}
           />
           <EditorPanelGroup
-            repositoryId={repository.id}
+            repositoryId={openedRepository.id}
             repositoryStatus={repositoryStatus}
             openedEditorPanels={openedEditorPanels}
             selectedEditorPanelId={selectedEditorPanelId ?? null}

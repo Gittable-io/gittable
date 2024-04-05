@@ -5,13 +5,7 @@ import { List } from "gittable-editor";
 import "./RepositoryList.css";
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 
-type RepositoryListProps = {
-  onRepositorySelect: (repository: Repository) => void;
-};
-
-export function RepositoryList({
-  onRepositorySelect,
-}: RepositoryListProps): JSX.Element {
+export function RepositoryList(): JSX.Element {
   const [repositories, setRepositories] = useState<Repository[]>([]);
 
   const fetchRepositories = async (): Promise<void> => {
@@ -37,7 +31,6 @@ export function RepositoryList({
           <RepositoryListItem
             key={repo.id}
             repository={repo}
-            onRepositorySelect={() => onRepositorySelect(repo)}
             onRepositoryDelete={fetchRepositories}
           />
         ))}

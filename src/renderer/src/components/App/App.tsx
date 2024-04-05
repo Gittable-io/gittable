@@ -4,9 +4,10 @@ import { WelcomePage } from "../welcome-page/WelcomePage";
 import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
-import { Repository } from "@sharedTypes/index";
 import { ModalProvider } from "react-modal-hook";
 import ReactModal from "react-modal";
+import { Provider, useSelector } from "react-redux";
+import { RootState, store } from "@renderer/store/store";
 
 // Add this as required by the react-modal library to prevent an error in the console (although without it the app functions normally)
 ReactModal.setAppElement("#root");
@@ -15,8 +16,8 @@ ReactModal.setAppElement("#root");
 I did not export App directly. AppWithModal below
 */
 function App(): JSX.Element {
-  const [currentRepository, setCurrentRepository] = useState<Repository | null>(
-    null,
+  const openedRepository = useSelector(
+    (state: RootState) => state.app.openedRepository,
   );
 
   const [gitUserName, setGitUserName] = useState<string>("");
@@ -45,16 +46,10 @@ function App(): JSX.Element {
   return (
     <div id="app">
       <div className="main-container">
-        {currentRepository ? (
-          <RepositoryWorkspace
-            repository={currentRepository}
-            onRepositoryClose={() => setCurrentRepository(null)}
-          />
+        {openedRepository ? (
+          <RepositoryWorkspace />
         ) : (
           <WelcomePage
-            onRepositorySelect={(repository) =>
-              setCurrentRepository(repository)
-            }
             gitReady={gitReady}
             onGitConfigChange={onGitConfigChange}
           />
@@ -68,12 +63,14 @@ function App(): JSX.Element {
 /*
 Before exporting App, I wrapped it in a <ModalProvider> so that it handles modal
 */
-function AppWithModal(): JSX.Element {
+function AppWithReduxAndModal(): JSX.Element {
   return (
-    <ModalProvider>
-      <App />
-    </ModalProvider>
+    <Provider store={store}>
+      <ModalProvider>
+        <App />
+      </ModalProvider>
+    </Provider>
   );
 }
 
-export { AppWithModal as App };
+export { AppWithReduxAndModal as App };

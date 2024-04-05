@@ -1,4 +1,3 @@
-import { Repository } from "@sharedTypes/index";
 import { RepositoryList } from "../RepositoryList";
 import { TitleBar } from "../../ui-components/TitleBar";
 
@@ -7,12 +6,10 @@ import { useModal } from "react-modal-hook";
 import { UserSettingsModal } from "@renderer/components/UserSettingsModal";
 
 type WelcomeSidebarProps = {
-  onRepositorySelect: (repository: Repository) => void;
   onGitConfigChange: () => Promise<void>;
 };
 
 export function WelcomeSidebar({
-  onRepositorySelect,
   onGitConfigChange,
 }: WelcomeSidebarProps): JSX.Element {
   const [showUserSettingsModal, hideUserSettingsModal] = useModal(() => (
@@ -32,7 +29,7 @@ export function WelcomeSidebar({
           label: "Open User Settings",
         }}
       />
-      <RepositoryList onRepositorySelect={onRepositorySelect} />
+      <RepositoryList />
     </div>
   );
 }
