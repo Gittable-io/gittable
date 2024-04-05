@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
-import { GitConfig, UserDataStore } from "../../db";
-import { list_repositories } from "../repository";
-import { getRepositoryPath } from "../../utils/utils";
+import { GitConfig, UserDataStore } from "../db";
+import { list_repositories } from "./repository";
+import { getRepositoryPath } from "../utils/utils";
 import * as EmailValidator from "email-validator";
 
 export type GetGitConfigReponse = {

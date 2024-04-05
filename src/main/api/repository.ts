@@ -9,8 +9,8 @@ import {
   generateRepositoryId,
   getRepositoryNameFromRemoteUrl,
   getRepositoryPath,
-} from "../../utils/utils";
-import { UserDataStore } from "../../db";
+} from "../utils/utils";
+import { UserDataStore } from "../db";
 
 export type CloneRepositoryParameters = {
   remoteUrl: string;
