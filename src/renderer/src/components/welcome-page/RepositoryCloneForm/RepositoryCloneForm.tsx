@@ -1,18 +1,13 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
-import { Repository } from "@sharedTypes/index";
 import { Spinner, InputAndValidation, Button } from "gittable-editor";
+import { appActions } from "@renderer/store/appSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@renderer/store/store";
 
-type RepositoryCloneFormProps = {
-  onRepositoryClone: (
-    repository: Repository,
-    alreadyExisting?: boolean,
-  ) => void;
-};
+export function RepositoryCloneForm(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
 
-export function RepositoryCloneForm({
-  onRepositoryClone,
-}: RepositoryCloneFormProps): JSX.Element {
   const [url, setUrl] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -36,10 +31,12 @@ export function RepositoryCloneForm({
     if (response.status === "error") {
       setError(response.message);
     } else if (response.status === "success") {
-      onRepositoryClone(
-        response.repository,
-        response.type === "already cloned",
-      );
+      // If the repository wasn't already cloned
+      if (response.type === "cloned") {
+        dispatch(appActions.addRepository(response.repository));
+      }
+
+      dispatch(appActions.openRepository(response.repository));
     }
   };
 

@@ -1,20 +1,26 @@
 import { Button, InputAndValidation } from "gittable-editor";
 import { Modal } from "../ui-components/Modal";
 import "./UserSettingsModal.css";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as EmailValidator from "email-validator";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@renderer/store/store";
+import { appActions } from "@renderer/store/appSlice";
 
 export type UserSettingsModalProps = {
   onClose: () => void;
-  onGitConfigChange: () => Promise<void>;
 };
 
 export function UserSettingsModal({
   onClose,
-  onGitConfigChange,
 }: UserSettingsModalProps): JSX.Element {
-  const [gitUserName, setGitUserName] = useState("");
-  const [gitUserEmail, setGitUserEmail] = useState("");
+  const dispatch = useDispatch<AppDispatch>();
+  const userGitConfig = useSelector(
+    (state: RootState) => state.app.gitConfig.user,
+  );
+
+  const [gitUserName, setGitUserName] = useState(userGitConfig.name);
+  const [gitUserEmail, setGitUserEmail] = useState(userGitConfig.email);
 
   const gitUserNameError: string | null =
     gitUserName.trim() === "" ? "Name should not be empty" : null;
@@ -28,23 +34,17 @@ export function UserSettingsModal({
     gitUserNameError == null && gitUserEmailError == null;
 
   const saveUserSettings = async (): Promise<void> => {
-    await window.api.save_git_config({
+    const response = await window.api.save_git_config({
       gitConfig: { user: { name: gitUserName, email: gitUserEmail } },
     });
 
-    onGitConfigChange();
-    onClose();
+    if (response.status === "success") {
+      dispatch(appActions.setGitConfig(response.gitConfig));
+      onClose();
+    } else {
+      console.error("[UserSettingsModal] Error saving git config");
+    }
   };
-
-  const fetchGitConfig = async (): Promise<void> => {
-    const response = await window.api.get_git_config();
-    setGitUserName(response.gitConfig.user.name);
-    setGitUserEmail(response.gitConfig.user.email);
-  };
-
-  useEffect(() => {
-    fetchGitConfig();
-  }, []);
 
   return (
     <Modal>
