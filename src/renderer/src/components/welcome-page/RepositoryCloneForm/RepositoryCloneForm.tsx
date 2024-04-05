@@ -31,6 +31,11 @@ export function RepositoryCloneForm(): JSX.Element {
     if (response.status === "error") {
       setError(response.message);
     } else if (response.status === "success") {
+      // If the repository wasn't already cloned
+      if (response.type === "cloned") {
+        dispatch(appActions.addRepository(response.repository));
+      }
+
       dispatch(appActions.openRepository(response.repository));
     }
   };

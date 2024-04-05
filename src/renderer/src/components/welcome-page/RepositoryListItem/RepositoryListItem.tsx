@@ -8,12 +8,10 @@ import { AppDispatch } from "@renderer/store/store";
 
 export type RepositoryListItemProps = {
   repository: Repository;
-  onRepositoryDelete: () => void;
 };
 
 export function RepositoryListItem({
   repository,
-  onRepositoryDelete,
 }: RepositoryListItemProps): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -23,7 +21,7 @@ export function RepositoryListItem({
         title="Deleting repository"
         text={`Are you sure you want to delete repository ${repository.name} ?`}
         confirmButtonLabel="Delete repository"
-        onConfirm={handleDeleteRepositoryConfirm}
+        onConfirm={deleteRepository}
         onCancel={hideDeleteRepositoryModal}
       />
     ),
@@ -35,14 +33,10 @@ export function RepositoryListItem({
     });
     if (response.status === "success") {
       hideDeleteRepositoryModal();
+      dispatch(appActions.deleteRepository(repository.id));
     } else {
-      console.warn(`[RepositoryListItem] Error deleting repository`);
+      console.error(`[RepositoryListItem] Error deleting repository`);
     }
-  };
-
-  const handleDeleteRepositoryConfirm = async (): Promise<void> => {
-    await deleteRepository();
-    onRepositoryDelete();
   };
 
   return (

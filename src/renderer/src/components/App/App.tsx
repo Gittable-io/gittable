@@ -6,8 +6,9 @@ import { Footer } from "../Footer";
 import "./App.css";
 import { ModalProvider } from "react-modal-hook";
 import ReactModal from "react-modal";
-import { Provider, useSelector } from "react-redux";
-import { RootState, store } from "@renderer/store/store";
+import { Provider, useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState, store } from "@renderer/store/store";
+import { appActions } from "@renderer/store/appSlice";
 
 // Add this as required by the react-modal library to prevent an error in the console (although without it the app functions normally)
 ReactModal.setAppElement("#root");
@@ -16,6 +17,8 @@ ReactModal.setAppElement("#root");
 I did not export App directly. AppWithModal below
 */
 function App(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const openedRepository = useSelector(
     (state: RootState) => state.app.openedRepository,
   );
@@ -38,6 +41,20 @@ function App(): JSX.Element {
   const onGitConfigChange = async (): Promise<void> => {
     fetchGitConfig();
   };
+
+  useEffect(() => {
+    const initState = async (): Promise<void> => {
+      // Fetch repositories
+      const repositoriesReponse = await window.api.list_repositories();
+      if (repositoriesReponse.status === "success") {
+        dispatch(appActions.setRepositories(repositoriesReponse.repositories));
+      } else {
+        console.error("[App/initState] Couldn't retrieve repository list");
+      }
+    };
+
+    initState();
+  }, [dispatch]);
 
   useEffect(() => {
     fetchGitConfig();
