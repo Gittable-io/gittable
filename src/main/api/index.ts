@@ -9,7 +9,7 @@ import {
   delete_repository,
   type DeleteRepositoryParameters,
   type DeleteRepositoryReponse,
-} from "./repository";
+} from "./repositories";
 import {
   get_table_data,
   type GetTableParameters,

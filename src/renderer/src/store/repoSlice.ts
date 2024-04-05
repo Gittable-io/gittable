@@ -4,26 +4,25 @@ import { Repository } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
 
 export type RepoState = {
-  repository: Repository;
-} | null;
+  repository: Repository | null;
+  versions: string[];
+};
 
-function initState(): RepoState {
-  return null;
+function initState(repository: Repository | null): RepoState {
+  return { repository, versions: [] };
 }
 
 export const repoSlice = createSlice({
   name: "repo",
-  initialState: initState(),
+  initialState: initState(null),
   reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(appActions.openRepository, (_state, action) => {
-        return {
-          repository: action.payload,
-        };
+        return initState(action.payload);
       })
       .addCase(appActions.closeRepository, () => {
-        return null;
+        return initState(null);
       });
   },
 });
