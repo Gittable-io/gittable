@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { appReducer } from "./appSlice";
 import logger from "redux-logger";
+import { repoReducer } from "./repoSlice";
 
 export const store = configureStore({
   reducer: {
     app: appReducer,
+    repo: repoReducer,
   },
 
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(logger),
