@@ -15,7 +15,11 @@ function initState(repository: Repository | null): RepoState {
 export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
-  reducers: {},
+  reducers: {
+    setVersions: (state, action: PayloadAction<string[]>) => {
+      state.versions = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(appActions.openRepository, (_state, action) => {

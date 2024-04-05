@@ -46,6 +46,11 @@ import {
   type SaveGitConfigParameters,
   type SaveGitConfigResponse,
 } from "./user";
+import {
+  get_versions,
+  type GetVersionsParameters,
+  type GetVersionsResponse,
+} from "./repository";
 
 /**
  * TODO: I was able to remove boilerplate when adding or modifying an endpoint. But there's room for improvement
@@ -91,6 +96,9 @@ const gittableElectronAPI = {
   pull: (params: PullParameters): Promise<PullResponse> =>
     ipcRenderer.invoke("pull", params),
 
+  get_versions: (params: GetVersionsParameters): Promise<GetVersionsResponse> =>
+    ipcRenderer.invoke("get_versions", params),
+
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
   save_git_config: (
@@ -126,6 +134,8 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("get_history", (_event, params) => get_history(params));
   ipcMain.handle("push", (_event, params) => push(params));
   ipcMain.handle("pull", (_event, params) => pull(params));
+
+  ipcMain.handle("get_versions", (_event, params) => get_versions(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>
