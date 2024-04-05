@@ -7,7 +7,7 @@ import "./App.css";
 import { ModalProvider } from "react-modal-hook";
 import ReactModal from "react-modal";
 import { Provider, useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState, store } from "@renderer/store/store";
+import { AppDispatch, AppRootState, store } from "@renderer/store/store";
 import { appActions } from "@renderer/store/appSlice";
 
 // Add this as required by the react-modal library to prevent an error in the console (although without it the app functions normally)
@@ -20,7 +20,7 @@ function App(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
   const openedRepository = useSelector(
-    (state: RootState) => state.app.openedRepository,
+    (state: AppRootState) => state.app.openedRepository,
   );
 
   useEffect(() => {

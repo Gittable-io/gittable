@@ -3,11 +3,11 @@ import { List } from "gittable-editor";
 import "./RepositoryList.css";
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import { useSelector } from "react-redux";
-import { RootState } from "@renderer/store/store";
+import { AppRootState } from "@renderer/store/store";
 
 export function RepositoryList(): JSX.Element {
   const repositories = useSelector(
-    (state: RootState) => state.app.repositories,
+    (state: AppRootState) => state.app.repositories,
   );
 
   return (

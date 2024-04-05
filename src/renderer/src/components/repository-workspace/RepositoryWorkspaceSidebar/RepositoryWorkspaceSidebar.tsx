@@ -5,7 +5,7 @@ import { RepositoryContent } from "../RepositoryContent";
 import { SourceControl } from "../source-control/SourceControl";
 import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@renderer/store/store";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { appActions } from "@renderer/store/appSlice";
 
 export type RepositoryWorkspaceSidebarProps = {
@@ -24,7 +24,7 @@ export function RepositoryWorkspaceSidebar({
   onHistorySelect,
 }: RepositoryWorkspaceSidebarProps): JSX.Element {
   const openedRepository = useSelector(
-    (state: RootState) => state.app.openedRepository,
+    (state: AppRootState) => state.app.openedRepository,
   )!;
   const dispatch = useDispatch<AppDispatch>();
 

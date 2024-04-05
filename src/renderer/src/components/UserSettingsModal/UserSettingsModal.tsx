@@ -4,7 +4,7 @@ import "./UserSettingsModal.css";
 import { useState } from "react";
 import * as EmailValidator from "email-validator";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@renderer/store/store";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { appActions } from "@renderer/store/appSlice";
 
 export type UserSettingsModalProps = {
@@ -16,7 +16,7 @@ export function UserSettingsModal({
 }: UserSettingsModalProps): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
   const userGitConfig = useSelector(
-    (state: RootState) => state.app.gitConfig.user,
+    (state: AppRootState) => state.app.gitConfig.user,
   );
 
   const [gitUserName, setGitUserName] = useState(userGitConfig.name);

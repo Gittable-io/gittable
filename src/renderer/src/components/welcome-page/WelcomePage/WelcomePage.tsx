@@ -4,10 +4,10 @@ import "./WelcomePage.css";
 import { InformationPanel } from "../InformationPanel";
 import { useSelector } from "react-redux";
 import { appSelectors } from "@renderer/store/appSlice";
-import { RootState } from "@renderer/store/store";
+import { AppRootState } from "@renderer/store/store";
 
 export function WelcomePage(): JSX.Element {
-  const gitReady: boolean = useSelector((state: RootState) =>
+  const gitReady: boolean = useSelector((state: AppRootState) =>
     appSelectors.isGitConfigured(state),
   );
 
