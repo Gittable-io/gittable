@@ -4,8 +4,8 @@ import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { TabPanel } from "react-headless-tabs";
 import { Panel, repoActions } from "@renderer/store/repoSlice";
 import { IconAndText, MaterialSymbolButton } from "gittable-editor";
-import { TableEditorPanel } from "../TableEditorPanel";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
+import { TableViewerPanel } from "../TableViewerPanel";
 
 const getPanelTitle = (panel: Panel): string => {
   return panel.type === "table"
@@ -57,7 +57,7 @@ export function EditorPanelGroup2(): JSX.Element {
                 unmount="never"
               >
                 {panel.type === "table" ? (
-                  <TableEditorPanel
+                  <TableViewerPanel
                     key={panel.table.id}
                     tableMetadata={panel.table}
                     hidden={panel.id !== selectedPanelId}
