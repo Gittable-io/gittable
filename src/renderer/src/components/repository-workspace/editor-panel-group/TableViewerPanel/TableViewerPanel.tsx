@@ -1,19 +1,19 @@
 import { useCallback } from "react";
-import { TableEditor, type Table } from "gittable-editor";
-import "./TableEditorPanel.css";
+import { TableViewer } from "gittable-editor";
+import "./TableViewerPanel.css";
 import type { TableMetadata } from "@sharedTypes/index";
 import { useSelector } from "react-redux";
 import { AppRootState } from "@renderer/store/store";
 
-type TableEditorPanelProps = {
+type TableViewerPanelProps = {
   tableMetadata: TableMetadata;
   hidden?: boolean;
 };
 
-export function TableEditorPanel({
+export function TableViewerPanel({
   tableMetadata,
   hidden,
-}: TableEditorPanelProps): JSX.Element {
+}: TableViewerPanelProps): JSX.Element {
   const repositoryId = useSelector(
     (state: AppRootState) => state.repo.repository!.id,
   );
@@ -33,30 +33,11 @@ export function TableEditorPanel({
     }
   }, [repositoryId, tableMetadata.id]);
 
-  const saveTable = useCallback(
-    async (tableData: Table) => {
-      const response = await window.api.save_table({
-        repositoryId,
-        tableId: tableMetadata.id,
-        tableData: tableData,
-      });
-
-      if (response.status === "success") return;
-      else
-        throw new Error(
-          `Error saving table data. repositoryId = ${repositoryId}, tableId=${tableMetadata.id}`,
-        );
-    },
-    [repositoryId, tableMetadata.id],
-  );
-
   return (
-    <div className="table-editor-panel">
-      <TableEditor
+    <div className="table-viewer-panel">
+      <TableViewer
         key={tableMetadata.id}
         fetchTable={fetchTable}
-        saveTable={saveTable}
-        watchExternalChanges
         hidden={hidden}
       />
     </div>

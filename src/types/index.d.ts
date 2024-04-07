@@ -6,6 +6,7 @@ export type Repository = {
   remoteUrl: string;
 };
 
+// TODO: REMOVE WHEN REDESIGN IS OVER
 export type RepositoryStatus = {
   currentBranch: {
     name: string;
@@ -14,6 +15,10 @@ export type RepositoryStatus = {
     isAheadOfRemote: boolean;
   };
   tables: TableStatus[];
+};
+
+export type VersionContent = {
+  tables: TableMetadata[];
 };
 
 export type RepositoryCredentials = {
@@ -36,3 +41,8 @@ export type TableWithMetadata = TableMetadata & {
 };
 
 export type TableStatus = TableMetadata & { modified: boolean };
+
+export type Version = {
+  type: "draft" | "published";
+  name: string;
+};

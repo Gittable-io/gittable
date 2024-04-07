@@ -1,0 +1,6 @@
+#repository-content {
+  --list-item-padding-top-bottom: 10px;
+  --list-item-padding-left-right: var(--padding);
+  --list-item-color-hover: var(--color-secondary-hover);
+  --list-item-secondary-action-color-hover: var(--color-secondary-hover-darker);
+}

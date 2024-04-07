@@ -8,15 +8,15 @@ import {
   getTableNameFromFileName,
   getAbsoluteTablePath,
   getRepositoryRelativeTablePath,
-} from "../../utils/utils";
-import { getConfig } from "../../config";
+} from "../utils/utils";
+import { getConfig } from "../config";
 import {
   RepositoryCredentials,
   RepositoryStatus,
   TableMetadata,
   TableStatus,
 } from "@sharedTypes/index";
-import { UserDataStore } from "../../db";
+import { UserDataStore } from "../db";
 
 /*
  TODO: Review the errors that are returned by those endpoints. Analyze different types of errors. Compare with repositories endpoint

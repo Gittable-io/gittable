@@ -3,11 +3,11 @@ import "./InformationPanel.css";
 import { useModal } from "react-modal-hook";
 import { Button } from "gittable-editor";
 import { useSelector } from "react-redux";
-import { RootState } from "@renderer/store/store";
+import { AppRootState } from "@renderer/store/store";
 import { appSelectors } from "@renderer/store/appSlice";
 
 export function InformationPanel(): JSX.Element {
-  const gitReady: boolean = useSelector((state: RootState) =>
+  const gitReady: boolean = useSelector((state: AppRootState) =>
     appSelectors.isGitConfigured(state),
   );
 

@@ -12,11 +12,11 @@ import {
   createEditorPanel,
 } from "../editor-panel-group/EditorPanelGroup";
 import { useSelector } from "react-redux";
-import { RootState } from "@renderer/store/store";
+import { AppRootState } from "@renderer/store/store";
 
 export function RepositoryWorkspace(): JSX.Element {
   const openedRepository = useSelector(
-    (state: RootState) => state.app.openedRepository,
+    (state: AppRootState) => state.app.openedRepository,
   )!;
 
   //#region State & Derived state

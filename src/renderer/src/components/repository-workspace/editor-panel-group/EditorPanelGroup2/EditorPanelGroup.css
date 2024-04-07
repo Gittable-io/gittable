@@ -1,0 +1,83 @@
+.editor-panel-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  width: 100%;
+
+  --material-symbol-button-color-hover: var(--color-secondary-hover);
+
+  overflow: hidden;
+}
+
+.editor-panel-group .tab-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+
+  background-color: var(--color-secondary);
+
+  flex-basis: 45px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.editor-panel-group .tab-list::-webkit-scrollbar {
+  height: 5px;
+  border: 1px solid #fff;
+}
+
+.editor-panel-group .tab-list::-webkit-scrollbar-track {
+  border-radius: 0;
+  background: var(--color-secondary);
+}
+
+.editor-panel-group .tab-list::-webkit-scrollbar-thumb {
+  border-radius: 0;
+  background: var(--color-secondary-hover);
+}
+
+.editor-panel-group .tab-label {
+  padding: 10px;
+  border: none;
+  border-bottom: 1px solid var(--color-borders);
+  border-right: 1px solid var(--color-borders);
+
+  font-weight: 600;
+  color: var(--color-text-lighter);
+
+  cursor: pointer;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+}
+
+.editor-panel-group .tab-label.selected {
+  background-color: white;
+  color: var(--color-primary);
+  border-bottom: none;
+}
+
+.editor-panel-group .tab-panels {
+  display: flex;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+.editor-panel-group .tab-panel {
+  display: flex;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+/* The react-headless-tabs library adds a "hidden" attribute to tab panels. However, it causes problems as it interfers with display:flex that I'm using
+   In addition, the react-headless-tabs library should be using "display:none;" for hidden panels as recommended here : https://stackoverflow.com/a/6708403/471461
+   This is also the approach taken by the headlessUI library
+  */
+.editor-panel-group .tab-panel[hidden] {
+  display: none;
+}
