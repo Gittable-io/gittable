@@ -34,11 +34,11 @@ export async function list_versions({
   }
 }
 
-export type CurrentVersionParameters = {
+export type GetCheckedOutVersionParameters = {
   repositoryId: string;
 };
 
-export type CurrentVersionResponse =
+export type GetCheckedOutVersionResponse =
   | {
       status: "success";
       version: string;
@@ -54,11 +54,11 @@ export type CurrentVersionResponse =
       message: "Unknown error";
     };
 
-export async function current_version({
+export async function get_checked_out_version({
   repositoryId,
-}: CurrentVersionParameters): Promise<CurrentVersionResponse> {
+}: GetCheckedOutVersionParameters): Promise<GetCheckedOutVersionResponse> {
   console.debug(
-    `[API/current_version] Called with repositoryId=${repositoryId}`,
+    `[API/get_checkedout_version] Called with repositoryId=${repositoryId}`,
   );
 
   try {

@@ -1,4 +1,4 @@
-import { MaterialSymbolButton } from "gittable-editor";
+import { MaterialSymbolButton, Spinner } from "gittable-editor";
 import "./RepositoryWorkspaceSidebar2.css";
 import { appActions } from "@renderer/store/appSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,13 +12,17 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
   const repository = useSelector(
     (state: AppRootState) => state.repo.repository!,
   )!;
+  const completedLoadingVersions = useSelector(
+    (state: AppRootState) => state.repo.loading.completedLoadingVersions,
+  );
+
   const versions = useSelector((state: AppRootState) => state.repo.versions);
   const checkedOutVersion = useSelector(
     (state: AppRootState) => state.repo.checkedOutVersion!,
   );
 
   const checkOutVersion = async (version: string): Promise<void> => {
-    dispatch(repoActions.checkoutVersion(version));
+    // TODO: TO FILL
   };
 
   return (
@@ -33,11 +37,15 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
         <h2>{repository.name}</h2>
       </div>
       <div className="content">
-        <VersionSelector
-          versions={versions}
-          selectedVersion={checkedOutVersion}
-          onVersionChange={checkOutVersion}
-        />
+        {completedLoadingVersions ? (
+          <VersionSelector
+            versions={versions}
+            selectedVersion={checkedOutVersion}
+            onVersionChange={checkOutVersion}
+          />
+        ) : (
+          <Spinner />
+        )}
       </div>
     </div>
   );
