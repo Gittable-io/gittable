@@ -1,11 +1,13 @@
 import { List, ListItem, MaterialSymbol } from "gittable-editor";
 import "./VersionSelector.css";
 import { useState } from "react";
+import { Version } from "@sharedTypes/index";
+import _ from "lodash";
 
 export type VersionSelectorProps = {
-  versions: string[];
-  selectedVersion: string;
-  onVersionChange: (version: string) => void;
+  versions: Version[];
+  selectedVersion: Version;
+  onVersionChange: (version: Version) => void;
 };
 
 export function VersionSelector({
@@ -19,8 +21,8 @@ export function VersionSelector({
     setMenuOpen((open) => !open);
   };
 
-  const selectVersion = (version): void => {
-    if (version !== selectVersion) {
+  const selectVersion = (version: Version): void => {
+    if (!_.isEqual(version, selectVersion)) {
       onVersionChange(version);
     }
     toggleMenu();
@@ -29,7 +31,7 @@ export function VersionSelector({
   return (
     <div className="version-selector">
       <div className="input" onClick={toggleMenu}>
-        <div className="value">{selectedVersion}</div>
+        <div className="value">{selectedVersion.name}</div>
         <div className="menu-toggle">
           <MaterialSymbol symbol="arrow_drop_down"></MaterialSymbol>
         </div>
@@ -39,8 +41,8 @@ export function VersionSelector({
           <List>
             {versions.map((version) => (
               <ListItem
-                key={version}
-                text={version}
+                key={version.name}
+                text={version.name}
                 onClick={() => selectVersion(version)}
               ></ListItem>
             ))}

@@ -1,6 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { Repository, TableMetadata, VersionContent } from "@sharedTypes/index";
+import {
+  Repository,
+  TableMetadata,
+  Version,
+  VersionContent,
+} from "@sharedTypes/index";
 import { appActions } from "./appSlice";
 
 export type DiffDescription = {
@@ -29,8 +34,8 @@ export type RepoState = {
     completedCheckout: boolean;
   };
 
-  versions: string[];
-  checkedOutVersion: string | null;
+  versions: Version[];
+  checkedOutVersion: Version | null;
   checkedOutContent: VersionContent | null;
 
   panels: Panel[];
@@ -60,7 +65,10 @@ export const repoSlice = createSlice({
   reducers: {
     setVersions: (
       state,
-      action: PayloadAction<{ versions: string[]; checkedOutVersion: string }>,
+      action: PayloadAction<{
+        versions: Version[];
+        checkedOutVersion: Version;
+      }>,
     ) => {
       state.versions = action.payload.versions;
       state.checkedOutVersion = action.payload.checkedOutVersion;

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
 import { getRepositoryPath, getTableNameFromFileName } from "../utils/utils";
-import { TableMetadata, VersionContent } from "@sharedTypes/index";
+import { TableMetadata, Version, VersionContent } from "@sharedTypes/index";
 import { getConfig } from "../config";
 
 export type ListVersionsParameters = {
@@ -11,7 +11,7 @@ export type ListVersionsParameters = {
 export type ListVersionsResponse =
   | {
       status: "success";
-      versions: string[];
+      versions: Version[];
     }
   | {
       status: "error";
@@ -30,7 +30,12 @@ export async function list_versions({
       dir: getRepositoryPath(repositoryId),
     });
 
-    return { status: "success", versions: tags };
+    const versions: Version[] = tags.map((tag) => ({
+      type: "published",
+      name: tag,
+    }));
+
+    return { status: "success", versions };
   } catch (error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
@@ -43,7 +48,7 @@ export type GetCheckedOutVersionParameters = {
 export type GetCheckedOutVersionResponse =
   | {
       status: "success";
-      version: string;
+      version: Version;
     }
   | {
       status: "error";
@@ -85,7 +90,7 @@ export async function get_checked_out_version({
       });
 
       if (tagCommitOid === headCommitOid) {
-        return { status: "success", version: tag };
+        return { status: "success", version: { type: "published", name: tag } };
       }
     }
 

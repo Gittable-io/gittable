@@ -4,8 +4,8 @@ import { appActions } from "@renderer/store/appSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { VersionSelector } from "../VersionSelector";
-import { repoActions } from "@renderer/store/repoSlice";
 import { RepositoryContent2 } from "../RepositoryContent2";
+import { Version } from "@sharedTypes/index";
 
 export function RepositoryWorkspaceSidebar2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,7 +22,7 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
     (state: AppRootState) => state.repo.checkedOutVersion!,
   );
 
-  const checkOutVersion = async (version: string): Promise<void> => {
+  const checkOutVersion = async (_version: Version): Promise<void> => {
     // TODO: TO FILL
   };
 
