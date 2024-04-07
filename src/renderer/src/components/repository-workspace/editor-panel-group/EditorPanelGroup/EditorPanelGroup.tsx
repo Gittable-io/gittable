@@ -118,13 +118,11 @@ export function EditorPanelGroup({
                 {panel.type === "table" ? (
                   <TableEditorPanel
                     key={panel.table.id}
-                    repositoryId={repositoryId}
                     tableMetadata={panel.table}
                     hidden={panel.id !== selectedEditorPanelId}
                   />
                 ) : panel.type === "diff" ? (
                   <TableDiffViewerPanel
-                    repositoryId={repositoryId}
                     diffDescription={panel.diff}
                     hidden={panel.id !== selectedEditorPanelId}
                   />

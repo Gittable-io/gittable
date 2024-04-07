@@ -2,18 +2,22 @@ import { useCallback } from "react";
 import { TableEditor, type Table } from "gittable-editor";
 import "./TableEditorPanel.css";
 import type { TableMetadata } from "@sharedTypes/index";
+import { useSelector } from "react-redux";
+import { AppRootState } from "@renderer/store/store";
 
 type TableEditorPanelProps = {
-  repositoryId: string;
   tableMetadata: TableMetadata;
   hidden?: boolean;
 };
 
 export function TableEditorPanel({
-  repositoryId,
   tableMetadata,
   hidden,
 }: TableEditorPanelProps): JSX.Element {
+  const repositoryId = useSelector(
+    (state: AppRootState) => state.repo.repository!.id,
+  );
+
   const fetchTable = useCallback(async () => {
     const response = await window.api.get_table_data({
       repositoryId,
