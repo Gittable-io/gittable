@@ -40,6 +40,19 @@ export function RepositoryWorkspace2(): JSX.Element {
         );
         return;
       }
+
+      // Get version content
+      const contentResponse = await window.api.get_checked_out_content({
+        repositoryId: repository.id,
+      });
+      if (contentResponse.status === "success") {
+        dispatch(repoActions.completeCheckout(contentResponse.content));
+      } else {
+        console.error(
+          "[RepositoryWorkspace/initState] Couldn't retrieve version content",
+        );
+        return;
+      }
     };
 
     initWorkspace();

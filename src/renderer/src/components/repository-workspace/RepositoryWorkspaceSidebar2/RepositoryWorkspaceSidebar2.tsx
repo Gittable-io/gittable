@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { VersionSelector } from "../VersionSelector";
 import { repoActions } from "@renderer/store/repoSlice";
+import { RepositoryContent2 } from "../RepositoryContent2";
 
 export function RepositoryWorkspaceSidebar2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -46,6 +47,7 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
         ) : (
           <Spinner />
         )}
+        <RepositoryContent2 />
       </div>
     </div>
   );

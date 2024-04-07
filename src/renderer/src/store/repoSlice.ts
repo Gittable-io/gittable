@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { Repository } from "@sharedTypes/index";
+import { Repository, VersionContent } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
 
 export type RepoState = {
@@ -11,6 +11,7 @@ export type RepoState = {
     completedCheckout: boolean;
   };
   checkedOutVersion: string | null;
+  checkedOutContent: VersionContent | null;
 
   versions: string[];
 };
@@ -25,6 +26,7 @@ function initState(repository: Repository | null): RepoState {
 
     versions: [],
     checkedOutVersion: null,
+    checkedOutContent: null,
   };
 }
 
@@ -41,7 +43,12 @@ export const repoSlice = createSlice({
 
       state.loading.completedLoadingVersions = true;
     },
-    completeCheckout: (state) => {
+    startCheckout: (state) => {
+      state.loading.completedCheckout = false;
+    },
+    completeCheckout: (state, action: PayloadAction<VersionContent>) => {
+      state.checkedOutContent = action.payload;
+
       state.loading.completedCheckout = true;
     },
   },

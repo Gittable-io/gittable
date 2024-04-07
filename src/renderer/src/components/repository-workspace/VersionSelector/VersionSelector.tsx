@@ -27,12 +27,10 @@ export function VersionSelector({
   };
 
   return (
-    <div className="version-selector">
-      <div className="input" onClick={toggleMenu}>
-        <div className="value">{selectedVersion}</div>
-        <div className="menu-toggle">
-          <MaterialSymbol symbol="arrow_drop_down"></MaterialSymbol>
-        </div>
+    <div className="version-selector" onClick={toggleMenu}>
+      <div className="value">{selectedVersion}</div>
+      <div className="menu-toggle">
+        <MaterialSymbol symbol="arrow_drop_down"></MaterialSymbol>
       </div>
       {menuOpen && (
         <div className="menu">

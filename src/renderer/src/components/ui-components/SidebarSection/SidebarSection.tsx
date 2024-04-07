@@ -2,7 +2,7 @@ import "./SidebarSection.css";
 
 export type SidebarSectionProps = {
   id?: string;
-  title: string;
+  title?: string;
   children: React.ReactNode;
 };
 
@@ -13,7 +13,7 @@ export function SidebarSection({
 }: SidebarSectionProps): JSX.Element {
   return (
     <div {...(id ? { id } : {})} className="sidebar-section" aria-label={title}>
-      <div className="section-title">{title}</div>
+      {title && <div className="section-title">{title}</div>}
       <div className="section-content">{children}</div>
     </div>
   );

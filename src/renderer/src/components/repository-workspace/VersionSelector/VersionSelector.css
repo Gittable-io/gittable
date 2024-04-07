@@ -1,4 +1,4 @@
-.version-selector .input {
+.version-selector {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -6,20 +6,22 @@
   background-color: white;
   border: 1px solid var(--color-borders);
   border-radius: var(--border-radius);
+
+  position: relative;
 }
 
-.version-selector .input:hover {
+.version-selector:hover {
   border: 1px solid var(--color-primary);
   cursor: pointer;
 }
 
-.version-selector .input .value {
+.version-selector.value {
   flex-grow: 1;
 
   padding: 5px 10px;
 }
 
-.version-selector .input .menu-toggle {
+.version-selector.menu-toggle {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -34,4 +36,6 @@
 .version-selector .menu {
   background-color: white;
   border: 1px solid var(--color-borders);
+
+  position: absolute;
 }
