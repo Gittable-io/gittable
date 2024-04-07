@@ -5,11 +5,14 @@ import { appActions } from "./appSlice";
 
 export type RepoState = {
   repository: Repository | null;
+  loading: boolean;
+  checkedOutVersion: string | null;
+
   versions: string[];
 };
 
 function initState(repository: Repository | null): RepoState {
-  return { repository, versions: [] };
+  return { repository, loading: true, versions: [], checkedOutVersion: null };
 }
 
 export const repoSlice = createSlice({
@@ -18,6 +21,9 @@ export const repoSlice = createSlice({
   reducers: {
     setVersions: (state, action: PayloadAction<string[]>) => {
       state.versions = action.payload;
+    },
+    checkoutVersion: (state, action: PayloadAction<string>) => {
+      state.checkedOutVersion = action.payload;
     },
   },
   extraReducers: (builder) => {

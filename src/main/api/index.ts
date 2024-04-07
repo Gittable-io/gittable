@@ -47,9 +47,12 @@ import {
   type SaveGitConfigResponse,
 } from "./user";
 import {
-  get_versions,
-  type GetVersionsParameters,
-  type GetVersionsResponse,
+  list_versions,
+  type ListVersionsParameters,
+  type ListVersionsResponse,
+  current_version,
+  type CurrentVersionParameters,
+  type CurrentVersionResponse,
 } from "./repository";
 
 /**
@@ -96,8 +99,14 @@ const gittableElectronAPI = {
   pull: (params: PullParameters): Promise<PullResponse> =>
     ipcRenderer.invoke("pull", params),
 
-  get_versions: (params: GetVersionsParameters): Promise<GetVersionsResponse> =>
-    ipcRenderer.invoke("get_versions", params),
+  list_versions: (
+    params: ListVersionsParameters,
+  ): Promise<ListVersionsResponse> =>
+    ipcRenderer.invoke("list_versions", params),
+  current_version: (
+    params: CurrentVersionParameters,
+  ): Promise<CurrentVersionResponse> =>
+    ipcRenderer.invoke("current_version", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -135,7 +144,10 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("push", (_event, params) => push(params));
   ipcMain.handle("pull", (_event, params) => pull(params));
 
-  ipcMain.handle("get_versions", (_event, params) => get_versions(params));
+  ipcMain.handle("list_versions", (_event, params) => list_versions(params));
+  ipcMain.handle("current_version", (_event, params) =>
+    current_version(params),
+  );
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>

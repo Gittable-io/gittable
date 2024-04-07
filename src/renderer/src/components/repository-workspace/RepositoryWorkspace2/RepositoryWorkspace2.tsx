@@ -13,22 +13,37 @@ export function RepositoryWorkspace2(): JSX.Element {
   )!;
 
   useEffect(() => {
-    const initState = async (): Promise<void> => {
-      // Fetch versions
-      const response = await window.api.get_versions({
+    const initWorkspace = async (): Promise<void> => {
+      // Fetch current version
+      const currentVersionResponse = await window.api.current_version({
         repositoryId: repository.id,
       });
 
-      if (response.status === "success") {
-        dispatch(repoActions.setVersions(response.versions));
+      if (currentVersionResponse.status === "success") {
+        dispatch(repoActions.checkoutVersion(currentVersionResponse.version));
+      } else {
+        console.error(
+          "[RepositoryWorkspace/initState] Couldn't retrieve current version",
+        );
+        return;
+      }
+
+      // Fetch versions
+      const versionsResponse = await window.api.list_versions({
+        repositoryId: repository.id,
+      });
+
+      if (versionsResponse.status === "success") {
+        dispatch(repoActions.setVersions(versionsResponse.versions));
       } else {
         console.error(
           "[RepositoryWorkspace/initState] Couldn't retrieve versions",
         );
+        return;
       }
     };
 
-    initState();
+    initWorkspace();
   }, [dispatch, repository.id]);
 
   return (
