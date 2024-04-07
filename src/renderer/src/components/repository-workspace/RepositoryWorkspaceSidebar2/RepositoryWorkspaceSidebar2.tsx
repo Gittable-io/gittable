@@ -6,6 +6,7 @@ import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { VersionSelector } from "../VersionSelector";
 import { RepositoryContent2 } from "../RepositoryContent2";
 import { Version } from "@sharedTypes/index";
+import { repoActions } from "@renderer/store/repoSlice";
 
 export function RepositoryWorkspaceSidebar2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,8 +23,18 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
     (state: AppRootState) => state.repo.checkedOutVersion!,
   );
 
-  const checkOutVersion = async (_version: Version): Promise<void> => {
-    // TODO: TO FILL
+  const checkOutVersion = async (version: Version): Promise<void> => {
+    dispatch(repoActions.startCheckout(version));
+    const response = await window.api.switch_version({
+      repositoryId: repository.id,
+      version,
+    });
+
+    if (response.status === "success") {
+      dispatch(repoActions.completeCheckout(response.content));
+    } else {
+      console.error(`[RepositoryWorkspaceSidebar] Error switching version`);
+    }
   };
 
   return (

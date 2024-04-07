@@ -147,3 +147,77 @@ export async function get_checked_out_content({
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }
+
+export type SwitchVersionParameters = {
+  repositoryId: string;
+  version: Version;
+};
+
+export type SwitchVersionResponse =
+  | {
+      status: "success";
+      content: VersionContent;
+    }
+  | {
+      status: "error";
+      type: "Cannot find version";
+      message: "Cannot find version";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function switch_version({
+  repositoryId,
+  version,
+}: SwitchVersionParameters): Promise<SwitchVersionResponse> {
+  console.debug(
+    `[API/switch_version] Called with repositoryId=${repositoryId} and version=${JSON.stringify(version)}`,
+  );
+  try {
+    if (version.type === "published") {
+      // 1. Make sure the tag exists
+      const tags = await git.listTags({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+      });
+
+      if (!tags.includes(version.name)) {
+        return {
+          status: "error",
+          type: "Cannot find version",
+          message: "Cannot find version",
+        };
+      }
+
+      // 2. Checkout the tag
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: version.name,
+      });
+
+      // 3. Get the current content
+      const response = await get_checked_out_content({ repositoryId });
+      if (response.status === "error") throw new Error();
+
+      return { status: "success", content: response.content };
+    } else {
+      return {
+        status: "error",
+        type: "Cannot find version",
+        message: "Cannot find version",
+      };
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(
+        `[API/switch_version] error.name=${error.name}, error.message=${error.message}`,
+      );
+    }
+
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+}

@@ -56,6 +56,9 @@ import {
   get_checked_out_content,
   type GetCheckedOutContentParameters,
   type GetCheckedOutContentResponse,
+  switch_version,
+  type SwitchVersionParameters,
+  type SwitchVersionResponse,
 } from "./repository";
 
 /**
@@ -114,6 +117,10 @@ const gittableElectronAPI = {
     params: GetCheckedOutContentParameters,
   ): Promise<GetCheckedOutContentResponse> =>
     ipcRenderer.invoke("get_checked_out_content", params),
+  switch_version: (
+    params: SwitchVersionParameters,
+  ): Promise<SwitchVersionResponse> =>
+    ipcRenderer.invoke("switch_version", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -158,6 +165,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("get_checked_out_content", (_event, params) =>
     get_checked_out_content(params),
   );
+  ipcMain.handle("switch_version", (_event, params) => switch_version(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>

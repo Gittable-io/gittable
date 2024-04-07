@@ -75,8 +75,14 @@ export const repoSlice = createSlice({
 
       state.loading.completedLoadingVersions = true;
     },
-    startCheckout: (state) => {
+    startCheckout: (state, action: PayloadAction<Version>) => {
+      state.checkedOutVersion = action.payload;
+      state.checkedOutContent = null;
+
       state.loading.completedCheckout = false;
+
+      state.panels = [];
+      state.selectedPanelId = null;
     },
     completeCheckout: (state, action: PayloadAction<VersionContent>) => {
       state.checkedOutContent = action.payload;
