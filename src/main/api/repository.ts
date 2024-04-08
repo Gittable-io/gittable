@@ -42,11 +42,9 @@ export async function list_versions({
       dir: getRepositoryPath(repositoryId),
     });
 
-    // 2. Determine which tag is the latest one & which one is the current one
-    console.debug(
-      `[API/list_versions] Determine which tag is the latest one & which one is the current one`,
-    );
-
+    // 2. Loop over all tags and
+    //      Determine which tag is the latest one & which one is the current one
+    //      Get the dates of each tag so that it can be sorted
     const mainCommitOid = await git.resolveRef({
       fs,
       dir: getRepositoryPath(repositoryId),
@@ -59,6 +57,8 @@ export async function list_versions({
       ref: "HEAD",
     });
 
+    const tagDates = new Map<string, number>();
+
     let newestTag: string | null = null;
     let currentTag: string | null = null;
     for (const tag of tags) {
@@ -68,6 +68,12 @@ export async function list_versions({
         ref: tag,
       });
 
+      const tagCommit = await git.readCommit({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        oid: tagCommitOid,
+      });
+
       if (tagCommitOid === mainCommitOid) {
         newestTag = tag;
       }
@@ -75,9 +81,7 @@ export async function list_versions({
         currentTag = tag;
       }
 
-      if (newestTag != null && currentTag != null) {
-        break;
-      }
+      tagDates.set(tag, tagCommit.commit.author.timestamp);
     }
 
     if (newestTag == null) {
@@ -102,14 +106,14 @@ export async function list_versions({
       };
     }
 
+    tags.sort((a, b) => tagDates.get(b)! - tagDates.get(a)!);
+
     const versions: Version[] = tags.map((tag) => ({
       type: "published",
       name: tag,
       newest: tag === newestTag,
       current: tag === currentTag,
     }));
-
-    console.debug(`[API/list_versions] Success. Sending versions`);
     return { status: "success", versions };
   } catch (error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
