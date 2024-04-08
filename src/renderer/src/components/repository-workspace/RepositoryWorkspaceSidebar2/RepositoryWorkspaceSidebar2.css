@@ -27,6 +27,26 @@
   padding: 0 10px;
 }
 
+.repository-workspace-sidebar2 .versions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  padding: 0 10px;
+}
+
+.repository-workspace-sidebar2 .version-list-and-create {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.repository-workspace-sidebar2 .version-list-and-create .version-selector {
+  flex-grow: 1;
+}
+
 .repository-workspace-sidebar2 .content {
   display: flex;
   flex-direction: column;
