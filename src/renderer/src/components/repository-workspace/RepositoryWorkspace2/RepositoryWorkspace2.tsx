@@ -14,48 +14,7 @@ export function RepositoryWorkspace2(): JSX.Element {
   )!;
 
   useEffect(() => {
-    const initWorkspace = async (): Promise<void> => {
-      // Fetch versions
-      const versionsResp = await window.api.list_versions({
-        repositoryId: repository.id,
-      });
-
-      const currentVersionResp = await window.api.get_current_version({
-        repositoryId: repository.id,
-      });
-
-      if (
-        versionsResp.status === "success" &&
-        currentVersionResp.status === "success"
-      ) {
-        dispatch(
-          repoActions.setVersions({
-            versions: versionsResp.versions,
-            checkedOutVersion: currentVersionResp.version,
-          }),
-        );
-      } else {
-        console.error(
-          "[RepositoryWorkspace/initState] Couldn't retrieve versions or current version",
-        );
-        return;
-      }
-
-      // Get version content
-      const contentResponse = await window.api.get_checked_out_content({
-        repositoryId: repository.id,
-      });
-      if (contentResponse.status === "success") {
-        dispatch(repoActions.completeCheckout(contentResponse.content));
-      } else {
-        console.error(
-          "[RepositoryWorkspace/initState] Couldn't retrieve version content",
-        );
-        return;
-      }
-    };
-
-    initWorkspace();
+    dispatch(repoActions.fetchRepositoryDetails());
   }, [dispatch, repository.id]);
 
   return (

@@ -7,7 +7,11 @@ import {
   VersionContent,
 } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
-import { switchVersion } from "./thunks";
+import {
+  createAndSwitchToDraft,
+  fetchRepositoryDetails,
+  switchVersion,
+} from "./thunks";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -54,26 +58,6 @@ export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
   reducers: {
-    setVersions: (
-      state,
-      action: PayloadAction<{
-        versions: Version[];
-        checkedOutVersion: Version;
-      }>,
-    ) => {
-      state.versions = action.payload.versions;
-      state.currentVersion = action.payload.checkedOutVersion;
-    },
-    startCheckout: (state, action: PayloadAction<Version>) => {
-      state.currentVersion = action.payload;
-      state.checkedOutContent = null;
-
-      state.panels = [];
-      state.selectedPanelId = null;
-    },
-    completeCheckout: (state, action: PayloadAction<VersionContent>) => {
-      state.checkedOutContent = action.payload;
-    },
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
       const panel = action.payload;
 
@@ -119,6 +103,11 @@ export const repoSlice = createSlice({
       .addCase(appActions.closeRepository, () => {
         return initState(null);
       })
+      .addCase(fetchRepositoryDetails.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
+        state.currentVersion = action.payload.currentVersion;
+        state.checkedOutContent = action.payload.content;
+      })
       .addCase(switchVersion.pending, (state, action) => {
         state.currentVersion = action.meta.arg;
         state.checkedOutContent = null;
@@ -129,9 +118,26 @@ export const repoSlice = createSlice({
       .addCase(switchVersion.fulfilled, (state, action) => {
         state.currentVersion = action.payload.currentVersion;
         state.checkedOutContent = action.payload.content;
+      })
+      .addCase(createAndSwitchToDraft.pending, (state) => {
+        state.currentVersion = null;
+        state.checkedOutContent = null;
+
+        state.panels = [];
+        state.selectedPanelId = null;
+      })
+      .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
+        state.currentVersion = action.payload.currentVersion;
+        state.checkedOutContent = action.payload.content;
       });
   },
 });
 
-export const repoActions = { ...repoSlice.actions, switchVersion };
+export const repoActions = {
+  ...repoSlice.actions,
+  switchVersion,
+  fetchRepositoryDetails,
+  createAndSwitchToDraft,
+};
 export const repoReducer = repoSlice.reducer;
