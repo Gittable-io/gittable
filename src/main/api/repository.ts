@@ -4,12 +4,13 @@ import { getRepositoryPath, getTableNameFromFileName } from "../utils/utils";
 import {
   DraftVersion,
   PublishedVersion,
-  TableMetadata,
+  TableMetadataWithStatus,
   Version,
   VersionContent,
 } from "@sharedTypes/index";
 import { getConfig } from "../config";
 
+//#region API: list_versions
 export type ListVersionsParameters = {
   repositoryId: string;
 };
@@ -55,7 +56,9 @@ export async function list_versions({
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }
+//#endregion
 
+//#region API: get_current_version
 export type GetCurrentVersionParameters = {
   repositoryId: string;
 };
@@ -150,7 +153,9 @@ export async function get_current_version({
     message: "Could not find current version",
   };
 }
+//#endregion
 
+//#region API: get_checked_out_content
 export type GetCheckedOutContentParameters = {
   repositoryId: string;
 };
@@ -174,8 +179,8 @@ export async function get_checked_out_content({
   );
 
   try {
-    const [FILE, _HEAD, _WORKDIR] = [0, 1, 2];
-    const tables: TableMetadata[] = (
+    const [FILE, HEAD, WORKDIR] = [0, 1, 2];
+    const tables: TableMetadataWithStatus[] = (
       await git.statusMatrix({
         fs,
         dir: getRepositoryPath(repositoryId),
@@ -184,6 +189,7 @@ export async function get_checked_out_content({
     ).map((tableStatus) => ({
       id: tableStatus[FILE] as string,
       name: getTableNameFromFileName(tableStatus[FILE] as string),
+      modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
     }));
 
     return {
@@ -195,6 +201,9 @@ export async function get_checked_out_content({
   }
 }
 
+//#endregion
+
+//#region API: switch_version
 export type SwitchVersionParameters = {
   repositoryId: string;
   version: Version;
@@ -216,6 +225,15 @@ export type SwitchVersionResponse =
       message: "Unknown error";
     };
 
+/**
+ * Switches HEAD to a version
+ *  - If version is a Draft version: it switches to a branch
+ *  - If version is a Published version: it switches to a Tag
+ *
+ * If switching from a Draft version, and there are changes in the working dir, they are discarded
+ *
+ * @returns
+ */
 export async function switch_version({
   repositoryId,
   version,
@@ -224,6 +242,16 @@ export async function switch_version({
     `[API/switch_version] Called with repositoryId=${repositoryId} and version=${JSON.stringify(version)}`,
   );
   try {
+    // 0. Discard changes in the working dir
+    // * I could've verified first that Working dir != local repository, but for now, I'm doing a discard in all cases
+    // TODO: In the future : stash before switching from a draft and reapply stash when switching back
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      force: true, // If I remove force:true, discard doesn't work
+    });
+
+    // 1. Switch to branch or tag
     const ref = version.type === "published" ? version.tag : version.branch;
 
     await git.checkout({
@@ -232,6 +260,7 @@ export async function switch_version({
       ref,
     });
 
+    // 2. Get the new content and return it
     const response = await get_checked_out_content({ repositoryId });
     if (response.status === "error") throw new Error();
 
@@ -246,7 +275,9 @@ export async function switch_version({
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
 }
+//#endregion
 
+//#region API: create_draft
 export type CreateDraftParameters = {
   repositoryId: string;
   name: string;
@@ -322,6 +353,7 @@ export async function create_draft({
     // If there's an error in pushing branch, delete created branch
   }
 }
+//#endregion
 
 //#region Helper functions
 type ListPublishedVersionsParameters = {

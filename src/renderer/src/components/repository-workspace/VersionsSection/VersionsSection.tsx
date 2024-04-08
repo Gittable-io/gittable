@@ -6,19 +6,57 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { useState } from "react";
 import { Version } from "@sharedTypes/index";
-import { repoActions } from "@renderer/store/repoSlice";
+import { repoActions, repoSelectors } from "@renderer/store/repoSlice";
+import { ConfirmationModal } from "@renderer/components/ui-components/ConfirmationModal";
+import { useModal } from "react-modal-hook";
 
 export function VersionsSection(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
-  //#region Selectors
+  //#region Selectors & State
   const versions = useSelector((state: AppRootState) => state.repo.versions);
   const checkedOutVersion = useSelector(
     (state: AppRootState) => state.repo.currentVersion,
   );
-  //#endregion
+  const isContentModified = useSelector((state: AppRootState) =>
+    repoSelectors.isContentModified(state),
+  );
 
   const [newDraft, setNewDraft] = useState<boolean>(false);
+  const [pendingVersion, setPendingVersion] = useState<Version | null>(null);
+
+  const [showSwitchWarningModal, hideSwitchWarningModal] = useModal(
+    () => (
+      <ConfirmationModal
+        title={`Switching to version ${pendingVersion?.name}`}
+        text={`If you switch to a published version, you will lose your uncommitted changes. Are you sure you want to switch?`}
+        confirmButtonLabel="Switch versions"
+        onConfirm={() => {
+          if (pendingVersion !== null) {
+            switchVersion(pendingVersion);
+            setPendingVersion(null); // Reset the pending version after switching
+          }
+          hideSwitchWarningModal();
+        }}
+        onCancel={() => {
+          hideSwitchWarningModal();
+          setPendingVersion(null);
+        }}
+      />
+    ),
+    [pendingVersion],
+  );
+
+  //#endregion
+
+  const confirmSwitchVersion = async (version: Version): Promise<void> => {
+    if (isContentModified) {
+      setPendingVersion(version); // Set the version the user intends to switch to
+      showSwitchWarningModal();
+    } else {
+      switchVersion(version);
+    }
+  };
 
   const switchVersion = async (version: Version): Promise<void> => {
     setNewDraft(false);
@@ -50,7 +88,7 @@ export function VersionsSection(): JSX.Element {
             <VersionSelector
               versions={versions}
               selectedVersion={checkedOutVersion}
-              onVersionChange={switchVersion}
+              onVersionChange={confirmSwitchVersion}
             />
             {!newDraft ? (
               <MaterialSymbolButton

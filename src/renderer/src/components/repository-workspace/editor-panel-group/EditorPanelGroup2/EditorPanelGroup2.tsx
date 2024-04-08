@@ -6,6 +6,7 @@ import { Panel, repoActions } from "@renderer/store/repoSlice";
 import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 import { TableViewerPanel } from "../TableViewerPanel";
+import { TableEditorPanel } from "../TableEditorPanel";
 
 const getPanelTitle = (panel: Panel): string => {
   return panel.type === "table"
@@ -20,6 +21,38 @@ export function EditorPanelGroup2(): JSX.Element {
   const selectedPanelId = useSelector(
     (state: AppRootState) => state.repo.selectedPanelId,
   );
+  const isDraft = useSelector(
+    (state: AppRootState) => state.repo.currentVersion?.type === "draft",
+  );
+
+  const renderPanel = (panel: Panel): JSX.Element => {
+    if (panel.type === "table") {
+      if (isDraft) {
+        return (
+          <TableEditorPanel
+            key={panel.table.id}
+            tableMetadata={panel.table}
+            hidden={panel.id !== selectedPanelId}
+          />
+        );
+      } else {
+        return (
+          <TableViewerPanel
+            key={panel.table.id}
+            tableMetadata={panel.table}
+            hidden={panel.id !== selectedPanelId}
+          />
+        );
+      }
+    } else {
+      return (
+        <TableDiffViewerPanel
+          diffDescription={panel.diff}
+          hidden={panel.id !== selectedPanelId}
+        />
+      );
+    }
+  };
 
   return (
     <div className="editor-panel-group">
@@ -56,18 +89,7 @@ export function EditorPanelGroup2(): JSX.Element {
                 hidden={panel.id !== selectedPanelId}
                 unmount="never"
               >
-                {panel.type === "table" ? (
-                  <TableViewerPanel
-                    key={panel.table.id}
-                    tableMetadata={panel.table}
-                    hidden={panel.id !== selectedPanelId}
-                  />
-                ) : (
-                  <TableDiffViewerPanel
-                    diffDescription={panel.diff}
-                    hidden={panel.id !== selectedPanelId}
-                  />
-                )}
+                {renderPanel(panel)}
               </TabPanel>
             ))}
           </div>
