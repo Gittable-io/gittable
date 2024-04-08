@@ -15,40 +15,8 @@ export type ListVersionsResponse =
     }
   | {
       status: "error";
-      type: "unknown";
-      message: "Unknown error";
-    };
-
-export async function list_versions({
-  repositoryId,
-}: ListVersionsParameters): Promise<ListVersionsResponse> {
-  console.debug(`[API/list_versions] Called with repositoryId=${repositoryId}`);
-
-  try {
-    const tags = await git.listTags({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-    });
-
-    const versions: Version[] = tags.map((tag) => ({
-      type: "published",
-      name: tag,
-    }));
-
-    return { status: "success", versions };
-  } catch (error) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
-  }
-}
-
-export type GetCheckedOutVersionParameters = {
-  repositoryId: string;
-};
-
-export type GetCheckedOutVersionResponse =
-  | {
-      status: "success";
-      version: Version;
+      type: "COULD NOT DETERMINE LATEST VERSION";
+      message: "Could not determine latest version";
     }
   | {
       status: "error";
@@ -61,27 +29,38 @@ export type GetCheckedOutVersionResponse =
       message: "Unknown error";
     };
 
-export async function get_checked_out_version({
+export async function list_versions({
   repositoryId,
-}: GetCheckedOutVersionParameters): Promise<GetCheckedOutVersionResponse> {
-  console.debug(
-    `[API/get_checked_out_version] Called with repositoryId=${repositoryId}`,
-  );
+}: ListVersionsParameters): Promise<ListVersionsResponse> {
+  console.debug(`[API/list_versions] Called with repositoryId=${repositoryId}`);
 
   try {
-    // 1. Get the commitOid referenced by HEAD
+    // 1. Get list of tags
+    console.debug(`[API/list_versions] Get list of tags`);
+    const tags = await git.listTags({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+    });
+
+    // 2. Determine which tag is the latest one & which one is the current one
+    console.debug(
+      `[API/list_versions] Determine which tag is the latest one & which one is the current one`,
+    );
+
+    const mainCommitOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "main",
+    });
+
     const headCommitOid = await git.resolveRef({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: "HEAD",
     });
 
-    // 2. For each tagged version, check which one is equal to HEAD
-    const tags = await git.listTags({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-    });
-
+    let newestTag: string | null = null;
+    let currentTag: string | null = null;
     for (const tag of tags) {
       const tagCommitOid = await git.resolveRef({
         fs,
@@ -89,16 +68,49 @@ export async function get_checked_out_version({
         ref: tag,
       });
 
+      if (tagCommitOid === mainCommitOid) {
+        newestTag = tag;
+      }
       if (tagCommitOid === headCommitOid) {
-        return { status: "success", version: { type: "published", name: tag } };
+        currentTag = tag;
+      }
+
+      if (newestTag != null && currentTag != null) {
+        break;
       }
     }
 
-    return {
-      status: "error",
-      type: "HEAD does not point to a Tag",
-      message: "HEAD does not point to a Tag",
-    };
+    if (newestTag == null) {
+      console.debug(
+        `[API/list_versions] Could not determine latest or current version`,
+      );
+
+      return {
+        status: "error",
+        type: "COULD NOT DETERMINE LATEST VERSION",
+        message: "Could not determine latest version",
+      };
+    }
+
+    if (currentTag == null) {
+      console.debug(`[API/list_versions] HEAD does not point to a Tag`);
+
+      return {
+        status: "error",
+        type: "HEAD does not point to a Tag",
+        message: "HEAD does not point to a Tag",
+      };
+    }
+
+    const versions: Version[] = tags.map((tag) => ({
+      type: "published",
+      name: tag,
+      newest: tag === newestTag,
+      current: tag === currentTag,
+    }));
+
+    console.debug(`[API/list_versions] Success. Sending versions`);
+    return { status: "success", versions };
   } catch (error) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }

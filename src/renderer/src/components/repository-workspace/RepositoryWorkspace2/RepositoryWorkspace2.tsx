@@ -20,19 +20,16 @@ export function RepositoryWorkspace2(): JSX.Element {
         repositoryId: repository.id,
       });
 
-      // Fetch checked out versions
-      const currentVersionResponse = await window.api.get_checked_out_version({
-        repositoryId: repository.id,
-      });
+      if (versionsResponse.status === "success") {
+        // Get current version
+        const currentVersion = versionsResponse.versions.find(
+          (v) => v.current,
+        )!;
 
-      if (
-        versionsResponse.status === "success" &&
-        currentVersionResponse.status === "success"
-      ) {
         dispatch(
           repoActions.setVersions({
             versions: versionsResponse.versions,
-            checkedOutVersion: currentVersionResponse.version,
+            checkedOutVersion: currentVersion,
           }),
         );
       } else {

@@ -50,9 +50,6 @@ import {
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
-  get_checked_out_version,
-  type GetCheckedOutVersionParameters,
-  type GetCheckedOutVersionResponse,
   get_checked_out_content,
   type GetCheckedOutContentParameters,
   type GetCheckedOutContentResponse,
@@ -109,10 +106,6 @@ const gittableElectronAPI = {
     params: ListVersionsParameters,
   ): Promise<ListVersionsResponse> =>
     ipcRenderer.invoke("list_versions", params),
-  get_checked_out_version: (
-    params: GetCheckedOutVersionParameters,
-  ): Promise<GetCheckedOutVersionResponse> =>
-    ipcRenderer.invoke("get_checked_out_version", params),
   get_checked_out_content: (
     params: GetCheckedOutContentParameters,
   ): Promise<GetCheckedOutContentResponse> =>
@@ -159,9 +152,6 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("pull", (_event, params) => pull(params));
 
   ipcMain.handle("list_versions", (_event, params) => list_versions(params));
-  ipcMain.handle("get_checked_out_version", (_event, params) =>
-    get_checked_out_version(params),
-  );
   ipcMain.handle("get_checked_out_content", (_event, params) =>
     get_checked_out_content(params),
   );
