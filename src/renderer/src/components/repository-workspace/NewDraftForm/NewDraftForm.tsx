@@ -1,23 +1,20 @@
 import { useState } from "react";
 import "./NewDraftForm.css";
 import { InputAndValidation, MaterialSymbolButton } from "gittable-editor";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, AppRootState } from "@renderer/store/store";
-import { repoActions } from "@renderer/store/repoSlice";
+import { useSelector } from "react-redux";
+import { AppRootState } from "@renderer/store/store";
 
-export function NewDraftForm(): JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
+export type NewDraftFormProps = {
+  onNewDraft: (name: string) => void;
+};
 
+export function NewDraftForm({ onNewDraft }: NewDraftFormProps): JSX.Element {
   const versions = useSelector((state: AppRootState) => state.repo.versions)!;
 
   const [draftName, setDraftName] = useState<string>("");
 
   const versionExists = (draftName: string): boolean => {
     return versions.some((v) => v.name === draftName);
-  };
-
-  const createDraft = async (): Promise<void> => {
-    dispatch(repoActions.createAndSwitchToDraft(draftName));
   };
 
   const error: string | null =
@@ -36,7 +33,9 @@ export function NewDraftForm(): JSX.Element {
       <MaterialSymbolButton
         symbol="check"
         disabled={error != null}
-        onClick={createDraft}
+        onClick={() => {
+          onNewDraft(draftName);
+        }}
       />
     </div>
   );
