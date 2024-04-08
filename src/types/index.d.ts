@@ -42,7 +42,17 @@ export type TableWithMetadata = TableMetadata & {
 
 export type TableStatus = TableMetadata & { modified: boolean };
 
-export type Version = {
-  type: "draft" | "published";
+export type PublishedVersion = {
+  type: "published";
   name: string;
+  tag: string;
+  newest: boolean;
 };
+
+export type DraftVersion = {
+  type: "draft";
+  name: string;
+  branch: string;
+};
+
+export type Version = PublishedVersion | DraftVersion;

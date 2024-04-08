@@ -7,6 +7,11 @@ import {
   VersionContent,
 } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
+import {
+  createAndSwitchToDraft,
+  fetchRepositoryDetails,
+  switchVersion,
+} from "./thunks";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -29,13 +34,8 @@ export type Panel = { id: string } & PanelDescription;
 export type RepoState = {
   repository: Repository | null;
 
-  loading: {
-    completedLoadingVersions: boolean;
-    completedCheckout: boolean;
-  };
-
-  versions: Version[];
-  checkedOutVersion: Version | null;
+  versions: Version[] | null;
+  currentVersion: Version | null;
   checkedOutContent: VersionContent | null;
 
   panels: Panel[];
@@ -45,13 +45,8 @@ export type RepoState = {
 function initState(repository: Repository | null): RepoState {
   return {
     repository,
-    loading: {
-      completedLoadingVersions: false,
-      completedCheckout: false,
-    },
-
-    versions: [],
-    checkedOutVersion: null,
+    versions: null,
+    currentVersion: null,
     checkedOutContent: null,
 
     panels: [],
@@ -63,32 +58,6 @@ export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
   reducers: {
-    setVersions: (
-      state,
-      action: PayloadAction<{
-        versions: Version[];
-        checkedOutVersion: Version;
-      }>,
-    ) => {
-      state.versions = action.payload.versions;
-      state.checkedOutVersion = action.payload.checkedOutVersion;
-
-      state.loading.completedLoadingVersions = true;
-    },
-    startCheckout: (state, action: PayloadAction<Version>) => {
-      state.checkedOutVersion = action.payload;
-      state.checkedOutContent = null;
-
-      state.loading.completedCheckout = false;
-
-      state.panels = [];
-      state.selectedPanelId = null;
-    },
-    completeCheckout: (state, action: PayloadAction<VersionContent>) => {
-      state.checkedOutContent = action.payload;
-
-      state.loading.completedCheckout = true;
-    },
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
       const panel = action.payload;
 
@@ -133,9 +102,42 @@ export const repoSlice = createSlice({
       })
       .addCase(appActions.closeRepository, () => {
         return initState(null);
+      })
+      .addCase(fetchRepositoryDetails.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
+        state.currentVersion = action.payload.currentVersion;
+        state.checkedOutContent = action.payload.content;
+      })
+      .addCase(switchVersion.pending, (state, action) => {
+        state.currentVersion = action.meta.arg;
+        state.checkedOutContent = null;
+
+        state.panels = [];
+        state.selectedPanelId = null;
+      })
+      .addCase(switchVersion.fulfilled, (state, action) => {
+        state.currentVersion = action.payload.currentVersion;
+        state.checkedOutContent = action.payload.content;
+      })
+      .addCase(createAndSwitchToDraft.pending, (state) => {
+        state.currentVersion = null;
+        state.checkedOutContent = null;
+
+        state.panels = [];
+        state.selectedPanelId = null;
+      })
+      .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
+        state.currentVersion = action.payload.currentVersion;
+        state.checkedOutContent = action.payload.content;
       });
   },
 });
 
-export const repoActions = repoSlice.actions;
+export const repoActions = {
+  ...repoSlice.actions,
+  switchVersion,
+  fetchRepositoryDetails,
+  createAndSwitchToDraft,
+};
 export const repoReducer = repoSlice.reducer;

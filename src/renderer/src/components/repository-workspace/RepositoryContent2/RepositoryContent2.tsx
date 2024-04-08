@@ -9,17 +9,13 @@ import { repoActions } from "@renderer/store/repoSlice";
 export function RepositoryContent2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
-  const completedCheckout = useSelector(
-    (state: AppRootState) => state.repo.loading.completedCheckout,
-  );
-
   const content = useSelector(
     (state: AppRootState) => state.repo.checkedOutContent,
   )!;
 
   return (
     <SidebarSection id="repository-content">
-      {completedCheckout ? (
+      {content ? (
         <List>
           {content.tables.map((tableMetadata) => (
             <RepositoryContentItem
