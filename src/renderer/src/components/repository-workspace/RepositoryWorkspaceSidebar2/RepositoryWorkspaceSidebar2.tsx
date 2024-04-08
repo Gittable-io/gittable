@@ -17,32 +17,19 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
   const repository = useSelector(
     (state: AppRootState) => state.repo.repository!,
   )!;
-  const completedLoadingVersions = useSelector(
-    (state: AppRootState) => state.repo.loading.completedLoadingVersions,
-  );
 
   const versions = useSelector((state: AppRootState) => state.repo.versions);
   const checkedOutVersion = useSelector(
-    (state: AppRootState) => state.repo.checkedOutVersion,
+    (state: AppRootState) => state.repo.currentVersion,
   );
   //#endregion
 
   const [newDraft, setNewDraft] = useState<boolean>(false);
 
-  const checkOutVersion = async (version: Version): Promise<void> => {
+  const switchVersion = async (version: Version): Promise<void> => {
     setNewDraft(false);
 
-    dispatch(repoActions.startCheckout(version));
-    const response = await window.api.switch_version({
-      repositoryId: repository.id,
-      version,
-    });
-
-    if (response.status === "success") {
-      dispatch(repoActions.completeCheckout(response.content));
-    } else {
-      console.error(`[RepositoryWorkspaceSidebar] Error switching version`);
-    }
+    dispatch(repoActions.switchVersion(version));
   };
 
   const hasDraft = (versions: Version[]): boolean => {
@@ -51,6 +38,7 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
 
   const canCreateDraft =
     checkedOutVersion &&
+    versions &&
     !hasDraft(versions) &&
     checkedOutVersion.type === "published" &&
     checkedOutVersion.newest;
@@ -67,13 +55,13 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
         <h2>{repository.name}</h2>
       </div>
       <div className="versions-section">
-        {completedLoadingVersions && checkedOutVersion ? (
+        {versions && checkedOutVersion ? (
           <>
             <div className="version-list-and-create">
               <VersionSelector
                 versions={versions}
                 selectedVersion={checkedOutVersion}
-                onVersionChange={checkOutVersion}
+                onVersionChange={switchVersion}
               />
               {!newDraft ? (
                 <MaterialSymbolButton

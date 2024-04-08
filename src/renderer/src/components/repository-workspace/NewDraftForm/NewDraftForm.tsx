@@ -12,7 +12,7 @@ export function NewDraftForm(): JSX.Element {
   const repository = useSelector(
     (state: AppRootState) => state.repo.repository!,
   )!;
-  const versions = useSelector((state: AppRootState) => state.repo.versions);
+  const versions = useSelector((state: AppRootState) => state.repo.versions)!;
 
   const [draftName, setDraftName] = useState<string>("");
 
