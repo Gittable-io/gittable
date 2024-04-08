@@ -23,7 +23,7 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
 
   const versions = useSelector((state: AppRootState) => state.repo.versions);
   const checkedOutVersion = useSelector(
-    (state: AppRootState) => state.repo.checkedOutVersion!,
+    (state: AppRootState) => state.repo.checkedOutVersion,
   );
   //#endregion
 
@@ -45,7 +45,15 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
     }
   };
 
-  const canCreateDraft = checkedOutVersion.current;
+  const hasDraft = (versions: Version[]): boolean => {
+    return versions.some((v) => v.type === "draft");
+  };
+
+  const canCreateDraft =
+    checkedOutVersion &&
+    !hasDraft(versions) &&
+    checkedOutVersion.type === "published" &&
+    checkedOutVersion.newest;
 
   return (
     <div className="repository-workspace-sidebar2">
@@ -59,7 +67,7 @@ export function RepositoryWorkspaceSidebar2(): JSX.Element {
         <h2>{repository.name}</h2>
       </div>
       <div className="versions-section">
-        {completedLoadingVersions ? (
+        {completedLoadingVersions && checkedOutVersion ? (
           <>
             <div className="version-list-and-create">
               <VersionSelector

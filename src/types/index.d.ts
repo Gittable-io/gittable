@@ -45,12 +45,14 @@ export type TableStatus = TableMetadata & { modified: boolean };
 export type PublishedVersion = {
   type: "published";
   name: string;
+  tag: string;
   newest: boolean;
 };
 
 export type DraftVersion = {
   type: "draft";
   name: string;
+  branch: string;
 };
 
-export type Version = { current: boolean } & (PublishedVersion | DraftVersion);
+export type Version = PublishedVersion | DraftVersion;

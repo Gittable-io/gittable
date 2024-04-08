@@ -16,25 +16,27 @@ export function RepositoryWorkspace2(): JSX.Element {
   useEffect(() => {
     const initWorkspace = async (): Promise<void> => {
       // Fetch versions
-      const versionsResponse = await window.api.list_versions({
+      const versionsResp = await window.api.list_versions({
         repositoryId: repository.id,
       });
 
-      if (versionsResponse.status === "success") {
-        // Get current version
-        const currentVersion = versionsResponse.versions.find(
-          (v) => v.current,
-        )!;
+      const currentVersionResp = await window.api.get_current_version({
+        repositoryId: repository.id,
+      });
 
+      if (
+        versionsResp.status === "success" &&
+        currentVersionResp.status === "success"
+      ) {
         dispatch(
           repoActions.setVersions({
-            versions: versionsResponse.versions,
-            checkedOutVersion: currentVersion,
+            versions: versionsResp.versions,
+            checkedOutVersion: currentVersionResp.version,
           }),
         );
       } else {
         console.error(
-          "[RepositoryWorkspace/initState] Couldn't retrieve versions",
+          "[RepositoryWorkspace/initState] Couldn't retrieve versions or current version",
         );
         return;
       }
