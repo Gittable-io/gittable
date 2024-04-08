@@ -2,6 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
+//#region fetchRepositoryDetails
 /**
  * Init workspace by retrieving:
  * - The list of versions
@@ -49,6 +50,9 @@ export const fetchRepositoryDetails = createAsyncThunk<
   };
 });
 
+//#endregion
+
+//#region switchVersion
 /**
  * Switch to an existing version and update
  * - Current version
@@ -87,7 +91,9 @@ export const switchVersion = createAsyncThunk<
     content: getCheckoutContentResp.content,
   };
 });
+//#endregion
 
+//#region createAndSwitchToDraft
 /**
  * Create a switch to a new draft version.
  *
@@ -144,3 +150,30 @@ export const createAndSwitchToDraft = createAsyncThunk<
     content: getCheckedOutContentResp.content,
   };
 });
+//#endregion
+
+//#region updateVersionContent
+export const updateVersionContent = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  void, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/updateVersionContent", async (_, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 3. Fetch content
+  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+    repositoryId,
+  });
+
+  if (getCheckedOutContentResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
+  }
+
+  return {
+    content: getCheckedOutContentResp.content,
+  };
+});
+
+//#endregion

@@ -11,6 +11,7 @@ import {
   createAndSwitchToDraft,
   fetchRepositoryDetails,
   switchVersion,
+  updateVersionContent,
 } from "./thunks";
 
 export type DiffDescription = {
@@ -130,7 +131,19 @@ export const repoSlice = createSlice({
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
         state.checkedOutContent = action.payload.content;
+      })
+      .addCase(updateVersionContent.fulfilled, (state, action) => {
+        state.checkedOutContent = action.payload.content;
       });
+  },
+  selectors: {
+    isContentModified: (state): boolean => {
+      if (state.checkedOutContent == null) return false;
+
+      if (state.checkedOutContent.tables.some((t) => t.modified)) return true;
+
+      return false;
+    },
   },
 });
 
@@ -139,5 +152,7 @@ export const repoActions = {
   switchVersion,
   fetchRepositoryDetails,
   createAndSwitchToDraft,
+  updateVersionContent,
 };
 export const repoReducer = repoSlice.reducer;
+export const repoSelectors = repoSlice.selectors;

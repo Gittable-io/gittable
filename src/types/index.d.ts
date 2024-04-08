@@ -1,5 +1,3 @@
-import { type Table } from "gittable-editor";
-
 export type Repository = {
   id: string;
   name: string;
@@ -17,10 +15,6 @@ export type RepositoryStatus = {
   tables: TableStatus[];
 };
 
-export type VersionContent = {
-  tables: TableMetadata[];
-};
-
 export type RepositoryCredentials = {
   username: string;
   password: string;
@@ -35,12 +29,10 @@ export type TableMetadata = {
   /** The name of the table, which corresponds currently to the ID (or filename) without the .table.json extension */
   name: string;
 };
-
-export type TableWithMetadata = TableMetadata & {
-  tableData: Table;
-};
-
+// TODO: REMOVE WHEN REDESIGN IS OVER
 export type TableStatus = TableMetadata & { modified: boolean };
+
+export type TableMetadataWithStatus = TableMetadata & { modified: boolean };
 
 export type PublishedVersion = {
   type: "published";
@@ -56,3 +48,7 @@ export type DraftVersion = {
 };
 
 export type Version = PublishedVersion | DraftVersion;
+
+export type VersionContent = {
+  tables: TableMetadataWithStatus[];
+};
