@@ -53,9 +53,6 @@ import {
   get_current_version,
   type GetCurrentVersionParameters,
   type GetCurrentVersionResponse,
-  get_checked_out_content,
-  type GetCheckedOutContentParameters,
-  type GetCheckedOutContentResponse,
   switch_version,
   type SwitchVersionParameters,
   type SwitchVersionResponse,
@@ -63,6 +60,11 @@ import {
   type CreateDraftParameters,
   type CreateDraftResponse,
 } from "./repository";
+import {
+  get_checked_out_content,
+  type GetCheckedOutContentParameters,
+  type GetCheckedOutContentResponse,
+} from "./version";
 
 /**
  * TODO: I was able to remove boilerplate when adding or modifying an endpoint. But there's room for improvement
@@ -116,16 +118,17 @@ const gittableElectronAPI = {
     params: GetCurrentVersionParameters,
   ): Promise<GetCurrentVersionResponse> =>
     ipcRenderer.invoke("get_current_version", params),
-  get_checked_out_content: (
-    params: GetCheckedOutContentParameters,
-  ): Promise<GetCheckedOutContentResponse> =>
-    ipcRenderer.invoke("get_checked_out_content", params),
   switch_version: (
     params: SwitchVersionParameters,
   ): Promise<SwitchVersionResponse> =>
     ipcRenderer.invoke("switch_version", params),
   create_draft: (params: CreateDraftParameters): Promise<CreateDraftResponse> =>
     ipcRenderer.invoke("create_draft", params),
+
+  get_checked_out_content: (
+    params: GetCheckedOutContentParameters,
+  ): Promise<GetCheckedOutContentResponse> =>
+    ipcRenderer.invoke("get_checked_out_content", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -167,11 +170,12 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("get_current_version", (_event, params) =>
     get_current_version(params),
   );
+  ipcMain.handle("switch_version", (_event, params) => switch_version(params));
+  ipcMain.handle("create_draft", (_event, params) => create_draft(params));
+
   ipcMain.handle("get_checked_out_content", (_event, params) =>
     get_checked_out_content(params),
   );
-  ipcMain.handle("switch_version", (_event, params) => switch_version(params));
-  ipcMain.handle("create_draft", (_event, params) => create_draft(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>
