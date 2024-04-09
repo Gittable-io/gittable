@@ -35,18 +35,18 @@ export const fetchRepositoryDetails = createAsyncThunk<
   }
 
   // 3. Fetch checked out content
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     versions: listVersionsResp.versions,
     currentVersion: getCurrentVersionResp.version,
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 
@@ -78,17 +78,17 @@ export const switchVersion = createAsyncThunk<
   }
 
   // 2. Get content
-  const getCheckoutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckoutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     currentVersion: version,
-    content: getCheckoutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 //#endregion
@@ -136,18 +136,18 @@ export const createAndSwitchToDraft = createAsyncThunk<
   }
   // 3. Fetch checked out content
   // * Might be necessary if I created a draft version but I'm not on the latest tag
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     versions: listVersionsResp.versions,
     currentVersion: createDraftResp.version,
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 //#endregion
@@ -163,16 +163,87 @@ export const updateVersionContent = createAsyncThunk<
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
   // 3. Fetch content
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
+  };
+});
+
+//#endregion
+
+//#region discardChanges
+export const discardChanges = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  void, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/discardChanges", async (_, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Discard changes
+  const discardResp = await window.api.discard_changes({
+    repositoryId,
+  });
+
+  if (discardResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error discarding");
+  }
+
+  // 2. Update content
+  const contentResp = await window.api.get_current_version_content({
+    repositoryId,
+  });
+
+  if (contentResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
+  }
+
+  return {
+    content: contentResp.content,
+  };
+});
+
+//#endregion
+
+//#region commit
+export const commit = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  string, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/commit", async (message, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Commit changes
+  const commitResp = await window.api.commit({
+    repositoryId,
+    message,
+  });
+
+  if (commitResp.status === "error") {
+    return thunkAPI.rejectWithValue(`Error committing: ${commitResp.type}`);
+  }
+
+  // 2. Update content
+  const contentResp = await window.api.get_current_version_content({
+    repositoryId,
+  });
+
+  if (contentResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
+  }
+
+  return {
+    content: contentResp.content,
   };
 });
 

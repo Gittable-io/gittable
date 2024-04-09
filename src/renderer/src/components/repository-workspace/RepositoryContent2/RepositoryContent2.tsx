@@ -9,15 +9,15 @@ import { repoActions } from "@renderer/store/repoSlice";
 export function RepositoryContent2(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
-  const content = useSelector(
-    (state: AppRootState) => state.repo.checkedOutContent,
+  const tables = useSelector(
+    (state: AppRootState) => state.repo.currentVersionContent?.tables,
   )!;
 
   return (
     <SidebarSection id="repository-content">
-      {content ? (
+      {tables ? (
         <List>
-          {content.tables.map((tableMetadata) => (
+          {tables.map((tableMetadata) => (
             <RepositoryContentItem
               key={tableMetadata.id}
               tableName={tableMetadata.name}
