@@ -28,6 +28,9 @@ export type PanelDescription =
   | {
       type: "diff";
       diff: DiffDescription;
+    }
+  | {
+      type: "review_current_version";
     };
 
 export type Panel = { id: string } & PanelDescription;
@@ -65,7 +68,9 @@ export const repoSlice = createSlice({
       const panelId =
         panel.type === "table"
           ? `${panel.type}_${panel.table.id}`
-          : `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`;
+          : panel.type === "diff"
+            ? `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`
+            : "review_current_version";
 
       if (!state.panels.find((p) => p.id === panelId)) {
         state.panels.push({ id: panelId, ...panel });

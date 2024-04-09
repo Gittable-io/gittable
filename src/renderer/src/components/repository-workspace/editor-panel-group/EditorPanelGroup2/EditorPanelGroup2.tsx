@@ -7,11 +7,28 @@ import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 import { TableViewerPanel } from "../TableViewerPanel";
 import { TableEditorPanel } from "../TableEditorPanel";
+import { ReviewPanel } from "../ReviewPanel";
 
 const getPanelTitle = (panel: Panel): string => {
-  return panel.type === "table"
-    ? panel.table.name
-    : `${panel.diff.table.name} (diff)`;
+  switch (panel.type) {
+    case "table":
+      return panel.table.name;
+    case "diff":
+      return `${panel.diff.table.name} (diff)`;
+    case "review_current_version":
+      return "Review";
+  }
+};
+
+const getPanelSymbol = (panel: Panel): string => {
+  switch (panel.type) {
+    case "table":
+      return "table";
+    case "diff":
+      return "table_view";
+    case "review_current_version":
+      return "preview";
+  }
 };
 
 export function EditorPanelGroup2(): JSX.Element {
@@ -26,31 +43,37 @@ export function EditorPanelGroup2(): JSX.Element {
   );
 
   const renderPanel = (panel: Panel): JSX.Element => {
-    if (panel.type === "table") {
-      if (isDraft) {
+    switch (panel.type) {
+      case "table": {
+        if (isDraft) {
+          return (
+            <TableEditorPanel
+              key={panel.table.id}
+              tableMetadata={panel.table}
+              hidden={panel.id !== selectedPanelId}
+            />
+          );
+        } else {
+          return (
+            <TableViewerPanel
+              key={panel.table.id}
+              tableMetadata={panel.table}
+              hidden={panel.id !== selectedPanelId}
+            />
+          );
+        }
+      }
+      case "diff": {
         return (
-          <TableEditorPanel
-            key={panel.table.id}
-            tableMetadata={panel.table}
-            hidden={panel.id !== selectedPanelId}
-          />
-        );
-      } else {
-        return (
-          <TableViewerPanel
-            key={panel.table.id}
-            tableMetadata={panel.table}
+          <TableDiffViewerPanel
+            diffDescription={panel.diff}
             hidden={panel.id !== selectedPanelId}
           />
         );
       }
-    } else {
-      return (
-        <TableDiffViewerPanel
-          diffDescription={panel.diff}
-          hidden={panel.id !== selectedPanelId}
-        />
-      );
+      case "review_current_version": {
+        return <ReviewPanel />;
+      }
     }
   };
 
@@ -70,7 +93,7 @@ export function EditorPanelGroup2(): JSX.Element {
               >
                 <IconAndText
                   text={getPanelTitle(panel)}
-                  materialSymbol="table"
+                  materialSymbol={getPanelSymbol(panel)}
                 />
                 <MaterialSymbolButton
                   symbol="close"
