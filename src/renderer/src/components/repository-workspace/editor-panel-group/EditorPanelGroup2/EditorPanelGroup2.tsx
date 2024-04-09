@@ -27,7 +27,7 @@ const getPanelSymbol = (panel: Panel): string => {
     case "diff":
       return "table_view";
     case "review_current_version":
-      return "preview";
+      return "fact_check";
   }
 };
 
