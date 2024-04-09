@@ -9,6 +9,7 @@ import {
 import { appActions } from "./appSlice";
 import {
   createAndSwitchToDraft,
+  discardChanges,
   fetchRepositoryDetails,
   switchVersion,
   updateVersionContent,
@@ -139,6 +140,9 @@ export const repoSlice = createSlice({
       })
       .addCase(updateVersionContent.fulfilled, (state, action) => {
         state.checkedOutContent = action.payload.content;
+      })
+      .addCase(discardChanges.fulfilled, (state, action) => {
+        state.checkedOutContent = action.payload.content;
       });
   },
   selectors: {
@@ -158,6 +162,7 @@ export const repoActions = {
   fetchRepositoryDetails,
   createAndSwitchToDraft,
   updateVersionContent,
+  discardChanges,
 };
 export const repoReducer = repoSlice.reducer;
 export const repoSelectors = repoSlice.selectors;

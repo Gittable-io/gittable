@@ -20,9 +20,6 @@ import {
   list_tables,
   type ListTablesParameters,
   type ListTablesResponse,
-  discard_changes,
-  type DiscardChangesParameters,
-  type DiscardChangesResponse,
   get_repository_status,
   type GetRepositoryStatusParameters,
   type GetRepositoryStatusResponse,
@@ -64,6 +61,9 @@ import {
   get_checked_out_content,
   type GetCheckedOutContentParameters,
   type GetCheckedOutContentResponse,
+  discard_changes,
+  type DiscardChangesParameters,
+  type DiscardChangesResponse,
 } from "./version";
 
 /**
@@ -93,10 +93,6 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("get_table_data", params),
   save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
     ipcRenderer.invoke("save_table", params),
-  discard_changes: (
-    params: DiscardChangesParameters,
-  ): Promise<DiscardChangesResponse> =>
-    ipcRenderer.invoke("discard_changes", params),
   get_repository_status: (
     params: GetRepositoryStatusParameters,
   ): Promise<GetRepositoryStatusResponse> =>
@@ -129,6 +125,10 @@ const gittableElectronAPI = {
     params: GetCheckedOutContentParameters,
   ): Promise<GetCheckedOutContentResponse> =>
     ipcRenderer.invoke("get_checked_out_content", params),
+  discard_changes: (
+    params: DiscardChangesParameters,
+  ): Promise<DiscardChangesResponse> =>
+    ipcRenderer.invoke("discard_changes", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -155,9 +155,6 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("list_tables", (_event, params) => list_tables(params));
   ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
   ipcMain.handle("save_table", (_event, params) => save_table(params));
-  ipcMain.handle("discard_changes", (_event, params) =>
-    discard_changes(params),
-  );
   ipcMain.handle("get_repository_status", (_event, params) =>
     get_repository_status(params),
   );
@@ -175,6 +172,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
 
   ipcMain.handle("get_checked_out_content", (_event, params) =>
     get_checked_out_content(params),
+  );
+  ipcMain.handle("discard_changes", (_event, params) =>
+    discard_changes(params),
   );
 
   ipcMain.handle("get_git_config", get_git_config);

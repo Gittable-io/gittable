@@ -51,3 +51,39 @@ export async function get_checked_out_content({
 }
 
 //#endregion
+
+//#region API: discard_changes
+export type DiscardChangesParameters = {
+  repositoryId: string;
+};
+
+export type DiscardChangesResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function discard_changes({
+  repositoryId,
+}: DiscardChangesParameters): Promise<DiscardChangesResponse> {
+  console.debug(
+    `[API/discard_changes] Called with repositoryId=${repositoryId}`,
+  );
+
+  try {
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      force: true, // If I remove force:true, discard doesn't work
+    });
+    return { status: "success" };
+  } catch (err) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+}
+
+//#endregion

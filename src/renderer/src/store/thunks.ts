@@ -177,3 +177,38 @@ export const updateVersionContent = createAsyncThunk<
 });
 
 //#endregion
+
+//#region discardChanges
+export const discardChanges = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  void, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/discardChanges", async (_, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Discard changes
+  const discardResp = await window.api.discard_changes({
+    repositoryId,
+  });
+
+  if (discardResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error discarding");
+  }
+
+  // 2. Update content
+  const contentResp = await window.api.get_checked_out_content({
+    repositoryId,
+  });
+
+  if (contentResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
+  }
+
+  return {
+    content: contentResp.content,
+  };
+});
+
+//#endregion
