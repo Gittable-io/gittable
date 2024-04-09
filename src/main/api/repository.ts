@@ -8,6 +8,7 @@ import {
   VersionContent,
 } from "@sharedTypes/index";
 import { get_current_version_content } from "./version";
+import _ from "lodash";
 
 //#region API: list_versions
 export type ListVersionsParameters = {
@@ -304,6 +305,85 @@ export async function create_draft({
     // If there's an error in pushing branch, delete created branch
   }
 }
+//#endregion
+
+//#region API: delete_draft
+export type DeleteDraftParameters = {
+  repositoryId: string;
+  version: DraftVersion;
+};
+
+export type DeleteDraftResponse =
+  | {
+      status: "success";
+      versions: Version[];
+    }
+  | {
+      status: "error";
+      type: "DRAFT VERSION OPENED";
+      message: "Cannot delete opened draft version";
+    }
+  | {
+      status: "error";
+      type: "DRAFT VERSION DO NOT EXIST";
+      message: "Draft version do not exist";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+      message: "Unknown error";
+    };
+
+export async function delete_draft({
+  repositoryId,
+  version,
+}: DeleteDraftParameters): Promise<DeleteDraftResponse> {
+  console.debug(
+    `[API/delete_draft] Called with repositoryId=${repositoryId} and version=${JSON.stringify(version)}`,
+  );
+
+  try {
+    // 1. Check that draft version exists
+    const draftVersions = await list_draft_versions({ repositoryId });
+    if (!draftVersions.find((dv) => _.isEqual(dv, version))) {
+      return {
+        status: "error",
+        type: "DRAFT VERSION DO NOT EXIST",
+        message: "Draft version do not exist",
+      };
+    }
+
+    // 2. Check that we're not in actual draft version
+    const currentVersionResp = await get_current_version({ repositoryId });
+    if (currentVersionResp.status === "error") {
+      return { status: "error", type: "unknown", message: "Unknown error" };
+    }
+    if (_.isEqual(currentVersionResp.version, version)) {
+      return {
+        status: "error",
+        type: "DRAFT VERSION OPENED",
+        message: "Cannot delete opened draft version",
+      };
+    }
+
+    // 3. Delete draft version
+    await git.deleteBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: version.branch,
+    });
+
+    // 4. Get new list of versions and return it
+    const versionsResp = await list_versions({ repositoryId });
+    if (versionsResp.status === "error") {
+      return { status: "error", type: "unknown", message: "Unknown error" };
+    }
+    return { status: "success", versions: versionsResp.versions };
+  } catch (error) {
+    return { status: "error", type: "unknown", message: "Unknown error" };
+  }
+}
+
 //#endregion
 
 //#region Helper functions

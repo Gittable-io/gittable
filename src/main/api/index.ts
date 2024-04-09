@@ -53,6 +53,9 @@ import {
   create_draft,
   type CreateDraftParameters,
   type CreateDraftResponse,
+  delete_draft,
+  type DeleteDraftParameters,
+  type DeleteDraftResponse,
 } from "./repository";
 import {
   get_current_version_content,
@@ -118,6 +121,8 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("switch_version", params),
   create_draft: (params: CreateDraftParameters): Promise<CreateDraftResponse> =>
     ipcRenderer.invoke("create_draft", params),
+  delete_draft: (params: DeleteDraftParameters): Promise<DeleteDraftResponse> =>
+    ipcRenderer.invoke("delete_draft", params),
 
   get_current_version_content: (
     params: GetCurrentVersionContentParameters,
@@ -168,6 +173,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   );
   ipcMain.handle("switch_version", (_event, params) => switch_version(params));
   ipcMain.handle("create_draft", (_event, params) => create_draft(params));
+  ipcMain.handle("delete_draft", (_event, params) => delete_draft(params));
 
   ipcMain.handle("get_current_version_content", (_event, params) =>
     get_current_version_content(params),
