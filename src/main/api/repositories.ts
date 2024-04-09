@@ -11,6 +11,7 @@ import {
   getRepositoryPath,
 } from "../utils/utils";
 import { UserDataStore } from "../db";
+import { get_last_published_versions, switch_version } from "./repository";
 
 export type CloneRepositoryParameters = {
   remoteUrl: string;
@@ -20,19 +21,16 @@ export type CloneRepositoryParameters = {
 export type CloneRepositoryResponse =
   | { status: "success"; type: "cloned"; repository: Repository }
   | { status: "success"; type: "already cloned"; repository: Repository }
-  | { status: "error"; type: "malformed url"; message: string }
   | {
       status: "error";
-      type: "auth required no credentials provided";
-      message: "Authentication is required but no credentials were provided";
-    }
-  | { status: "error"; type: "connection error"; message: string }
-  | {
-      status: "error";
-      type: "git user name & email not configured ";
-      message: string;
-    }
-  | { status: "error"; type: "unknown"; message: string };
+      type:
+        | "MALFORMED_URL"
+        | "AUTH_REQUIRED_NO_CREDENTIALS_PROVIDED"
+        | "CONNECTION_ERROR"
+        | "GIT_USER_NOT_CONFIGURED"
+        | "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION"
+        | "UNKNOWN";
+    };
 
 /**
  *
@@ -69,16 +67,15 @@ export async function clone_repository({
 
   const trimmedRemoteUrl = remoteUrl.trim();
 
-  // First, check that the git config: user name and email are configured
+  // 1. check that the git config: user name and email are configured
   const gitConfig = await UserDataStore.getGitConfig();
   if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
     return {
       status: "error",
-      type: "git user name & email not configured ",
-      message: "Git user name and email are not configured",
+      type: "GIT_USER_NOT_CONFIGURED",
     };
   }
-  // Second, check that we didn't already clone this repository
+  // 2. Check that we didn't already clone this repository
   const repositories = await UserDataStore.getRepositories();
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
@@ -99,7 +96,7 @@ export async function clone_repository({
 
   //* it seems that the git.clone() creates the dir if it doesn't exist. So we don't need to create the folder beforehand
   try {
-    // Clone the repository
+    // 3. Clone the repository
     await git.clone({
       fs,
       http,
@@ -115,9 +112,7 @@ export async function clone_repository({
         if (!credentials) {
           errorResponse = {
             status: "error",
-            type: "auth required no credentials provided",
-            message:
-              "Authentication is required but no credentials were provided",
+            type: "AUTH_REQUIRED_NO_CREDENTIALS_PROVIDED",
           };
           return { cancel: true };
         } else {
@@ -133,7 +128,7 @@ export async function clone_repository({
         console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
     });
 
-    // Configure the user name and email
+    // 4. Configure the user name and email
     await git.setConfig({
       fs,
       dir: repositoryPath,
@@ -146,6 +141,28 @@ export async function clone_repository({
       path: "user.email",
       value: gitConfig.user.email,
     });
+
+    /*
+     5. At first clone, checkout to the last published version.
+
+     Note : when cloning a repository, by default, HEAD points to main. However, we do not allow HEAD to point to main
+     We allow only HEAD to point to another branch than main or to a tag.
+     So the code below, will make HEAD point to the latest published tag 
+
+     TODO: need to change this when cloning an empty repository
+    */
+    const lastPublishedVersion = await get_last_published_versions({
+      repositoryId,
+    });
+    const switchResp = await switch_version({
+      repositoryId,
+      version: lastPublishedVersion,
+    });
+    if (switchResp.status === "error")
+      errorResponse = {
+        status: "error",
+        type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
+      };
   } catch (error) {
     if (error instanceof Error) {
       console.debug(
@@ -157,21 +174,18 @@ export async function clone_repository({
       } else if (error.name === "UrlParseError") {
         errorResponse = {
           status: "error",
-          type: "malformed url",
-          message: "URL is not valid",
+          type: "MALFORMED_URL",
         };
       } else {
         errorResponse = {
           status: "error",
-          type: "connection error",
-          message: "Error connecting to Git repository",
+          type: "CONNECTION_ERROR",
         };
       }
     } else {
       errorResponse = {
         status: "error",
-        type: "unknown",
-        message: "Unknown error",
+        type: "UNKNOWN",
       };
     }
   } finally {
@@ -188,8 +202,7 @@ export async function clone_repository({
         } catch (error) {
           errorResponse = {
             status: "error",
-            type: "unknown",
-            message: "Unknown error",
+            type: "UNKNOWN",
           };
         }
       }
@@ -246,12 +259,10 @@ export type DeleteRepositoryReponse =
   | {
       status: "error";
       type: "non-existing repository folder";
-      message: "An error occured. Please contact support";
     }
   | {
       status: "error";
       type: "error deleting repository folder";
-      message: "An error occured. Please contact support";
     };
 
 export async function delete_repository({
@@ -278,14 +289,12 @@ export async function delete_repository({
       return {
         status: "error",
         type: "error deleting repository folder",
-        message: "An error occured. Please contact support",
       };
     }
   } else {
     return {
       status: "error",
       type: "non-existing repository folder",
-      message: "An error occured. Please contact support",
     };
   }
 }

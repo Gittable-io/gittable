@@ -29,7 +29,18 @@ export function RepositoryCloneForm(): JSX.Element {
     setWaitingForResponse(false);
 
     if (response.status === "error") {
-      setError(response.message);
+      const errorType = response.type;
+      if (errorType === "MALFORMED_URL") setError("URL is not valid");
+      else if (errorType === "AUTH_REQUIRED_NO_CREDENTIALS_PROVIDED")
+        setError("Authentication is required but no credentials were provided");
+      else if (errorType === "CONNECTION_ERROR")
+        setError("Error connecting to Git repository");
+      else if (errorType === "GIT_USER_NOT_CONFIGURED")
+        setError("Git user name and email are not configured");
+      else
+        setError(
+          "An error occured. Try contacting your Git administrator or support",
+        );
     } else if (response.status === "success") {
       // If the repository wasn't already cloned
       if (response.type === "cloned") {

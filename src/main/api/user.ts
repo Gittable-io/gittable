@@ -33,17 +33,14 @@ export type SaveGitConfigResponse =
   | {
       status: "error";
       type: "Invalid user.name";
-      message: "Git config user.name is empty or invalid";
     }
   | {
       status: "error";
       type: "Invalid user.email";
-      message: "Git config user.email is empty or invalid";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function save_git_config({
@@ -56,7 +53,6 @@ export async function save_git_config({
     return {
       status: "error",
       type: "Invalid user.name",
-      message: "Git config user.name is empty or invalid",
     };
   } else if (
     gitConfig.user.email.trim() === "" ||
@@ -65,7 +61,6 @@ export async function save_git_config({
     return {
       status: "error",
       type: "Invalid user.email",
-      message: "Git config user.email is empty or invalid",
     };
   }
 
@@ -104,7 +99,6 @@ export async function save_git_config({
     return {
       status: "error",
       type: "unknown",
-      message: "Unknown error",
     };
   }
 }

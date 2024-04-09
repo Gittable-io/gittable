@@ -34,7 +34,6 @@ export type ListTablesResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 // ! Note : this endpoint is no longer used as from 1/03/2024. Consider removing it after some times
@@ -61,7 +60,7 @@ export async function list_tables({
       }));
     return { status: "success", tableMetadataList: tableMetadataList };
   } catch (err) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -79,7 +78,6 @@ export type GetTableResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function get_table_data({
@@ -121,7 +119,7 @@ export async function get_table_data({
       return { status: "success", tableData: tableContent };
     }
   } catch (err: unknown) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -138,7 +136,6 @@ export type SaveTableResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function save_table({
@@ -159,7 +156,6 @@ export async function save_table({
     return {
       status: "error",
       type: "unknown",
-      message: "Unknown error",
     };
   }
 }
@@ -176,7 +172,6 @@ export type GetRepositoryStatusResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function get_repository_status({
@@ -270,7 +265,7 @@ export async function get_repository_status({
       },
     };
   } catch (err) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -308,17 +303,14 @@ export type PushResponse =
   | {
       status: "error";
       type: "No credentials provided";
-      message: "Credentials are required to share your changes";
     }
   | {
       status: "error";
       type: "Error authenticating with provided credentials";
-      message: "Incorrect credentials. Please try again.";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function push({
@@ -341,7 +333,6 @@ export async function push({
     return {
       status: "error",
       type: "No credentials provided",
-      message: "Credentials are required to share your changes",
     };
   }
 
@@ -362,7 +353,6 @@ export async function push({
         errorResponse = {
           status: "error",
           type: "Error authenticating with provided credentials",
-          message: "Incorrect credentials. Please try again.",
         };
 
         return { cancel: true };
@@ -376,14 +366,12 @@ export async function push({
         errorResponse = {
           status: "error",
           type: "unknown",
-          message: "Unknown error",
         };
       }
     } else {
       errorResponse = {
         status: "error",
         type: "unknown",
-        message: "Unknown error",
       };
     }
   }
@@ -392,7 +380,7 @@ export async function push({
   if (errorResponse) {
     return errorResponse;
   } else if (!pushResult || pushResult.error) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 
   // In case of success
@@ -417,7 +405,6 @@ export type PullResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function pull({
@@ -459,7 +446,6 @@ export async function pull({
     return {
       status: "error",
       type: "unknown",
-      message: "Unknown error",
     };
   }
 }
