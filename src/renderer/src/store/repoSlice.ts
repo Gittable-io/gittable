@@ -40,6 +40,11 @@ export type Panel = { id: string } & PanelDescription;
 export type RepoState = {
   repository: Repository | null;
 
+  progress: {
+    discardInProgress: boolean;
+    commitInProgress: boolean;
+  };
+
   versions: Version[] | null;
   currentVersion: Version | null;
   checkedOutContent: VersionContent | null;
@@ -51,6 +56,12 @@ export type RepoState = {
 function initState(repository: Repository | null): RepoState {
   return {
     repository,
+
+    progress: {
+      discardInProgress: false,
+      commitInProgress: false,
+    },
+
     versions: null,
     currentVersion: null,
     checkedOutContent: null,
@@ -142,10 +153,18 @@ export const repoSlice = createSlice({
       .addCase(updateVersionContent.fulfilled, (state, action) => {
         state.checkedOutContent = action.payload.content;
       })
+      .addCase(discardChanges.pending, (state) => {
+        state.progress.discardInProgress = true;
+      })
       .addCase(discardChanges.fulfilled, (state, action) => {
+        state.progress.discardInProgress = false;
         state.checkedOutContent = action.payload.content;
       })
+      .addCase(commit.pending, (state) => {
+        state.progress.commitInProgress = true;
+      })
       .addCase(commit.fulfilled, (state, action) => {
+        state.progress.commitInProgress = false;
         state.checkedOutContent = action.payload.content;
       });
   },

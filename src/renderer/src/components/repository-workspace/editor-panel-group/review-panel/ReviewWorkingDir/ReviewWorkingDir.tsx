@@ -13,6 +13,13 @@ export function ReviewWorkingDir(): JSX.Element {
   const content = useSelector(
     (state: AppRootState) => state.repo.checkedOutContent!,
   );
+  const discardInProgress = useSelector(
+    (state: AppRootState) => state.repo.progress.discardInProgress,
+  );
+  const commitInProgress = useSelector(
+    (state: AppRootState) => state.repo.progress.commitInProgress,
+  );
+
   const [commitMessage, setCommitMessage] = useState<string>("");
 
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
@@ -30,6 +37,11 @@ export function ReviewWorkingDir(): JSX.Element {
     dispatch(repoActions.discardChanges());
   };
 
+  const commit = (): void => {
+    dispatch(repoActions.commit(commitMessage));
+    setCommitMessage("");
+  };
+
   const modifiedTables = content.tables.filter((table) => table.modified);
   const isWorkingDirModified = modifiedTables.length > 0;
   const canCommit = isWorkingDirModified && commitMessage !== "";
@@ -43,6 +55,7 @@ export function ReviewWorkingDir(): JSX.Element {
           variant="outlined"
           disabled={!isWorkingDirModified}
           onClick={showDiscardChangesModal}
+          loading={discardInProgress}
         />
         <div className="review-working-dir-commit">
           <InputAndValidation
@@ -55,7 +68,8 @@ export function ReviewWorkingDir(): JSX.Element {
             text="Commit changes"
             variant="outlined"
             disabled={!canCommit}
-            onClick={() => dispatch(repoActions.commit(commitMessage))}
+            onClick={commit}
+            loading={commitInProgress}
           />
         </div>
       </div>
