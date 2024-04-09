@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Version, VersionContent } from "@sharedTypes/index";
+import { DraftVersion, Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
 //#region fetchRepositoryDetails
@@ -176,6 +176,36 @@ export const updateVersionContent = createAsyncThunk<
   };
 });
 
+//#endregion
+
+//#region deleteDraft
+/**
+ * Delete draft
+ *
+ */
+export const deleteDraft = createAsyncThunk<
+  {
+    versions: Version[];
+  },
+  DraftVersion, // The draft to delete
+  { state: AppRootState; rejectValue: string }
+>("repo/deleteDraft", async (draftVersion, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Delete draft version
+  const deleteDraftResp = await window.api.delete_draft({
+    repositoryId,
+    version: draftVersion,
+  });
+
+  if (deleteDraftResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error deleting draft version");
+  }
+
+  return {
+    versions: deleteDraftResp.versions,
+  };
+});
 //#endregion
 
 //#region discardChanges

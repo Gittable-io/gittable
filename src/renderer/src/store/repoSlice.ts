@@ -10,6 +10,7 @@ import { appActions } from "./appSlice";
 import {
   commit,
   createAndSwitchToDraft,
+  deleteDraft,
   discardChanges,
   fetchRepositoryDetails,
   switchVersion,
@@ -43,6 +44,7 @@ export type RepoState = {
   progress: {
     discardInProgress: boolean;
     commitInProgress: boolean;
+    deleteDraftInProgress: boolean;
   };
 
   versions: Version[] | null;
@@ -60,6 +62,7 @@ function initState(repository: Repository | null): RepoState {
     progress: {
       discardInProgress: false,
       commitInProgress: false,
+      deleteDraftInProgress: false,
     },
 
     versions: null,
@@ -166,6 +169,13 @@ export const repoSlice = createSlice({
       .addCase(commit.fulfilled, (state, action) => {
         state.progress.commitInProgress = false;
         state.currentVersionContent = action.payload.content;
+      })
+      .addCase(deleteDraft.pending, (state) => {
+        state.progress.deleteDraftInProgress = true;
+      })
+      .addCase(deleteDraft.fulfilled, (state, action) => {
+        state.progress.deleteDraftInProgress = false;
+        state.versions = action.payload.versions;
       });
   },
   selectors: {
@@ -185,6 +195,7 @@ export const repoActions = {
   switchVersion,
   fetchRepositoryDetails,
   createAndSwitchToDraft,
+  deleteDraft,
   updateVersionContent,
   discardChanges,
   commit,
