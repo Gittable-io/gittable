@@ -47,7 +47,7 @@ export type RepoState = {
 
   versions: Version[] | null;
   currentVersion: Version | null;
-  checkedOutContent: VersionContent | null;
+  currentVersionContent: VersionContent | null;
 
   panels: Panel[];
   selectedPanelId: string | null;
@@ -64,7 +64,7 @@ function initState(repository: Repository | null): RepoState {
 
     versions: null,
     currentVersion: null,
-    checkedOutContent: null,
+    currentVersionContent: null,
 
     panels: [],
     selectedPanelId: null,
@@ -125,22 +125,22 @@ export const repoSlice = createSlice({
       .addCase(fetchRepositoryDetails.fulfilled, (state, action) => {
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       })
       .addCase(switchVersion.pending, (state, action) => {
         state.currentVersion = action.meta.arg;
-        state.checkedOutContent = null;
+        state.currentVersionContent = null;
 
         state.panels = [];
         state.selectedPanelId = null;
       })
       .addCase(switchVersion.fulfilled, (state, action) => {
         state.currentVersion = action.payload.currentVersion;
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       })
       .addCase(createAndSwitchToDraft.pending, (state) => {
         state.currentVersion = null;
-        state.checkedOutContent = null;
+        state.currentVersionContent = null;
 
         state.panels = [];
         state.selectedPanelId = null;
@@ -148,31 +148,32 @@ export const repoSlice = createSlice({
       .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       })
       .addCase(updateVersionContent.fulfilled, (state, action) => {
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       })
       .addCase(discardChanges.pending, (state) => {
         state.progress.discardInProgress = true;
       })
       .addCase(discardChanges.fulfilled, (state, action) => {
         state.progress.discardInProgress = false;
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       })
       .addCase(commit.pending, (state) => {
         state.progress.commitInProgress = true;
       })
       .addCase(commit.fulfilled, (state, action) => {
         state.progress.commitInProgress = false;
-        state.checkedOutContent = action.payload.content;
+        state.currentVersionContent = action.payload.content;
       });
   },
   selectors: {
     isContentModified: (state): boolean => {
-      if (state.checkedOutContent == null) return false;
+      if (state.currentVersionContent == null) return false;
 
-      if (state.checkedOutContent.tables.some((t) => t.modified)) return true;
+      if (state.currentVersionContent.tables.some((t) => t.modified))
+        return true;
 
       return false;
     },

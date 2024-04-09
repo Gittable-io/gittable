@@ -7,7 +7,7 @@ import {
   Version,
   VersionContent,
 } from "@sharedTypes/index";
-import { get_checked_out_content } from "./version";
+import { get_current_version_content } from "./version";
 
 //#region API: list_versions
 export type ListVersionsParameters = {
@@ -212,7 +212,7 @@ export async function switch_version({
     });
 
     // 2. Get the new content and return it
-    const response = await get_checked_out_content({ repositoryId });
+    const response = await get_current_version_content({ repositoryId });
     if (response.status === "error") throw new Error();
 
     return { status: "success", content: response.content };

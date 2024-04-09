@@ -1,3 +1,5 @@
+import { ReadCommitResult } from "isomorphic-git";
+
 export type Repository = {
   id: string;
   name: string;
@@ -51,4 +53,5 @@ export type Version = PublishedVersion | DraftVersion;
 
 export type VersionContent = {
   tables: TableMetadataWithStatus[];
+  commits: ReadCommitResult[];
 };

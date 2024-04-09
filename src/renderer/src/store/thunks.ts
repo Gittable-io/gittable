@@ -35,18 +35,18 @@ export const fetchRepositoryDetails = createAsyncThunk<
   }
 
   // 3. Fetch checked out content
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     versions: listVersionsResp.versions,
     currentVersion: getCurrentVersionResp.version,
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 
@@ -78,17 +78,17 @@ export const switchVersion = createAsyncThunk<
   }
 
   // 2. Get content
-  const getCheckoutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckoutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     currentVersion: version,
-    content: getCheckoutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 //#endregion
@@ -136,18 +136,18 @@ export const createAndSwitchToDraft = createAsyncThunk<
   }
   // 3. Fetch checked out content
   // * Might be necessary if I created a draft version but I'm not on the latest tag
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
     versions: listVersionsResp.versions,
     currentVersion: createDraftResp.version,
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 //#endregion
@@ -163,16 +163,16 @@ export const updateVersionContent = createAsyncThunk<
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
   // 3. Fetch content
-  const getCheckedOutContentResp = await window.api.get_checked_out_content({
+  const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
-  if (getCheckedOutContentResp.status === "error") {
+  if (currentContentResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
-    content: getCheckedOutContentResp.content,
+    content: currentContentResp.content,
   };
 });
 
@@ -198,7 +198,7 @@ export const discardChanges = createAsyncThunk<
   }
 
   // 2. Update content
-  const contentResp = await window.api.get_checked_out_content({
+  const contentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 
@@ -234,7 +234,7 @@ export const commit = createAsyncThunk<
   }
 
   // 2. Update content
-  const contentResp = await window.api.get_checked_out_content({
+  const contentResp = await window.api.get_current_version_content({
     repositoryId,
   });
 

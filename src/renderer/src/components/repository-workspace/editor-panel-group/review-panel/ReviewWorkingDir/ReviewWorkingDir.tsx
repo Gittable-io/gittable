@@ -10,8 +10,8 @@ import { useState } from "react";
 export function ReviewWorkingDir(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
-  const content = useSelector(
-    (state: AppRootState) => state.repo.checkedOutContent!,
+  const tables = useSelector(
+    (state: AppRootState) => state.repo.currentVersionContent!.tables,
   );
   const discardInProgress = useSelector(
     (state: AppRootState) => state.repo.progress.discardInProgress,
@@ -42,7 +42,7 @@ export function ReviewWorkingDir(): JSX.Element {
     setCommitMessage("");
   };
 
-  const modifiedTables = content.tables.filter((table) => table.modified);
+  const modifiedTables = tables.filter((table) => table.modified);
   const isWorkingDirModified = modifiedTables.length > 0;
   const canCommit = isWorkingDirModified && commitMessage !== "";
 

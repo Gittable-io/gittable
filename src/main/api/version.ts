@@ -1,19 +1,24 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
 import { getConfig } from "../config";
-import { TableMetadataWithStatus, VersionContent } from "@sharedTypes/index";
+import {
+  PublishedVersion,
+  TableMetadataWithStatus,
+  VersionContent,
+} from "@sharedTypes/index";
 import {
   getRepositoryPath,
   getRepositoryRelativeTablePath,
   getTableNameFromFileName,
 } from "../utils/utils";
+import { get_current_version, list_versions } from "./repository";
 
-//#region API: get_checked_out_content
-export type GetCheckedOutContentParameters = {
+//#region API: get_current_version_content
+export type GetCurrentVersionContentParameters = {
   repositoryId: string;
 };
 
-export type GetCheckedOutContentResponse =
+export type GetCurrentVersionContentResponse =
   | {
       status: "success";
       content: VersionContent;
@@ -24,31 +29,84 @@ export type GetCheckedOutContentResponse =
       message: "Unknown error";
     };
 
-export async function get_checked_out_content({
+export async function get_current_version_content({
   repositoryId,
-}: GetCheckedOutContentParameters): Promise<GetCheckedOutContentResponse> {
+}: GetCurrentVersionContentParameters): Promise<GetCurrentVersionContentResponse> {
   console.debug(
-    `[API/get_checked_out_content] Called with repositoryId=${repositoryId}`,
+    `[API/get_current_version_content] Called with repositoryId=${repositoryId}`,
   );
 
   try {
-    const [FILE, HEAD, WORKDIR] = [0, 1, 2];
-    const tables: TableMetadataWithStatus[] = (
-      await git.statusMatrix({
+    const currentVersionResp = await get_current_version({ repositoryId });
+    if (currentVersionResp.status === "error") {
+      throw new Error();
+    }
+    const currentVersion = currentVersionResp.version;
+
+    if (currentVersion.type === "draft") {
+      // 1. Get tables and their statuses
+      const [FILE, HEAD, WORKDIR] = [0, 1, 2];
+      const tables: TableMetadataWithStatus[] = (
+        await git.statusMatrix({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          filter: (f) => f.endsWith(getConfig().fileExtensions.table),
+        })
+      ).map((tableStatus) => ({
+        id: tableStatus[FILE] as string,
+        name: getTableNameFromFileName(tableStatus[FILE] as string),
+        modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
+      }));
+
+      // 2. Get the commit log from the HEAD to the oid of the last published version
+      const listVersionsResp = await list_versions({ repositoryId });
+      if (listVersionsResp.status === "error") {
+        throw new Error();
+      }
+
+      const lastPublishedVersion: PublishedVersion =
+        listVersionsResp.versions.filter(
+          (v) => v.type === "published" && v.newest,
+        )[0] as PublishedVersion;
+      const lastPublishedVersionOid = await git.resolveRef({
         fs,
         dir: getRepositoryPath(repositoryId),
-        filter: (f) => f.endsWith(getConfig().fileExtensions.table),
-      })
-    ).map((tableStatus) => ({
-      id: tableStatus[FILE] as string,
-      name: getTableNameFromFileName(tableStatus[FILE] as string),
-      modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
-    }));
+        ref: lastPublishedVersion.tag,
+      });
 
-    return {
-      status: "success",
-      content: { tables },
-    };
+      const log = await git.log({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+      });
+      // Only return the log from the HEAD of the branch to the last published tag
+      const branchLog = log.slice(
+        0,
+        log.findIndex((commit) => commit.oid === lastPublishedVersionOid),
+      );
+
+      return {
+        status: "success",
+        content: { tables, commits: branchLog },
+      };
+    } else {
+      const [FILE] = [0];
+      const tables: TableMetadataWithStatus[] = (
+        await git.statusMatrix({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          filter: (f) => f.endsWith(getConfig().fileExtensions.table),
+        })
+      ).map((tableStatus) => ({
+        id: tableStatus[FILE] as string,
+        name: getTableNameFromFileName(tableStatus[FILE] as string),
+        modified: false,
+      }));
+
+      return {
+        status: "success",
+        content: { tables, commits: [] },
+      };
+    }
   } catch (err) {
     return { status: "error", type: "unknown", message: "Unknown error" };
   }
@@ -120,7 +178,7 @@ export async function commit({
   console.debug(`[API/commit] Called with repositoryId=${repositoryId}`);
 
   // First check that there's something to commit (there's a change in the working dir)
-  const contentResp = await get_checked_out_content({
+  const contentResp = await get_current_version_content({
     repositoryId,
   });
 

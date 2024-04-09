@@ -55,9 +55,9 @@ import {
   type CreateDraftResponse,
 } from "./repository";
 import {
-  get_checked_out_content,
-  type GetCheckedOutContentParameters,
-  type GetCheckedOutContentResponse,
+  get_current_version_content,
+  type GetCurrentVersionContentParameters,
+  type GetCurrentVersionContentResponse,
   discard_changes,
   type DiscardChangesParameters,
   type DiscardChangesResponse,
@@ -119,10 +119,10 @@ const gittableElectronAPI = {
   create_draft: (params: CreateDraftParameters): Promise<CreateDraftResponse> =>
     ipcRenderer.invoke("create_draft", params),
 
-  get_checked_out_content: (
-    params: GetCheckedOutContentParameters,
-  ): Promise<GetCheckedOutContentResponse> =>
-    ipcRenderer.invoke("get_checked_out_content", params),
+  get_current_version_content: (
+    params: GetCurrentVersionContentParameters,
+  ): Promise<GetCurrentVersionContentResponse> =>
+    ipcRenderer.invoke("get_current_version_content", params),
   discard_changes: (
     params: DiscardChangesParameters,
   ): Promise<DiscardChangesResponse> =>
@@ -169,8 +169,8 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("switch_version", (_event, params) => switch_version(params));
   ipcMain.handle("create_draft", (_event, params) => create_draft(params));
 
-  ipcMain.handle("get_checked_out_content", (_event, params) =>
-    get_checked_out_content(params),
+  ipcMain.handle("get_current_version_content", (_event, params) =>
+    get_current_version_content(params),
   );
   ipcMain.handle("discard_changes", (_event, params) =>
     discard_changes(params),

@@ -1,0 +1,17 @@
+.review-commits table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.review-commits tr {
+  border-bottom: 1px solid var(--color-borders);
+}
+
+.review-commits td,
+.review-commits th {
+  padding: 10px;
+}
+
+.review-commits th {
+  text-align: left;
+}
