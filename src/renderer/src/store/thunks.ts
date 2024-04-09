@@ -26,12 +26,14 @@ export const fetchRepositoryDetails = createAsyncThunk<
     return thunkAPI.rejectWithValue("Error fetching versions");
   }
 
-  // 2. Fetch checked out version
-  const getCurrentVersionResp = await window.api.get_current_version({
+  // 2. Fetch current version
+  const currentVersionResp = await window.api.get_current_version({
     repositoryId,
   });
-  if (getCurrentVersionResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching current version");
+  if (currentVersionResp.status === "error") {
+    return thunkAPI.rejectWithValue(
+      `Error fetching current version: ${currentVersionResp.type}`,
+    );
   }
 
   // 3. Fetch checked out content
@@ -45,7 +47,7 @@ export const fetchRepositoryDetails = createAsyncThunk<
 
   return {
     versions: listVersionsResp.versions,
-    currentVersion: getCurrentVersionResp.version,
+    currentVersion: currentVersionResp.version,
     content: currentContentResp.content,
   };
 });

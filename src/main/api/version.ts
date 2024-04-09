@@ -26,7 +26,6 @@ export type GetCurrentVersionContentResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function get_current_version_content({
@@ -108,7 +107,7 @@ export async function get_current_version_content({
       };
     }
   } catch (err) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -126,7 +125,6 @@ export type DiscardChangesResponse =
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function discard_changes({
@@ -144,7 +142,7 @@ export async function discard_changes({
     });
     return { status: "success" };
   } catch (err) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -163,12 +161,10 @@ export type CommitResponse =
   | {
       status: "error";
       type: "NOTHING_TO_COMMIT";
-      message: "There's nothing to commit";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function commit({
@@ -183,7 +179,7 @@ export async function commit({
   });
 
   if (contentResp.status === "error") {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 
   const tableStatuses: TableMetadataWithStatus[] = contentResp.content.tables;
@@ -191,7 +187,6 @@ export async function commit({
     return {
       status: "error",
       type: "NOTHING_TO_COMMIT",
-      message: "There's nothing to commit",
     };
   }
 
@@ -219,7 +214,7 @@ export async function commit({
     if (error instanceof Error) {
       console.debug(`[API/commit] Error: ${error.name}`);
     }
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 

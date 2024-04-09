@@ -76,7 +76,7 @@ export function PushSection({
       } else if (
         response.type === "Error authenticating with provided credentials"
       ) {
-        setPushError(response.message);
+        setPushError(response.type);
         showPushCredentialsModal();
       } else {
         console.error(`[SourceControl] Unhandled Push error: ${response.type}`);

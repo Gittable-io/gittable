@@ -23,17 +23,14 @@ export type ListVersionsResponse =
   | {
       status: "error";
       type: "COULD NOT DETERMINE LATEST VERSION";
-      message: "Could not determine latest version";
     }
   | {
       status: "error";
       type: "HEAD does not point to a Tag";
-      message: "HEAD does not point to a Tag";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function list_versions({
@@ -53,7 +50,7 @@ export async function list_versions({
 
     return { status: "success", versions };
   } catch (error) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 //#endregion
@@ -71,12 +68,10 @@ export type GetCurrentVersionResponse =
   | {
       status: "error";
       type: "COULD NOT FIND CURRENT VERSION";
-      message: "Could not find current version";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function get_current_version({
@@ -96,62 +91,71 @@ export async function get_current_version({
    * This works, because, in the App, HEAD can only point to a Branch or to a Tag. There's no other options
    */
 
-  // Check where HEAD is pointing at
-  const currentBranch = await git.currentBranch({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-  });
+  try {
+    // Check where HEAD is pointing at
+    const currentBranch = await git.currentBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+    });
 
-  const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
-    ? "POINTS_TO_BRANCH"
-    : "POINTS_TO_TAG";
+    const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
+      ? "POINTS_TO_BRANCH"
+      : "POINTS_TO_TAG";
 
-  console.debug(
-    `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
-  );
+    console.debug(
+      `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
+    );
 
-  const headCommitOid = await git.resolveRef({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-    ref: "HEAD",
-  });
+    const headCommitOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "HEAD",
+    });
 
-  if (headStatus === "POINTS_TO_BRANCH") {
-    const draftVersions = await list_draft_versions({ repositoryId });
+    if (headStatus === "POINTS_TO_BRANCH") {
+      const draftVersions = await list_draft_versions({ repositoryId });
 
-    // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
-    for (const version of draftVersions) {
-      const branchCommitOid = await git.resolveRef({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: version.branch,
-      });
+      // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
+      for (const version of draftVersions) {
+        const branchCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.branch,
+        });
 
-      if (branchCommitOid === headCommitOid) {
-        return { status: "success", version };
+        if (branchCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
+      }
+    } else {
+      const publishedVersions = await list_published_versions({ repositoryId });
+
+      for (const version of publishedVersions) {
+        const tagCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.tag,
+        });
+
+        if (tagCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
       }
     }
-  } else {
-    const publishedVersions = await list_published_versions({ repositoryId });
 
-    for (const version of publishedVersions) {
-      const tagCommitOid = await git.resolveRef({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: version.tag,
-      });
-
-      if (tagCommitOid === headCommitOid) {
-        return { status: "success", version };
-      }
+    return {
+      status: "error",
+      type: "COULD NOT FIND CURRENT VERSION",
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(`[API/get_current_version] Error : ${error.name}`);
+    } else {
+      console.debug(`[API/get_current_version] Error`);
     }
+
+    return { status: "error", type: "unknown" };
   }
-
-  return {
-    status: "error",
-    type: "COULD NOT FIND CURRENT VERSION",
-    message: "Could not find current version",
-  };
 }
 //#endregion
 
@@ -169,12 +173,10 @@ export type SwitchVersionResponse =
   | {
       status: "error";
       type: "Cannot find version";
-      message: "Cannot find version";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 /**
@@ -224,7 +226,7 @@ export async function switch_version({
       );
     }
 
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 //#endregion
@@ -243,12 +245,10 @@ export type CreateDraftResponse =
   | {
       status: "error";
       type: "VERSION ALREADY EXISTS";
-      message: "Version already exists";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function create_draft({
@@ -274,7 +274,6 @@ export async function create_draft({
       return {
         status: "error",
         type: "VERSION ALREADY EXISTS",
-        message: "Version already exists",
       };
     }
 
@@ -300,7 +299,7 @@ export async function create_draft({
       version: { type: "draft", name: draftName, branch: branchName },
     };
   } catch (error) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   } finally {
     // If there's an error in pushing branch, delete created branch
   }
@@ -321,17 +320,14 @@ export type DeleteDraftResponse =
   | {
       status: "error";
       type: "DRAFT VERSION OPENED";
-      message: "Cannot delete opened draft version";
     }
   | {
       status: "error";
       type: "DRAFT VERSION DO NOT EXIST";
-      message: "Draft version do not exist";
     }
   | {
       status: "error";
       type: "unknown";
-      message: "Unknown error";
     };
 
 export async function delete_draft({
@@ -349,20 +345,18 @@ export async function delete_draft({
       return {
         status: "error",
         type: "DRAFT VERSION DO NOT EXIST",
-        message: "Draft version do not exist",
       };
     }
 
     // 2. Check that we're not in actual draft version
     const currentVersionResp = await get_current_version({ repositoryId });
     if (currentVersionResp.status === "error") {
-      return { status: "error", type: "unknown", message: "Unknown error" };
+      return { status: "error", type: "unknown" };
     }
     if (_.isEqual(currentVersionResp.version, version)) {
       return {
         status: "error",
         type: "DRAFT VERSION OPENED",
-        message: "Cannot delete opened draft version",
       };
     }
 
@@ -376,11 +370,11 @@ export async function delete_draft({
     // 4. Get new list of versions and return it
     const versionsResp = await list_versions({ repositoryId });
     if (versionsResp.status === "error") {
-      return { status: "error", type: "unknown", message: "Unknown error" };
+      return { status: "error", type: "unknown" };
     }
     return { status: "success", versions: versionsResp.versions };
   } catch (error) {
-    return { status: "error", type: "unknown", message: "Unknown error" };
+    return { status: "error", type: "unknown" };
   }
 }
 
@@ -393,7 +387,7 @@ type ListPublishedVersionsParameters = {
 
 type ListPublishedVersionsResponse = PublishedVersion[];
 
-async function list_published_versions({
+export async function list_published_versions({
   repositoryId,
 }: ListPublishedVersionsParameters): Promise<ListPublishedVersionsResponse> {
   console.debug(
@@ -457,13 +451,34 @@ async function list_published_versions({
   return versions;
 }
 
+type GetLastPublishedVersionParameters = {
+  repositoryId: string;
+};
+
+type GetLastPublishedVersionResponse = PublishedVersion;
+
+export async function get_last_published_versions({
+  repositoryId,
+}: GetLastPublishedVersionParameters): Promise<GetLastPublishedVersionResponse> {
+  console.debug(
+    `[Help/get_last_published_versions] Called with repositoryId=${repositoryId}`,
+  );
+
+  const publishedVersions = await list_published_versions({ repositoryId });
+  const latestPublishedVersion = publishedVersions.find((v) => v.newest);
+
+  if (!latestPublishedVersion) throw new Error();
+
+  return latestPublishedVersion;
+}
+
 type ListDraftVersionsParameters = {
   repositoryId: string;
 };
 
 type ListDraftVersionsResponse = DraftVersion[];
 
-async function list_draft_versions({
+export async function list_draft_versions({
   repositoryId,
 }: ListDraftVersionsParameters): Promise<ListDraftVersionsResponse> {
   console.debug(
