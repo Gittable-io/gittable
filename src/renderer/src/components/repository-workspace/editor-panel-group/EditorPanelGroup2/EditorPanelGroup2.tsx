@@ -7,7 +7,7 @@ import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
 import { TableViewerPanel } from "../TableViewerPanel";
 import { TableEditorPanel } from "../TableEditorPanel";
-import { ReviewPanel } from "../ReviewPanel";
+import { ReviewPanel } from "../review-panel/ReviewPanel";
 
 const getPanelTitle = (panel: Panel): string => {
   switch (panel.type) {
