@@ -23,9 +23,6 @@ import {
   get_repository_status,
   type GetRepositoryStatusParameters,
   type GetRepositoryStatusResponse,
-  commit,
-  type CommitParameters,
-  type CommitResponse,
   get_history,
   type GetHistoryParameters,
   type GetHistoryResponse,
@@ -64,6 +61,9 @@ import {
   discard_changes,
   type DiscardChangesParameters,
   type DiscardChangesResponse,
+  commit,
+  type CommitParameters,
+  type CommitResponse,
 } from "./version";
 
 /**
@@ -97,8 +97,6 @@ const gittableElectronAPI = {
     params: GetRepositoryStatusParameters,
   ): Promise<GetRepositoryStatusResponse> =>
     ipcRenderer.invoke("get_repository_status", params),
-  commit: (params: CommitParameters): Promise<CommitResponse> =>
-    ipcRenderer.invoke("commit", params),
   get_history: (params: GetHistoryParameters): Promise<GetHistoryResponse> =>
     ipcRenderer.invoke("get_history", params),
   push: (params: PushParameters): Promise<PushResponse> =>
@@ -129,6 +127,8 @@ const gittableElectronAPI = {
     params: DiscardChangesParameters,
   ): Promise<DiscardChangesResponse> =>
     ipcRenderer.invoke("discard_changes", params),
+  commit: (params: CommitParameters): Promise<CommitResponse> =>
+    ipcRenderer.invoke("commit", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -158,7 +158,6 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("get_repository_status", (_event, params) =>
     get_repository_status(params),
   );
-  ipcMain.handle("commit", (_event, params) => commit(params));
   ipcMain.handle("get_history", (_event, params) => get_history(params));
   ipcMain.handle("push", (_event, params) => push(params));
   ipcMain.handle("pull", (_event, params) => pull(params));
@@ -176,6 +175,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("discard_changes", (_event, params) =>
     discard_changes(params),
   );
+  ipcMain.handle("commit", (_event, params) => commit(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>

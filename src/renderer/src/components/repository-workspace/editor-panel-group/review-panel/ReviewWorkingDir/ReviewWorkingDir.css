@@ -3,3 +3,15 @@
   flex-direction: column;
   gap: 10px;
 }
+
+.review-working-dir .review-working-dir-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+}
+
+.review-working-dir .review-working-dir-commit {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}

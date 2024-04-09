@@ -8,6 +8,7 @@ import {
 } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
 import {
+  commit,
   createAndSwitchToDraft,
   discardChanges,
   fetchRepositoryDetails,
@@ -143,6 +144,9 @@ export const repoSlice = createSlice({
       })
       .addCase(discardChanges.fulfilled, (state, action) => {
         state.checkedOutContent = action.payload.content;
+      })
+      .addCase(commit.fulfilled, (state, action) => {
+        state.checkedOutContent = action.payload.content;
       });
   },
   selectors: {
@@ -163,6 +167,7 @@ export const repoActions = {
   createAndSwitchToDraft,
   updateVersionContent,
   discardChanges,
+  commit,
 };
 export const repoReducer = repoSlice.reducer;
 export const repoSelectors = repoSlice.selectors;

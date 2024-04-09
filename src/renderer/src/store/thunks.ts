@@ -212,3 +212,39 @@ export const discardChanges = createAsyncThunk<
 });
 
 //#endregion
+
+//#region commit
+export const commit = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  string, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/commit", async (message, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Commit changes
+  const commitResp = await window.api.commit({
+    repositoryId,
+    message,
+  });
+
+  if (commitResp.status === "error") {
+    return thunkAPI.rejectWithValue(`Error committing: ${commitResp.type}`);
+  }
+
+  // 2. Update content
+  const contentResp = await window.api.get_checked_out_content({
+    repositoryId,
+  });
+
+  if (contentResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
+  }
+
+  return {
+    content: contentResp.content,
+  };
+});
+
+//#endregion

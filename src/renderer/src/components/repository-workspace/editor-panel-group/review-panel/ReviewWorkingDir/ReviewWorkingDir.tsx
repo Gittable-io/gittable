@@ -1,10 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
 import "./ReviewWorkingDir.css";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
-import { Button, List, ListItem } from "gittable-editor";
+import { Button, InputAndValidation, List, ListItem } from "gittable-editor";
 import { repoActions } from "@renderer/store/repoSlice";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "@renderer/components/ui-components/ConfirmationModal";
+import { useState } from "react";
 
 export function ReviewWorkingDir(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -12,6 +13,7 @@ export function ReviewWorkingDir(): JSX.Element {
   const content = useSelector(
     (state: AppRootState) => state.repo.checkedOutContent!,
   );
+  const [commitMessage, setCommitMessage] = useState<string>("");
 
   const [showDiscardChangesModal, hideDiscardChangesModal] = useModal(() => (
     <ConfirmationModal
@@ -30,6 +32,7 @@ export function ReviewWorkingDir(): JSX.Element {
 
   const modifiedTables = content.tables.filter((table) => table.modified);
   const isWorkingDirModified = modifiedTables.length > 0;
+  const canCommit = isWorkingDirModified && commitMessage !== "";
 
   return (
     <div className="review-working-dir">
@@ -41,6 +44,20 @@ export function ReviewWorkingDir(): JSX.Element {
           disabled={!isWorkingDirModified}
           onClick={showDiscardChangesModal}
         />
+        <div className="review-working-dir-commit">
+          <InputAndValidation
+            value={commitMessage}
+            onChange={setCommitMessage}
+            placeholder="Describe your commit"
+            maxLength={72}
+          />
+          <Button
+            text="Commit changes"
+            variant="outlined"
+            disabled={!canCommit}
+            onClick={() => dispatch(repoActions.commit(commitMessage))}
+          />
+        </div>
       </div>
       <div>
         {isWorkingDirModified ? (
