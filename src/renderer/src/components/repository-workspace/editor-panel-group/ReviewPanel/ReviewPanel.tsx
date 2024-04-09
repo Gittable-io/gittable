@@ -1,9 +1,12 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import "./ReviewPanel.css";
-import { AppRootState } from "@renderer/store/store";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { List, ListItem } from "gittable-editor";
+import { repoActions } from "@renderer/store/repoSlice";
 
 export function ReviewPanel(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const content = useSelector(
     (state: AppRootState) => state.repo.checkedOutContent!,
   );
@@ -22,6 +25,14 @@ export function ReviewPanel(): JSX.Element {
                   key={table.id}
                   text={table.name}
                   materialSymbol="table"
+                  onClick={() =>
+                    dispatch(
+                      repoActions.openPanel({
+                        type: "diff",
+                        diff: { table, fromRef: "HEAD", toRef: "WorkingDir" },
+                      }),
+                    )
+                  }
                 ></ListItem>
               ))}
             </List>
