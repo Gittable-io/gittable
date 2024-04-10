@@ -15,14 +15,17 @@ export function VersionsSection(): JSX.Element {
 
   //#region Selectors & State
   const versions = useSelector((state: AppRootState) => state.repo.versions);
-  const checkedOutVersion = useSelector(
+  const currentVersion = useSelector(
     (state: AppRootState) => state.repo.currentVersion,
   );
   const isContentModified = useSelector((state: AppRootState) =>
     repoSelectors.isContentModified(state),
   );
 
-  const [newDraft, setNewDraft] = useState<boolean>(false);
+  const createDraftProgress = useSelector(
+    (state: AppRootState) => state.repo.progress.createDraftProgress,
+  );
+
   const [pendingVersion, setPendingVersion] = useState<Version | null>(null);
 
   const [showSwitchWarningModal, hideSwitchWarningModal] = useModal(
@@ -59,14 +62,7 @@ export function VersionsSection(): JSX.Element {
   };
 
   const switchVersion = async (version: Version): Promise<void> => {
-    setNewDraft(false);
-
     dispatch(repoActions.switchVersion(version));
-  };
-
-  const createDraft = async (draftName: string): Promise<void> => {
-    setNewDraft(false);
-    dispatch(repoActions.createAndSwitchToDraft(draftName));
   };
 
   const hasDraft = (versions: Version[]): boolean => {
@@ -74,30 +70,30 @@ export function VersionsSection(): JSX.Element {
   };
 
   const canCreateDraft =
-    checkedOutVersion &&
+    currentVersion &&
     versions &&
     !hasDraft(versions) &&
-    checkedOutVersion.type === "published" &&
-    checkedOutVersion.newest;
+    currentVersion.type === "published" &&
+    currentVersion.newest;
 
   return (
     <div className="versions-section">
-      {versions && checkedOutVersion ? (
+      {versions && currentVersion ? (
         <>
           <div className="version-list-and-create">
             <VersionSelector
               versions={versions}
-              selectedVersion={checkedOutVersion}
+              selectedVersion={currentVersion}
               onVersionChange={confirmSwitchVersion}
             />
-            {!newDraft ? (
+            {createDraftProgress === "NONE" ? (
               <MaterialSymbolButton
                 symbol="add_box"
                 label="Create draft version"
                 tooltip
                 disabled={!canCreateDraft}
                 onClick={() => {
-                  setNewDraft((s) => !s);
+                  dispatch(repoActions.startNewDraft());
                 }}
               />
             ) : (
@@ -106,14 +102,14 @@ export function VersionsSection(): JSX.Element {
                 label="Cancel creating draft"
                 tooltip
                 onClick={() => {
-                  setNewDraft((s) => !s);
+                  dispatch(repoActions.cancelNewDraft());
                 }}
               />
             )}
           </div>
-          {newDraft && (
+          {createDraftProgress !== "NONE" && (
             <div className="new-draft-section">
-              <NewDraftForm onNewDraft={createDraft} />
+              <NewDraftForm />
             </div>
           )}
         </>

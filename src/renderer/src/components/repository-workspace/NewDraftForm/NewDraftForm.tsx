@@ -1,15 +1,18 @@
 import { useState } from "react";
 import "./NewDraftForm.css";
 import { InputAndValidation, MaterialSymbolButton } from "gittable-editor";
-import { useSelector } from "react-redux";
-import { AppRootState } from "@renderer/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { repoActions } from "@renderer/store/repoSlice";
+import { CredentialsInputModal } from "../source-control/CredentialsInputModal";
 
-export type NewDraftFormProps = {
-  onNewDraft: (name: string) => void;
-};
+export function NewDraftForm(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
 
-export function NewDraftForm({ onNewDraft }: NewDraftFormProps): JSX.Element {
   const versions = useSelector((state: AppRootState) => state.repo.versions)!;
+  const createDraftProgress = useSelector(
+    (state: AppRootState) => state.repo.progress.createDraftProgress,
+  );
 
   const [draftName, setDraftName] = useState<string>("");
 
@@ -32,11 +35,23 @@ export function NewDraftForm({ onNewDraft }: NewDraftFormProps): JSX.Element {
       />
       <MaterialSymbolButton
         symbol="check"
-        disabled={error != null}
-        onClick={() => {
-          onNewDraft(draftName);
-        }}
+        disabled={error != null || draftName === ""}
+        onClick={() =>
+          dispatch(repoActions.createAndSwitchToDraft({ draftName }))
+        }
       />
+      {(createDraftProgress === "REQUESTING_CREDENTIALS" ||
+        createDraftProgress === "AUTH_ERROR") && (
+        <CredentialsInputModal
+          authError={createDraftProgress === "AUTH_ERROR"}
+          onConfirm={(credentials) =>
+            dispatch(
+              repoActions.createAndSwitchToDraft({ draftName, credentials }),
+            )
+          }
+          onCancel={() => dispatch(repoActions.cancelNewDraft())}
+        />
+      )}
     </div>
   );
 }

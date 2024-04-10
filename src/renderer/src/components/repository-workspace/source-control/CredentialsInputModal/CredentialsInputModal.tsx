@@ -5,13 +5,13 @@ import { RepositoryCredentials } from "@sharedTypes/index";
 import { useState } from "react";
 
 export type CredentialsInputModalProps = {
-  errorMessage: string | null;
+  authError?: boolean;
   onConfirm: (credentials: RepositoryCredentials) => void;
   onCancel: () => void;
 };
 
 export function CredentialsInputModal({
-  errorMessage,
+  authError,
   onConfirm,
   onCancel,
 }: CredentialsInputModalProps): JSX.Element {
@@ -23,6 +23,10 @@ export function CredentialsInputModal({
   };
 
   const isConfirmDisabled: boolean = username === "" || password === "";
+
+  const errorMessage = authError
+    ? "Error authenticating with provided credentials"
+    : null;
 
   return (
     <Modal>

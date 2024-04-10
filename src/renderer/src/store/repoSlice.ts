@@ -42,6 +42,13 @@ export type RepoState = {
   repository: Repository | null;
 
   progress: {
+    createDraftProgress:
+      | "NONE"
+      | "WAITING_FOR_DRAFT_NAME"
+      | "IN_PROGRESS"
+      | "REQUESTING_CREDENTIALS"
+      | "AUTH_ERROR"
+      | "UNKOWN_ERROR";
     discardInProgress: boolean;
     commitInProgress: boolean;
     deleteDraftInProgress: boolean;
@@ -60,6 +67,7 @@ function initState(repository: Repository | null): RepoState {
     repository,
 
     progress: {
+      createDraftProgress: "NONE",
       discardInProgress: false,
       commitInProgress: false,
       deleteDraftInProgress: false,
@@ -78,6 +86,13 @@ export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
   reducers: {
+    startNewDraft: (state) => {
+      state.progress.createDraftProgress = "WAITING_FOR_DRAFT_NAME";
+    },
+    cancelNewDraft: (state) => {
+      state.progress.createDraftProgress = "NONE";
+    },
+
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
       const panel = action.payload;
 
@@ -138,20 +153,31 @@ export const repoSlice = createSlice({
         state.selectedPanelId = null;
       })
       .addCase(switchVersion.fulfilled, (state, action) => {
+        state.progress.createDraftProgress = "NONE";
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
       })
       .addCase(createAndSwitchToDraft.pending, (state) => {
-        state.currentVersion = null;
-        state.currentVersionContent = null;
-
-        state.panels = [];
-        state.selectedPanelId = null;
+        state.progress.createDraftProgress = "IN_PROGRESS";
+        // state.currentVersion = null;
+        // state.currentVersionContent = null;
+        // state.panels = [];
+        // state.selectedPanelId = null;
       })
       .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
+        state.progress.createDraftProgress = "NONE";
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
+      })
+      .addCase(createAndSwitchToDraft.rejected, (state, action) => {
+        if (action.payload === "NO_PROVIDED_CREDENTIALS") {
+          state.progress.createDraftProgress = "REQUESTING_CREDENTIALS";
+        } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
+          state.progress.createDraftProgress = "AUTH_ERROR";
+        } else {
+          state.progress.createDraftProgress = "UNKOWN_ERROR";
+        }
       })
       .addCase(updateVersionContent.fulfilled, (state, action) => {
         state.currentVersionContent = action.payload.content;

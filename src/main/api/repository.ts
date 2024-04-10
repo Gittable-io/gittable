@@ -4,6 +4,7 @@ import { getRepositoryPath } from "../utils/utils";
 import {
   DraftVersion,
   PublishedVersion,
+  RepositoryCredentials,
   Version,
   VersionContent,
 } from "@sharedTypes/index";
@@ -240,6 +241,7 @@ export async function switch_version({
 export type CreateDraftParameters = {
   repositoryId: string;
   name: string;
+  credentials?: RepositoryCredentials;
 };
 
 export type CreateDraftResponse =
@@ -259,6 +261,7 @@ export type CreateDraftResponse =
 export async function create_draft({
   repositoryId,
   name: draftName,
+  credentials,
 }: CreateDraftParameters): Promise<CreateDraftResponse> {
   console.debug(
     `[API/create_draft] Called with repositoryId=${repositoryId} and name=${draftName}`,
@@ -306,7 +309,7 @@ export async function create_draft({
   let errorResponse: CreateDraftResponse | null = null;
   try {
     // 2. Push branch
-    await pushNewBranch({ repositoryId, branchName });
+    await pushNewBranch({ repositoryId, branchName, credentials });
   } catch (error) {
     console.debug(`[API/create_draft] Error pushing local branch`);
     if (error instanceof NoCredentialsProvidedError) {

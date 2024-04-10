@@ -1,5 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { DraftVersion, Version, VersionContent } from "@sharedTypes/index";
+import {
+  DraftVersion,
+  RepositoryCredentials,
+  Version,
+  VersionContent,
+} from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
 //#region fetchRepositoryDetails
@@ -106,52 +111,79 @@ export const createAndSwitchToDraft = createAsyncThunk<
     currentVersion: Version;
     content: VersionContent;
   },
-  string, // The name of the draft
-  { state: AppRootState; rejectValue: string }
->("repo/createAndSwitchToDraft", async (draftName, thunkAPI) => {
-  const repositoryId = thunkAPI.getState().repo.repository!.id;
-
-  // 1. Create Draft version
-  const createDraftResp = await window.api.create_draft({
-    repositoryId,
-    name: draftName,
-  });
-
-  if (createDraftResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error creating draft version");
+  { draftName: string; credentials?: RepositoryCredentials },
+  {
+    state: AppRootState;
+    rejectValue:
+      | "NO_PROVIDED_CREDENTIALS"
+      | "AUTH_ERROR_WITH_CREDENTIALS"
+      | "UNKNOWN_ERROR";
   }
+>(
+  "repo/createAndSwitchToDraft",
+  async ({ draftName, credentials }, thunkAPI) => {
+    const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 2. Switch to new draft version
-  const switchVersionResp = await window.api.switch_version({
-    repositoryId: repositoryId,
-    version: createDraftResp.version,
-  });
+    // 1. Create Draft version
+    const createDraftResp = await window.api.create_draft({
+      repositoryId,
+      name: draftName,
+      credentials,
+    });
 
-  if (switchVersionResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error switching to new draft version");
-  }
+    if (createDraftResp.status === "error") {
+      console.error(
+        `[thunk/createAndSwitchToDraft]: Error creating draft version`,
+      );
 
-  // 3. Fetch new list of versions
-  const listVersionsResp = await window.api.list_versions({ repositoryId });
-  if (listVersionsResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching versions");
-  }
-  // 3. Fetch checked out content
-  // * Might be necessary if I created a draft version but I'm not on the latest tag
-  const currentContentResp = await window.api.get_current_version_content({
-    repositoryId,
-  });
+      if (createDraftResp.type === "NO_PROVIDED_CREDENTIALS") {
+        return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
+      } else if (createDraftResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
+        return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
+      } else {
+        return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+      }
+    }
 
-  if (currentContentResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching checked out content");
-  }
+    // 2. Switch to new draft version
+    const switchVersionResp = await window.api.switch_version({
+      repositoryId: repositoryId,
+      version: createDraftResp.version,
+    });
 
-  return {
-    versions: listVersionsResp.versions,
-    currentVersion: createDraftResp.version,
-    content: currentContentResp.content,
-  };
-});
+    if (switchVersionResp.status === "error") {
+      console.error(
+        `[thunk/createAndSwitchToDraft]: Error creating draft version`,
+      );
+      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    }
+
+    // 3. Fetch new list of versions
+    const listVersionsResp = await window.api.list_versions({ repositoryId });
+    if (listVersionsResp.status === "error") {
+      console.error(`[thunk/createAndSwitchToDraft]: Error fetching versions`);
+      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    }
+    // 3. Fetch current content
+    // * Might be necessary if I created a draft version but I'm not on the latest tag
+    const currentContentResp = await window.api.get_current_version_content({
+      repositoryId,
+    });
+
+    if (currentContentResp.status === "error") {
+      console.error(
+        `[thunk/createAndSwitchToDraft]: Error fetching current content`,
+      );
+      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    }
+
+    return {
+      versions: listVersionsResp.versions,
+      currentVersion: createDraftResp.version,
+      content: currentContentResp.content,
+    };
+  },
+);
 //#endregion
 
 //#region updateVersionContent

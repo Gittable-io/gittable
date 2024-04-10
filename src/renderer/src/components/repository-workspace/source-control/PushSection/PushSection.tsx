@@ -26,7 +26,7 @@ export function PushSection({
   const [showPushCredentialsModal, hidePushCredentialsModal] = useModal(
     () => (
       <CredentialsInputModal
-        errorMessage={pushError}
+        authError={pushError != null}
         onConfirm={(credentials) => push(credentials)}
         onCancel={cancelPush}
       />
