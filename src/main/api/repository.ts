@@ -13,7 +13,7 @@ import _ from "lodash";
 import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
-  pushNewBranch,
+  pushBranch,
 } from "../utils/git/push";
 
 //#region API: list_versions
@@ -309,7 +309,7 @@ export async function create_draft({
   let errorResponse: CreateDraftResponse | null = null;
   try {
     // 2. Push branch
-    await pushNewBranch({ repositoryId, branchName, credentials });
+    await pushBranch({ repositoryId, branchName, credentials });
   } catch (error) {
     console.debug(`[API/create_draft] Error pushing local branch`);
     if (error instanceof NoCredentialsProvidedError) {
@@ -351,6 +351,7 @@ export async function create_draft({
 export type DeleteDraftParameters = {
   repositoryId: string;
   version: DraftVersion;
+  credentials?: RepositoryCredentials;
 };
 
 export type DeleteDraftResponse =
@@ -360,63 +361,86 @@ export type DeleteDraftResponse =
     }
   | {
       status: "error";
-      type: "DRAFT VERSION OPENED";
-    }
-  | {
-      status: "error";
-      type: "DRAFT VERSION DO NOT EXIST";
-    }
-  | {
-      status: "error";
-      type: "unknown";
+      type:
+        | "DRAFT_VERSION_OPENED"
+        | "DRAFT_VERSION_DO_NOT_EXIST"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
     };
 
 export async function delete_draft({
   repositoryId,
-  version,
+  version: versionToDelete,
+  credentials,
 }: DeleteDraftParameters): Promise<DeleteDraftResponse> {
   console.debug(
-    `[API/delete_draft] Called with repositoryId=${repositoryId} and version=${JSON.stringify(version)}`,
+    `[API/delete_draft] Called with repositoryId=${repositoryId} and version=${JSON.stringify(versionToDelete)}`,
   );
 
+  // 1. Check that draft version exists
+  const draftVersions = await list_draft_versions({ repositoryId });
+  if (!draftVersions.find((dv) => _.isEqual(dv, versionToDelete))) {
+    return {
+      status: "error",
+      type: "DRAFT_VERSION_DO_NOT_EXIST",
+    };
+  }
+
+  // 2. Check that we're not in actual draft version
+  const currentVersionResp = await get_current_version({ repositoryId });
+  if (currentVersionResp.status === "error") {
+    return { status: "error", type: "UNKNOWN" };
+  }
+  if (_.isEqual(currentVersionResp.version, versionToDelete)) {
+    return {
+      status: "error",
+      type: "DRAFT_VERSION_OPENED",
+    };
+  }
+
+  /*
+   * We're first deleting the remote, before deleting the local branch
+   * In case of error in deleting a remote branch, there's no need to recover the local branch
+   */
   try {
-    // 1. Check that draft version exists
-    const draftVersions = await list_draft_versions({ repositoryId });
-    if (!draftVersions.find((dv) => _.isEqual(dv, version))) {
-      return {
-        status: "error",
-        type: "DRAFT VERSION DO NOT EXIST",
-      };
+    // 3. Delete remote branch
+    await pushBranch({
+      repositoryId,
+      branchName: versionToDelete.branch,
+      credentials,
+      deleteBranch: true,
+    });
+  } catch (error) {
+    console.debug(`[API/delete_draft] Error deleting remote branch`);
+    if (error instanceof NoCredentialsProvidedError) {
+      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      return { status: "error", type: "UNKNOWN" };
     }
+  }
 
-    // 2. Check that we're not in actual draft version
-    const currentVersionResp = await get_current_version({ repositoryId });
-    if (currentVersionResp.status === "error") {
-      return { status: "error", type: "unknown" };
-    }
-    if (_.isEqual(currentVersionResp.version, version)) {
-      return {
-        status: "error",
-        type: "DRAFT VERSION OPENED",
-      };
-    }
-
-    // 3. Delete draft version
+  //* If remote branch was deleted, then delete local branch
+  try {
+    // 4. Delete local draft branch
     await git.deleteBranch({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: version.branch,
+      ref: versionToDelete.branch,
     });
-
-    // 4. Get new list of versions and return it
-    const versionsResp = await list_versions({ repositoryId });
-    if (versionsResp.status === "error") {
-      return { status: "error", type: "unknown" };
-    }
-    return { status: "success", versions: versionsResp.versions };
   } catch (error) {
-    return { status: "error", type: "unknown" };
+    console.debug(`[API/delete_draft] Error deleting draft`);
+    return { status: "error", type: "UNKNOWN" };
   }
+
+  // 5. Get new list of versions and return it
+  const versionsResp = await list_versions({ repositoryId });
+  if (versionsResp.status === "error") {
+    return { status: "error", type: "UNKNOWN" };
+  }
+  return { status: "success", versions: versionsResp.versions };
 }
 
 //#endregion

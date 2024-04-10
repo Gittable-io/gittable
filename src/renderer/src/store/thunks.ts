@@ -221,19 +221,34 @@ export const deleteDraft = createAsyncThunk<
   {
     versions: Version[];
   },
-  DraftVersion, // The draft to delete
-  { state: AppRootState; rejectValue: string }
->("repo/deleteDraft", async (draftVersion, thunkAPI) => {
+  { draftVersion: DraftVersion; credentials?: RepositoryCredentials },
+  {
+    state: AppRootState;
+    rejectValue:
+      | "NO_PROVIDED_CREDENTIALS"
+      | "AUTH_ERROR_WITH_CREDENTIALS"
+      | "UNKNOWN_ERROR";
+  }
+>("repo/deleteDraft", async ({ draftVersion, credentials }, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
   // 1. Delete draft version
   const deleteDraftResp = await window.api.delete_draft({
     repositoryId,
     version: draftVersion,
+    credentials,
   });
 
   if (deleteDraftResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error deleting draft version");
+    console.error(`[thunk/deleteDraft]: Error deleting draft version`);
+
+    if (deleteDraftResp.type === "NO_PROVIDED_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
+    } else if (deleteDraftResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
+    } else {
+      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    }
   }
 
   return {

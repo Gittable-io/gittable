@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
+  DraftVersion,
   Repository,
   TableMetadata,
   Version,
@@ -49,9 +50,15 @@ export type RepoState = {
       | "REQUESTING_CREDENTIALS"
       | "AUTH_ERROR"
       | "UNKOWN_ERROR";
+    deleteDraftProgress:
+      | "NONE"
+      | "IN_PROGRESS"
+      | "REQUESTING_CREDENTIALS"
+      | "AUTH_ERROR"
+      | "UNKOWN_ERROR";
+
     discardInProgress: boolean;
     commitInProgress: boolean;
-    deleteDraftInProgress: boolean;
   };
 
   versions: Version[] | null;
@@ -68,9 +75,9 @@ function initState(repository: Repository | null): RepoState {
 
     progress: {
       createDraftProgress: "NONE",
+      deleteDraftProgress: "NONE",
       discardInProgress: false,
       commitInProgress: false,
-      deleteDraftInProgress: false,
     },
 
     versions: null,
@@ -91,6 +98,9 @@ export const repoSlice = createSlice({
     },
     cancelNewDraft: (state) => {
       state.progress.createDraftProgress = "NONE";
+    },
+    cancelDeleteDraft: (state) => {
+      state.progress.deleteDraftProgress = "NONE";
     },
 
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
@@ -159,10 +169,6 @@ export const repoSlice = createSlice({
       })
       .addCase(createAndSwitchToDraft.pending, (state) => {
         state.progress.createDraftProgress = "IN_PROGRESS";
-        // state.currentVersion = null;
-        // state.currentVersionContent = null;
-        // state.panels = [];
-        // state.selectedPanelId = null;
       })
       .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
         state.progress.createDraftProgress = "NONE";
@@ -197,11 +203,20 @@ export const repoSlice = createSlice({
         state.currentVersionContent = action.payload.content;
       })
       .addCase(deleteDraft.pending, (state) => {
-        state.progress.deleteDraftInProgress = true;
+        state.progress.deleteDraftProgress = "IN_PROGRESS";
       })
       .addCase(deleteDraft.fulfilled, (state, action) => {
-        state.progress.deleteDraftInProgress = false;
+        state.progress.deleteDraftProgress = "NONE";
         state.versions = action.payload.versions;
+      })
+      .addCase(deleteDraft.rejected, (state, action) => {
+        if (action.payload === "NO_PROVIDED_CREDENTIALS") {
+          state.progress.deleteDraftProgress = "REQUESTING_CREDENTIALS";
+        } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
+          state.progress.deleteDraftProgress = "AUTH_ERROR";
+        } else {
+          state.progress.deleteDraftProgress = "UNKOWN_ERROR";
+        }
       });
   },
   selectors: {
@@ -212,6 +227,10 @@ export const repoSlice = createSlice({
         return true;
 
       return false;
+    },
+    draftVersion: (state): DraftVersion | null => {
+      const draftVersion = state.versions?.find((v) => v.type === "draft");
+      return draftVersion ? (draftVersion as DraftVersion) : null;
     },
   },
 });

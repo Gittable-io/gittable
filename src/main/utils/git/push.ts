@@ -29,14 +29,16 @@ export class UnknownPushError extends Error {
   }
 }
 
-export async function pushNewBranch({
+export async function pushBranch({
   repositoryId,
   branchName,
   credentials: providedCredentials,
+  deleteBranch = false,
 }: {
   repositoryId: string;
   branchName: string;
   credentials?: RepositoryCredentials;
+  deleteBranch?: boolean;
 }): Promise<void> {
   // Retrieve credentials, and return error if there are no credentials
   const credentials =
@@ -54,6 +56,7 @@ export async function pushNewBranch({
       http,
       dir: getRepositoryPath(repositoryId),
       ref: branchName,
+      delete: deleteBranch,
       onAuth: () => {
         return credentials;
       },
