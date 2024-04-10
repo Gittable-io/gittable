@@ -9,6 +9,11 @@ import {
 } from "@sharedTypes/index";
 import { get_current_version_content } from "./version";
 import _ from "lodash";
+import {
+  AuthWithProvidedCredentialsError,
+  NoCredentialsProvidedError,
+  pushNewBranch,
+} from "../utils/git/push";
 
 //#region API: list_versions
 export type ListVersionsParameters = {
@@ -244,11 +249,11 @@ export type CreateDraftResponse =
     }
   | {
       status: "error";
-      type: "VERSION ALREADY EXISTS";
-    }
-  | {
-      status: "error";
-      type: "unknown";
+      type:
+        | "VERSION_ALREADY_EXISTS"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
     };
 
 export async function create_draft({
@@ -258,6 +263,8 @@ export async function create_draft({
   console.debug(
     `[API/create_draft] Called with repositoryId=${repositoryId} and name=${draftName}`,
   );
+
+  const branchName = `draft/${draftName}`;
 
   try {
     // 1. Create branch
@@ -273,35 +280,66 @@ export async function create_draft({
       console.debug(`[API/create_draft] Version already exists`);
       return {
         status: "error",
-        type: "VERSION ALREADY EXISTS",
+        type: "VERSION_ALREADY_EXISTS",
       };
     }
 
     // 1.2. Get the newest published version
-    const publishedVersions = versions.filter(
-      (v) => v.type === "published",
-    ) as PublishedVersion[];
-    const latestPublishedVersion = publishedVersions.find((v) => v.newest)!;
+    const latestPublishedVersion = await get_last_published_version({
+      repositoryId,
+    });
 
     // 1.3 Create a new branch from the newest published version
-    const branchName = `draft/${draftName}`;
+
     await git.branch({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: branchName,
-      object: latestPublishedVersion.name,
+      object: latestPublishedVersion.tag,
     });
-    // 2. Push branch
+    console.debug(`[API/create_draft] Created local branch`);
+  } catch (error) {
+    console.debug(`[API/create_draft] Error creating local branch`);
+    return { status: "error", type: "UNKNOWN" };
+  }
 
+  let errorResponse: CreateDraftResponse | null = null;
+  try {
+    // 2. Push branch
+    await pushNewBranch({ repositoryId, branchName });
+  } catch (error) {
+    console.debug(`[API/create_draft] Error pushing local branch`);
+    if (error instanceof NoCredentialsProvidedError) {
+      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      errorResponse = { status: "error", type: "UNKNOWN" };
+    }
+  } finally {
+    // If there's an error in pushing branch, delete created branch
+    if (errorResponse) {
+      console.debug(
+        `[API/create_draft] Error pushing local branch: deleting local branch`,
+      );
+      await git.deleteBranch({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: branchName,
+      });
+    }
+  }
+
+  if (errorResponse) {
+    console.debug(`[API/create_draft] Returning error`);
+    return errorResponse;
+  } else {
     // 3. Return newly created version
+    console.debug(`[API/create_draft] Returning success`);
     return {
       status: "success",
       version: { type: "draft", name: draftName, branch: branchName },
     };
-  } catch (error) {
-    return { status: "error", type: "unknown" };
-  } finally {
-    // If there's an error in pushing branch, delete created branch
   }
 }
 //#endregion
@@ -457,7 +495,7 @@ type GetLastPublishedVersionParameters = {
 
 type GetLastPublishedVersionResponse = PublishedVersion;
 
-export async function get_last_published_versions({
+export async function get_last_published_version({
   repositoryId,
 }: GetLastPublishedVersionParameters): Promise<GetLastPublishedVersionResponse> {
   console.debug(

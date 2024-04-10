@@ -11,7 +11,7 @@ import {
   getRepositoryPath,
 } from "../utils/utils";
 import { UserDataStore } from "../db";
-import { get_last_published_versions, switch_version } from "./repository";
+import { get_last_published_version, switch_version } from "./repository";
 
 export type CloneRepositoryParameters = {
   remoteUrl: string;
@@ -143,15 +143,46 @@ export async function clone_repository({
     });
 
     /*
-     5. At first clone, checkout to the last published version.
+     5. Now that the repository is cloned, There's some steps to make our local repository usable
 
-     Note : when cloning a repository, by default, HEAD points to main. However, we do not allow HEAD to point to main
-     We allow only HEAD to point to another branch than main or to a tag.
-     So the code below, will make HEAD point to the latest published tag 
+      - 5.1 : Create a local branch for every draft branch
+        - Why? When cloning a remote repo, by default, git creates a local branch "main" that tracks "origin/main", but it does not create a local branch for other remotes branches
+        - However, to detect versions, our app only looks at local branches
+        - We correct this by creating a local branch for every draft remote branch other than main
 
-     TODO: need to change this when cloning an empty repository
+      - 5.2 : Checkout the last published version (tag)
+        - Why? When cloning a remote repo, by default, HEAD points to main.
+        - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
+        - We correct this by making HEAD point to the latest published tag
+        TODO: need to change this when cloning an empty repository
     */
-    const lastPublishedVersion = await get_last_published_versions({
+
+    // 5.1 For every remote draft branch: create a local draft branch that tracks the remote branch
+    const remoteBranches = await git.listBranches({
+      fs,
+      dir: repositoryPath,
+      remote: "origin",
+    });
+
+    for (const remoteBranch of remoteBranches) {
+      if (remoteBranch.startsWith("draft/")) {
+        /*
+         * - If I just create a local branch of the same name, it won't work, as isomorphic-git (or git) doesn't automatically set it to track the remote branch of the same name
+         * - isogit doesn't have a command like git branch --set-upstream-to=<remote branch> that allows me to create a local branch and set its upstream branch
+         * - The solution I found is to checkout the branch, and here isogit will automatically create the local branch correctly set its upstream branch
+         *
+         TODO: For the future : Modify isogit and to add a --set-upstream-to option
+         */
+        await git.checkout({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: remoteBranch,
+        });
+      }
+    }
+
+    // 5.2 : Checkout the last published version (tag)
+    const lastPublishedVersion = await get_last_published_version({
       repositoryId,
     });
     const switchResp = await switch_version({
