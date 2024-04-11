@@ -1,14 +1,129 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
 import { getConfig } from "../config";
-import { TableMetadataWithStatus, VersionContent } from "@sharedTypes/index";
+import {
+  DraftVersion,
+  RepositoryCredentials,
+  TableMetadataWithStatus,
+  Version,
+  VersionContent,
+} from "@sharedTypes/index";
 import {
   getRepositoryPath,
   getRepositoryRelativeTablePath,
   getTableNameFromFileName,
 } from "../utils/utils";
-import { get_current_version } from "./repository";
 import { getDraftVersionCommits } from "../utils/git/commit";
+import { list_draft_versions, list_published_versions } from "./repository";
+import {
+  AuthWithProvidedCredentialsError,
+  NoCredentialsProvidedError,
+  pushBranch,
+} from "../utils/git/push";
+
+//#region API: get_current_version
+export type GetCurrentVersionParameters = {
+  repositoryId: string;
+};
+
+export type GetCurrentVersionResponse =
+  | {
+      status: "success";
+      version: Version;
+    }
+  | {
+      status: "error";
+      type: "COULD NOT FIND CURRENT VERSION";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+    };
+
+export async function get_current_version({
+  repositoryId,
+}: GetCurrentVersionParameters): Promise<GetCurrentVersionResponse> {
+  console.debug(
+    `[API/get_current_version] Called with repositoryId=${repositoryId}`,
+  );
+
+  /*
+   * Here's the algorithm to know on which version I am :
+   *
+   * Check if git HEAD is pointing to a current branch or in a detached HEAD mode
+   *     If HEAD points to the current branch => I'm on a draft version
+   *     If Detached HEAD => I'm on a Tag
+   *
+   * This works, because, in the App, HEAD can only point to a Branch or to a Tag. There's no other options
+   */
+
+  try {
+    // Check where HEAD is pointing at
+    const currentBranch = await git.currentBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+    });
+
+    const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
+      ? "POINTS_TO_BRANCH"
+      : "POINTS_TO_TAG";
+
+    console.debug(
+      `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
+    );
+
+    const headCommitOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "HEAD",
+    });
+
+    if (headStatus === "POINTS_TO_BRANCH") {
+      const draftVersions = await list_draft_versions({ repositoryId });
+
+      // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
+      for (const version of draftVersions) {
+        const branchCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.branch,
+        });
+
+        if (branchCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
+      }
+    } else {
+      const publishedVersions = await list_published_versions({ repositoryId });
+
+      for (const version of publishedVersions) {
+        const tagCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.tag,
+        });
+
+        if (tagCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
+      }
+    }
+
+    return {
+      status: "error",
+      type: "COULD NOT FIND CURRENT VERSION",
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(`[API/get_current_version] Error : ${error.name}`);
+    } else {
+      console.debug(`[API/get_current_version] Error`);
+    }
+
+    return { status: "error", type: "unknown" };
+  }
+}
+//#endregion
 
 //#region API: get_current_version_content
 export type GetCurrentVersionContentParameters = {
@@ -191,6 +306,67 @@ export async function commit({
       console.debug(`[API/commit] Error: ${error.name}`);
     }
     return { status: "error", type: "unknown" };
+  }
+}
+
+//#endregion
+
+//#region API: push_commits
+export type PushCommitsParameters = {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type PushCommitsResponse =
+  | {
+      status: "success";
+      content: VersionContent;
+    }
+  | {
+      status: "error";
+      type:
+        | "NOT_ON_DRAFT_VERSION"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
+    };
+
+export async function push_commits({
+  repositoryId,
+  credentials,
+}: PushCommitsParameters): Promise<PushCommitsResponse> {
+  console.debug(`[API/push_commits] Called with repositoryId=${repositoryId}`);
+
+  const currentVersionResp = await get_current_version({ repositoryId });
+  if (currentVersionResp.status === "error") {
+    return { status: "error", type: "UNKNOWN" };
+  } else if (currentVersionResp.version.type !== "draft") {
+    return { status: "error", type: "NOT_ON_DRAFT_VERSION" };
+  }
+
+  const currentDraftVersion: DraftVersion = currentVersionResp.version;
+
+  try {
+    await pushBranch({
+      repositoryId,
+      branchName: currentDraftVersion.branch,
+      credentials,
+    });
+
+    const contentResp = await get_current_version_content({ repositoryId });
+    if (contentResp.status === "error") {
+      return { status: "error", type: "UNKNOWN" };
+    }
+    return { status: "success", content: contentResp.content };
+  } catch (error) {
+    console.debug(`[API/push_commits] Error pushing commits`);
+    if (error instanceof NoCredentialsProvidedError) {
+      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      return { status: "error", type: "UNKNOWN" };
+    }
   }
 }
 

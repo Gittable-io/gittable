@@ -44,9 +44,6 @@ import {
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
-  get_current_version,
-  type GetCurrentVersionParameters,
-  type GetCurrentVersionResponse,
   switch_version,
   type SwitchVersionParameters,
   type SwitchVersionResponse,
@@ -58,6 +55,9 @@ import {
   type DeleteDraftResponse,
 } from "./repository";
 import {
+  get_current_version,
+  type GetCurrentVersionParameters,
+  type GetCurrentVersionResponse,
   get_current_version_content,
   type GetCurrentVersionContentParameters,
   type GetCurrentVersionContentResponse,
@@ -67,6 +67,9 @@ import {
   commit,
   type CommitParameters,
   type CommitResponse,
+  push_commits,
+  type PushCommitsParameters,
+  type PushCommitsResponse,
 } from "./version";
 
 /**
@@ -134,6 +137,8 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("discard_changes", params),
   commit: (params: CommitParameters): Promise<CommitResponse> =>
     ipcRenderer.invoke("commit", params),
+  push_commits: (params: PushCommitsParameters): Promise<PushCommitsResponse> =>
+    ipcRenderer.invoke("push_commits", params),
 
   get_git_config: (): Promise<GetGitConfigReponse> =>
     ipcRenderer.invoke("get_git_config"),
@@ -182,6 +187,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
     discard_changes(params),
   );
   ipcMain.handle("commit", (_event, params) => commit(params));
+  ipcMain.handle("push_commits", (_event, params) => push_commits(params));
 
   ipcMain.handle("get_git_config", get_git_config);
   ipcMain.handle("save_git_config", (_event, params) =>

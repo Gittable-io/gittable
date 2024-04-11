@@ -42,7 +42,8 @@ export async function getDraftVersionCommits({
     remoteBranchLog: ReadCommitResult[],
     localCommit: ReadCommitResult,
   ): boolean =>
-    remoteBranchLog.findIndex((rcommit) => rcommit.oid === localCommit.oid) > 0;
+    remoteBranchLog.findIndex((rcommit) => rcommit.oid === localCommit.oid) >=
+    0;
 
   // 3. Convert ReadCommitResult object to Commit object
   const commits: Commit[] = localBranchLog.map((c) => ({

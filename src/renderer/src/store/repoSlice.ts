@@ -44,7 +44,8 @@ export type RemoteAction =
       type: "CREATE_DRAFT";
       draftName: string;
     }
-  | { type: "DELETE_DRAFT"; draftVersion: DraftVersion };
+  | { type: "DELETE_DRAFT"; draftVersion: DraftVersion }
+  | { type: "PUSH_COMMITS" };
 
 export type RepoState = {
   repository: Repository | null;

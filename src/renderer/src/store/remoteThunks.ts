@@ -2,7 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RemoteAction, repoActions } from "./repoSlice";
 import { AppRootState } from "./store";
 import { DraftVersion, RepositoryCredentials } from "@sharedTypes/index";
-import { switchVersion, updateVersions } from "./thunks";
+import { switchVersion, updateVersionContent, updateVersions } from "./thunks";
 
 export const remoteAction = createAsyncThunk<
   void,
@@ -21,6 +21,7 @@ export const remoteAction = createAsyncThunk<
   let response:
     | Awaited<ReturnType<typeof window.api.create_draft>>
     | Awaited<ReturnType<typeof window.api.delete_draft>>
+    | Awaited<ReturnType<typeof window.api.push_commits>>
     | null = null;
   switch (action.type) {
     case "CREATE_DRAFT": {
@@ -35,6 +36,13 @@ export const remoteAction = createAsyncThunk<
       response = await window.api.delete_draft({
         repositoryId,
         version: action.draftVersion,
+        credentials,
+      });
+      break;
+    }
+    case "PUSH_COMMITS": {
+      response = await window.api.push_commits({
+        repositoryId,
         credentials,
       });
       break;
@@ -74,6 +82,9 @@ export const remoteAction = createAsyncThunk<
     case "DELETE_DRAFT": {
       await thunkAPI.dispatch(updateVersions());
       break;
+    }
+    case "PUSH_COMMITS": {
+      await thunkAPI.dispatch(updateVersionContent());
     }
   }
   return;

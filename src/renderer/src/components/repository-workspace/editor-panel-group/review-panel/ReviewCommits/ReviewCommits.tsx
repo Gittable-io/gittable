@@ -1,7 +1,8 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import "./ReviewCommits.css";
-import { AppRootState } from "@renderer/store/store";
-import { MaterialSymbol } from "gittable-editor";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { Button, MaterialSymbol } from "gittable-editor";
+import { repoActions } from "@renderer/store/repoSlice";
 
 function formatTimestamp(timestamp: number, timezoneOffset: number): string {
   // Convert timestamp from seconds to milliseconds
@@ -29,13 +30,34 @@ function formatTimestamp(timestamp: number, timezoneOffset: number): string {
 }
 
 export function ReviewCommits(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const commits = useSelector(
     (state: AppRootState) => state.repo.currentVersionContent!.commits,
   );
+  const isPushCommitInProgress: boolean = useSelector(
+    (state: AppRootState) =>
+      state.repo.remoteActionSequence?.action.type === "PUSH_COMMITS",
+  );
+
+  const unpushedCommits = commits.some((c) => !c.inRemote);
 
   return (
     <div className="review-commits">
       <h2>Commits included in this version</h2>
+      <Button
+        text="Share your commits"
+        variant="outlined"
+        disabled={!unpushedCommits}
+        onClick={() =>
+          dispatch(
+            repoActions.remoteAction({
+              action: { type: "PUSH_COMMITS" },
+            }),
+          )
+        }
+        loading={isPushCommitInProgress}
+      />
       <table>
         <thead>
           <tr>

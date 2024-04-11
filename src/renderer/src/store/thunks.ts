@@ -1,9 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import {
-  RepositoryCredentials,
-  Version,
-  VersionContent,
-} from "@sharedTypes/index";
+import { Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
 //#region fetchRepositoryDetails
@@ -220,48 +216,4 @@ export const commit = createAsyncThunk<
   };
 });
 
-//#endregion
-
-//#region pushCommits
-/**
- * Delete draft
- *
- */
-export const pushCommits = createAsyncThunk<
-  {
-    content: VersionContent;
-  },
-  { credentials?: RepositoryCredentials },
-  {
-    state: AppRootState;
-    rejectValue:
-      | "NO_PROVIDED_CREDENTIALS"
-      | "AUTH_ERROR_WITH_CREDENTIALS"
-      | "UNKNOWN_ERROR";
-  }
->("repo/pushCommits", async ({ credentials }, thunkAPI) => {
-  const repositoryId = thunkAPI.getState().repo.repository!.id;
-
-  // 1. push commits
-  const pushCommitResp = await window.api.push_commits({
-    repositoryId,
-    credentials,
-  });
-
-  if (pushCommitResp.status === "error") {
-    console.error(`[thunk/pushCommitResp]: Error deleting draft version`);
-
-    if (pushCommitResp.type === "NO_PROVIDED_CREDENTIALS") {
-      return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
-    } else if (pushCommitResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
-      return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
-    } else {
-      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-    }
-  }
-
-  return {
-    content: pushCommitResp.content,
-  };
-});
 //#endregion
