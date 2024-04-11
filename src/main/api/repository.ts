@@ -14,7 +14,8 @@ import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
   pushBranch,
-} from "../utils/git/push";
+} from "../utils/gitdb/push";
+import { gitdb } from "../utils/gitdb/gitdb";
 
 //#region API: list_versions
 export type ListVersionsParameters = {
@@ -45,10 +46,9 @@ export async function list_versions({
   console.debug(`[API/list_versions] Called with repositoryId=${repositoryId}`);
 
   try {
-    const publishedVersions: PublishedVersion[] = await list_published_versions(
-      { repositoryId },
-    );
-    const draftVersions: DraftVersion[] = await list_draft_versions({
+    const publishedVersions: PublishedVersion[] =
+      await gitdb.getPublishedVersions({ repositoryId });
+    const draftVersions: DraftVersion[] = await gitdb.getDraftVersions({
       repositoryId,
     });
 
@@ -167,14 +167,9 @@ export async function create_draft({
 
   try {
     // 1. Create branch
-    // 1.1. First check that a version of the same name is not already created
-    const response = await list_versions({ repositoryId });
-    if (response.status === "error") {
-      throw new Error();
-    }
-
-    const versions = response.versions;
-    const versionExists = versions.some((v) => v.name === draftName);
+    // 1.1. First check that a draft version of the same name is not already created
+    const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+    const versionExists = draftVersions.some((v) => v.name === draftName);
     if (versionExists) {
       console.debug(`[API/create_draft] Version already exists`);
       return {
@@ -183,18 +178,20 @@ export async function create_draft({
       };
     }
 
-    // 1.2. Get the newest published version
-    const latestPublishedVersion = await get_last_published_version({
+    // 1.2 Create a new branch from the latest published version or the initial commit if there's no published version
+    const lastPublishedVersion = await gitdb.getLastPublishedVersion({
       repositoryId,
     });
 
-    // 1.3 Create a new branch from the newest published version
+    const branchBaseRef = lastPublishedVersion
+      ? lastPublishedVersion.tag
+      : await gitdb.getInitialCommitOid({ repositoryId });
 
     await git.branch({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: branchName,
-      object: latestPublishedVersion.tag,
+      object: branchBaseRef,
     });
     console.debug(`[API/create_draft] Created local branch`);
   } catch (error) {
@@ -235,9 +232,13 @@ export async function create_draft({
   } else {
     // 3. Return newly created version
     console.debug(`[API/create_draft] Returning success`);
+    const version = (await gitdb.getDraftVersion({
+      repositoryId,
+      branch: branchName,
+    }))!;
     return {
       status: "success",
-      version: { type: "draft", name: draftName, branch: branchName },
+      version,
     };
   }
 }
@@ -275,7 +276,7 @@ export async function delete_draft({
   );
 
   // 1. Check that draft version exists
-  const draftVersions = await list_draft_versions({ repositoryId });
+  const draftVersions = await gitdb.getDraftVersions({ repositoryId });
   if (!draftVersions.find((dv) => _.isEqual(dv, versionToDelete))) {
     return {
       status: "error",
@@ -337,131 +338,6 @@ export async function delete_draft({
     return { status: "error", type: "UNKNOWN" };
   }
   return { status: "success", versions: versionsResp.versions };
-}
-
-//#endregion
-
-//#region Helper functions
-type ListPublishedVersionsParameters = {
-  repositoryId: string;
-};
-
-type ListPublishedVersionsResponse = PublishedVersion[];
-
-export async function list_published_versions({
-  repositoryId,
-}: ListPublishedVersionsParameters): Promise<ListPublishedVersionsResponse> {
-  console.debug(
-    `[Help/list_published_versions] Called with repositoryId=${repositoryId}`,
-  );
-
-  // 1. Get list of tags
-  const tags = await git.listTags({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-  });
-
-  // 2. Loop over all tags and
-  //      Determine which tag is the latest one
-  //      Get the dates of each tag so that it can be sorted
-  const mainCommitOid = await git.resolveRef({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-    ref: "main",
-  });
-
-  const tagDates = new Map<string, number>();
-
-  let newestTag: string | null = null;
-  for (const tag of tags) {
-    const tagCommitOid = await git.resolveRef({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: tag,
-    });
-
-    const tagCommit = await git.readCommit({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      oid: tagCommitOid,
-    });
-
-    if (tagCommitOid === mainCommitOid) {
-      newestTag = tag;
-    }
-
-    tagDates.set(tag, tagCommit.commit.author.timestamp);
-  }
-
-  if (newestTag == null) {
-    console.debug(
-      `[API/list_published_versions] Could not determine latest or current version`,
-    );
-    throw new Error();
-  }
-
-  tags.sort((a, b) => tagDates.get(b)! - tagDates.get(a)!);
-
-  const versions: PublishedVersion[] = tags.map((tag) => ({
-    type: "published",
-    name: tag,
-    tag: tag,
-    newest: tag === newestTag,
-  }));
-
-  return versions;
-}
-
-type GetLastPublishedVersionParameters = {
-  repositoryId: string;
-};
-
-type GetLastPublishedVersionResponse = PublishedVersion;
-
-export async function get_last_published_version({
-  repositoryId,
-}: GetLastPublishedVersionParameters): Promise<GetLastPublishedVersionResponse> {
-  console.debug(
-    `[Help/get_last_published_versions] Called with repositoryId=${repositoryId}`,
-  );
-
-  const publishedVersions = await list_published_versions({ repositoryId });
-  const latestPublishedVersion = publishedVersions.find((v) => v.newest);
-
-  if (!latestPublishedVersion) throw new Error();
-
-  return latestPublishedVersion;
-}
-
-type ListDraftVersionsParameters = {
-  repositoryId: string;
-};
-
-type ListDraftVersionsResponse = DraftVersion[];
-
-export async function list_draft_versions({
-  repositoryId,
-}: ListDraftVersionsParameters): Promise<ListDraftVersionsResponse> {
-  console.debug(
-    `[Help/list_draft_versions] Called with repositoryId=${repositoryId}`,
-  );
-
-  // 1. Get list of branches
-  const branches = await git.listBranches({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-  });
-
-  // 2. Filter draft branches
-  const draftBranches = branches.filter((b) => b.startsWith("draft/"));
-
-  const versions: DraftVersion[] = draftBranches.map((branch) => ({
-    type: "draft",
-    branch: branch,
-    name: branch.slice(6),
-  }));
-
-  return versions;
 }
 
 //#endregion

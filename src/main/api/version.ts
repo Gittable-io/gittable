@@ -13,13 +13,12 @@ import {
   getRepositoryRelativeTablePath,
   getTableNameFromFileName,
 } from "../utils/utils";
-import { getDraftVersionCommits } from "../utils/git/commit";
-import { list_draft_versions, list_published_versions } from "./repository";
 import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
   pushBranch,
-} from "../utils/git/push";
+} from "../utils/gitdb/push";
+import { gitdb } from "../utils/gitdb/gitdb";
 
 //#region API: get_current_version
 export type GetCurrentVersionParameters = {
@@ -79,7 +78,7 @@ export async function get_current_version({
     });
 
     if (headStatus === "POINTS_TO_BRANCH") {
-      const draftVersions = await list_draft_versions({ repositoryId });
+      const draftVersions = await gitdb.getDraftVersions({ repositoryId });
 
       // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
       for (const version of draftVersions) {
@@ -94,7 +93,9 @@ export async function get_current_version({
         }
       }
     } else {
-      const publishedVersions = await list_published_versions({ repositoryId });
+      const publishedVersions = await gitdb.getPublishedVersions({
+        repositoryId,
+      });
 
       for (const version of publishedVersions) {
         const tagCommitOid = await git.resolveRef({
@@ -169,7 +170,7 @@ export async function get_current_version_content({
         modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
       }));
 
-      const branchCommits = await getDraftVersionCommits({
+      const branchCommits = await gitdb.getDraftVersionCommits({
         repositoryId,
         draftVersion: currentVersion,
       });

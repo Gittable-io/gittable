@@ -1,9 +1,13 @@
 import fs from "node:fs/promises";
 import fsync from "node:fs";
-import git, { GitProgressEvent, GitAuth } from "isomorphic-git";
+import git, { GitAuth } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
-import type { Repository, RepositoryCredentials } from "@sharedTypes/index";
+import type {
+  Repository,
+  RepositoryCredentials,
+  Version,
+} from "@sharedTypes/index";
 
 import {
   generateRepositoryId,
@@ -11,7 +15,8 @@ import {
   getRepositoryPath,
 } from "../utils/utils";
 import { UserDataStore } from "../db";
-import { get_last_published_version, switch_version } from "./repository";
+import { switch_version } from "./repository";
+import { gitdb } from "../utils/gitdb/gitdb";
 
 //#region API: clone_repository
 export type CloneRepositoryParameters = {
@@ -71,6 +76,7 @@ export async function clone_repository({
   // 1. check that the git config: user name and email are configured
   const gitConfig = await UserDataStore.getGitConfig();
   if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
+    console.debug(`[API/clone_repository] Git user is not configured`);
     return {
       status: "error",
       type: "GIT_USER_NOT_CONFIGURED",
@@ -82,6 +88,7 @@ export async function clone_repository({
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
   );
   if (existingRepository) {
+    console.debug(`[API/clone_repository] Repository already exists`);
     return {
       status: "success",
       type: "already cloned",
@@ -103,11 +110,6 @@ export async function clone_repository({
       http,
       dir: repositoryPath,
       url: remoteUrl,
-      onMessage: (message: string) => {
-        console.log(`onMessage: ${message}`);
-      },
-      onProgress: (progress: GitProgressEvent) =>
-        console.log(`onProgress: ${JSON.stringify(progress)}`),
       onAuth: () => {
         console.debug(`[API/clone_repository] onAuth callback called`);
         if (!credentials) {
@@ -151,10 +153,10 @@ export async function clone_repository({
         - However, to detect versions, our app only looks at local branches
         - We correct this by creating a local branch for every draft remote branch other than main
 
-      - 5.2 : Checkout the last published version (tag)
+      - 5.2 : Checkout to either: the last published version (tag) or the draft version if there's no published version
         - Why? When cloning a remote repo, by default, HEAD points to main.
         - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
-        - We correct this by making HEAD point to the latest published tag
+        - We correct this by making HEAD point to the latest published tag or to a draft branch
         TODO: need to change this when cloning an empty repository
     */
 
@@ -168,7 +170,7 @@ export async function clone_repository({
     for (const remoteBranch of remoteBranches) {
       if (remoteBranch.startsWith("draft/")) {
         /*
-         * - If I just create a local branch of the same name, it won't work, as isomorphic-git (or git) doesn't automatically set it to track the remote branch of the same name
+         * - If I just create a local branch of the same name, it won't work, as isogit (or git) doesn't automatically set it to track the remote branch of the same name
          * - isogit doesn't have a command like git branch --set-upstream-to=<remote branch> that allows me to create a local branch and set its upstream branch
          * - The solution I found is to checkout the branch, and here isogit will automatically create the local branch correctly set its upstream branch
          *
@@ -182,19 +184,33 @@ export async function clone_repository({
       }
     }
 
-    // 5.2 : Checkout the last published version (tag)
-    const lastPublishedVersion = await get_last_published_version({
-      repositoryId,
-    });
-    const switchResp = await switch_version({
-      repositoryId,
-      version: lastPublishedVersion,
-    });
-    if (switchResp.status === "error")
+    // 5.2 : Checkout the last published version (tag) or draft
+
+    let versionToSwitchTo: Version | null = await gitdb.getLastPublishedVersion(
+      {
+        repositoryId,
+      },
+    );
+    if (!versionToSwitchTo) {
+      const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+      versionToSwitchTo = draftVersions[0];
+    }
+    if (!versionToSwitchTo) {
       errorResponse = {
         status: "error",
         type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
       };
+    } else {
+      const switchResp = await switch_version({
+        repositoryId,
+        version: versionToSwitchTo,
+      });
+      if (switchResp.status === "error")
+        errorResponse = {
+          status: "error",
+          type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
+        };
+    }
   } catch (error) {
     if (error instanceof Error) {
       console.debug(
@@ -284,7 +300,7 @@ export async function list_repositories(): Promise<ListRepositoriesReponse> {
 }
 //#endregion
 
-//#region API: list_repositories
+//#region API: delete_repository
 export type DeleteRepositoryParameters = {
   repositoryId: string;
 };
