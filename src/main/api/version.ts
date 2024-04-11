@@ -1,18 +1,14 @@
 import fs from "node:fs/promises";
-import git, { ReadCommitResult } from "isomorphic-git";
+import git from "isomorphic-git";
 import { getConfig } from "../config";
-import {
-  Commit,
-  PublishedVersion,
-  TableMetadataWithStatus,
-  VersionContent,
-} from "@sharedTypes/index";
+import { TableMetadataWithStatus, VersionContent } from "@sharedTypes/index";
 import {
   getRepositoryPath,
   getRepositoryRelativeTablePath,
   getTableNameFromFileName,
 } from "../utils/utils";
-import { get_current_version, list_versions } from "./repository";
+import { get_current_version } from "./repository";
+import { getDraftVersionCommits } from "../utils/git/commit";
 
 //#region API: get_current_version_content
 export type GetCurrentVersionContentParameters = {
@@ -58,42 +54,14 @@ export async function get_current_version_content({
         modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
       }));
 
-      // 2. Get the commit log from the branch HEAD to the oid of the last published version
-      const listVersionsResp = await list_versions({ repositoryId });
-      if (listVersionsResp.status === "error") {
-        throw new Error();
-      }
-
-      const lastPublishedVersion: PublishedVersion =
-        listVersionsResp.versions.filter(
-          (v) => v.type === "published" && v.newest,
-        )[0] as PublishedVersion;
-      const lastPublishedVersionOid = await git.resolveRef({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: lastPublishedVersion.tag,
+      const branchCommits = await getDraftVersionCommits({
+        repositoryId,
+        draftVersion: currentVersion,
       });
-
-      const log: ReadCommitResult[] = await git.log({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-      });
-      // Only return the log from the HEAD of the branch to the last published tag
-      const branchLog: ReadCommitResult[] = log.slice(
-        0,
-        log.findIndex((commit) => commit.oid === lastPublishedVersionOid),
-      );
-
-      const commits: Commit[] = branchLog.map((r) => ({
-        oid: r.oid,
-        message: r.commit.message,
-        // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
-        author: r.commit.author,
-      }));
 
       return {
         status: "success",
-        content: { tables, commits },
+        content: { tables, commits: branchCommits },
       };
     } else {
       const [FILE] = [0];
