@@ -1,5 +1,5 @@
 import "./RemoteActionCredentialsInputModal.css";
-import { Modal } from "../../../ui-components/Modal";
+import { Modal } from "../../ui-components/Modal";
 import { Button, InputAndValidation } from "gittable-editor";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { WelcomePage } from "../welcome-page/WelcomePage";
-import { RepositoryWorkspace2 } from "../repository-workspace/RepositoryWorkspace2";
+import { RepositoryWorkspace } from "../repository-workspace/RepositoryWorkspace";
 import { Footer } from "../Footer";
 import "./App.css";
 import { ModalProvider } from "react-modal-hook";
@@ -44,7 +44,7 @@ function App(): JSX.Element {
   return (
     <div id="app">
       <div className="main-container">
-        {openedRepository ? <RepositoryWorkspace2 /> : <WelcomePage />}
+        {openedRepository ? <RepositoryWorkspace /> : <WelcomePage />}
       </div>
       <Footer />
     </div>
