@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import "./ReviewCommits.css";
 import { AppRootState } from "@renderer/store/store";
+import { MaterialSymbol } from "gittable-editor";
 
 function formatTimestamp(timestamp: number, timezoneOffset: number): string {
   // Convert timestamp from seconds to milliseconds
@@ -52,7 +53,7 @@ export function ReviewCommits(): JSX.Element {
                 {formatTimestamp(c.author.timestamp, c.author.timezoneOffset)}
               </td>
               <td>{`${c.author.name} (${c.author.email})`}</td>
-              <td>{/* TODO: Mark which commits were not pushed */}</td>
+              <td>{!c.inRemote && <MaterialSymbol symbol="cloud_upload" />}</td>
             </tr>
           ))}
         </tbody>

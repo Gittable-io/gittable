@@ -1,5 +1,3 @@
-import { ReadCommitResult } from "isomorphic-git";
-
 export type Repository = {
   id: string;
   name: string;
@@ -60,6 +58,8 @@ export type Commit = {
     timestamp: number;
     timezoneOffset: number;
   };
+
+  inRemote: boolean;
 };
 
 export type VersionContent = {

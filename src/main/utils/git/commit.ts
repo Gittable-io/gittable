@@ -12,13 +12,12 @@ export async function getDraftVersionCommits({
   draftVersion: DraftVersion;
 }): Promise<Commit[]> {
   // 1. Get the commit log from the branch HEAD to the oid of the last published version
-  const log: ReadCommitResult[] = await git.log({
+  const localLog: ReadCommitResult[] = await git.log({
     fs,
     dir: getRepositoryPath(repositoryId),
     ref: draftVersion.branch,
   });
 
-  // Only return the log from the HEAD of the branch to the last published tag
   const lastPublishedVersion: PublishedVersion =
     await get_last_published_version({ repositoryId });
   const lastPublishedVersionOid = await git.resolveRef({
@@ -27,17 +26,31 @@ export async function getDraftVersionCommits({
     ref: lastPublishedVersion.tag,
   });
 
-  const branchLog: ReadCommitResult[] = log.slice(
+  const localBranchLog: ReadCommitResult[] = localLog.slice(
     0,
-    log.findIndex((commit) => commit.oid === lastPublishedVersionOid),
+    localLog.findIndex((commit) => commit.oid === lastPublishedVersionOid),
   );
 
-  // Convert ReadCommitResult object to Commit object
-  const commits: Commit[] = branchLog.map((r) => ({
-    oid: r.oid,
-    message: r.commit.message,
+  // 2. Check which commit is also in remote
+  const remoteBranchLog: ReadCommitResult[] = await git.log({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: `refs/remotes/origin/${draftVersion.branch}`,
+  });
+
+  const isCommitInRemote = (
+    remoteBranchLog: ReadCommitResult[],
+    localCommit: ReadCommitResult,
+  ): boolean =>
+    remoteBranchLog.findIndex((rcommit) => rcommit.oid === localCommit.oid) > 0;
+
+  // 3. Convert ReadCommitResult object to Commit object
+  const commits: Commit[] = localBranchLog.map((c) => ({
+    oid: c.oid,
+    message: c.commit.message,
     // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
-    author: r.commit.author,
+    author: c.commit.author,
+    inRemote: isCommitInRemote(remoteBranchLog, c),
   }));
 
   return commits;
