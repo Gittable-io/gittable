@@ -1,23 +1,37 @@
 import { useState } from "react";
 import "./NewDraftForm.css";
-import { InputAndValidation, MaterialSymbolButton } from "gittable-editor";
+import {
+  InputAndValidation,
+  MaterialSymbolButton,
+  Spinner,
+} from "gittable-editor";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { repoActions } from "@renderer/store/repoSlice";
-import { CredentialsInputModal } from "../source-control/CredentialsInputModal";
 
 export function NewDraftForm(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
   const versions = useSelector((state: AppRootState) => state.repo.versions)!;
-  const createDraftProgress = useSelector(
-    (state: AppRootState) => state.repo.progress.createDraftProgress,
-  );
 
   const [draftName, setDraftName] = useState<string>("");
 
   const versionExists = (draftName: string): boolean => {
     return versions.some((v) => v.name === draftName);
+  };
+  const isCreateDraftInProgress: boolean = useSelector(
+    (state: AppRootState) =>
+      state.repo.remoteActionSequence?.action.type === "CREATE_DRAFT",
+  );
+
+  const createDraft = (): void => {
+    setDraftName("");
+
+    dispatch(
+      repoActions.remoteAction({
+        action: { type: "CREATE_DRAFT", draftName },
+      }),
+    );
   };
 
   const error: string | null =
@@ -33,24 +47,14 @@ export function NewDraftForm(): JSX.Element {
         {...(error ? { error } : {})}
         onChange={setDraftName}
       />
-      <MaterialSymbolButton
-        symbol="check"
-        disabled={error != null || draftName === ""}
-        onClick={() =>
-          dispatch(repoActions.createAndSwitchToDraft({ draftName }))
-        }
-      />
-      {(createDraftProgress === "REQUESTING_CREDENTIALS" ||
-        createDraftProgress === "AUTH_ERROR") && (
-        <CredentialsInputModal
-          authError={createDraftProgress === "AUTH_ERROR"}
-          onConfirm={(credentials) =>
-            dispatch(
-              repoActions.createAndSwitchToDraft({ draftName, credentials }),
-            )
-          }
-          onCancel={() => dispatch(repoActions.cancelNewDraft())}
+      {!isCreateDraftInProgress ? (
+        <MaterialSymbolButton
+          symbol="check"
+          disabled={error != null || draftName === ""}
+          onClick={createDraft}
         />
+      ) : (
+        <Spinner inline />
       )}
     </div>
   );

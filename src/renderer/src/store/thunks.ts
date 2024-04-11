@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
-  DraftVersion,
   RepositoryCredentials,
   Version,
   VersionContent,
@@ -100,92 +99,6 @@ export const switchVersion = createAsyncThunk<
 });
 //#endregion
 
-//#region createAndSwitchToDraft
-/**
- * Create a switch to a new draft version.
- *
- */
-export const createAndSwitchToDraft = createAsyncThunk<
-  {
-    versions: Version[];
-    currentVersion: Version;
-    content: VersionContent;
-  },
-  { draftName: string; credentials?: RepositoryCredentials },
-  {
-    state: AppRootState;
-    rejectValue:
-      | "NO_PROVIDED_CREDENTIALS"
-      | "AUTH_ERROR_WITH_CREDENTIALS"
-      | "UNKNOWN_ERROR";
-  }
->(
-  "repo/createAndSwitchToDraft",
-  async ({ draftName, credentials }, thunkAPI) => {
-    const repositoryId = thunkAPI.getState().repo.repository!.id;
-
-    // 1. Create Draft version
-    const createDraftResp = await window.api.create_draft({
-      repositoryId,
-      name: draftName,
-      credentials,
-    });
-
-    if (createDraftResp.status === "error") {
-      console.error(
-        `[thunk/createAndSwitchToDraft]: Error creating draft version`,
-      );
-
-      if (createDraftResp.type === "NO_PROVIDED_CREDENTIALS") {
-        return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
-      } else if (createDraftResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
-        return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
-      } else {
-        return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-      }
-    }
-
-    // 2. Switch to new draft version
-    const switchVersionResp = await window.api.switch_version({
-      repositoryId: repositoryId,
-      version: createDraftResp.version,
-    });
-
-    if (switchVersionResp.status === "error") {
-      console.error(
-        `[thunk/createAndSwitchToDraft]: Error creating draft version`,
-      );
-      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-    }
-
-    // 3. Fetch new list of versions
-    const listVersionsResp = await window.api.list_versions({ repositoryId });
-    if (listVersionsResp.status === "error") {
-      console.error(`[thunk/createAndSwitchToDraft]: Error fetching versions`);
-      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-    }
-    // 3. Fetch current content
-    // * Might be necessary if I created a draft version but I'm not on the latest tag
-    const currentContentResp = await window.api.get_current_version_content({
-      repositoryId,
-    });
-
-    if (currentContentResp.status === "error") {
-      console.error(
-        `[thunk/createAndSwitchToDraft]: Error fetching current content`,
-      );
-      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-    }
-
-    return {
-      versions: listVersionsResp.versions,
-      currentVersion: createDraftResp.version,
-      content: currentContentResp.content,
-    };
-  },
-);
-//#endregion
-
 //#region updateVersionContent
 export const updateVersionContent = createAsyncThunk<
   {
@@ -212,49 +125,30 @@ export const updateVersionContent = createAsyncThunk<
 
 //#endregion
 
-//#region deleteDraft
-/**
- * Delete draft
- *
- */
-export const deleteDraft = createAsyncThunk<
+//#region updateVersions
+export const updateVersions = createAsyncThunk<
   {
     versions: Version[];
   },
-  { draftVersion: DraftVersion; credentials?: RepositoryCredentials },
-  {
-    state: AppRootState;
-    rejectValue:
-      | "NO_PROVIDED_CREDENTIALS"
-      | "AUTH_ERROR_WITH_CREDENTIALS"
-      | "UNKNOWN_ERROR";
-  }
->("repo/deleteDraft", async ({ draftVersion, credentials }, thunkAPI) => {
+  void, // No payload expected
+  { state: AppRootState; rejectValue: string }
+>("repo/updateVersions", async (_, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 1. Delete draft version
-  const deleteDraftResp = await window.api.delete_draft({
+  // 3. Fetch versions
+  const versionsResp = await window.api.list_versions({
     repositoryId,
-    version: draftVersion,
-    credentials,
   });
 
-  if (deleteDraftResp.status === "error") {
-    console.error(`[thunk/deleteDraft]: Error deleting draft version`);
-
-    if (deleteDraftResp.type === "NO_PROVIDED_CREDENTIALS") {
-      return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
-    } else if (deleteDraftResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
-      return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
-    } else {
-      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
-    }
+  if (versionsResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
-    versions: deleteDraftResp.versions,
+    versions: versionsResp.versions,
   };
 });
+
 //#endregion
 
 //#region discardChanges
@@ -326,4 +220,48 @@ export const commit = createAsyncThunk<
   };
 });
 
+//#endregion
+
+//#region pushCommits
+/**
+ * Delete draft
+ *
+ */
+export const pushCommits = createAsyncThunk<
+  {
+    content: VersionContent;
+  },
+  { credentials?: RepositoryCredentials },
+  {
+    state: AppRootState;
+    rejectValue:
+      | "NO_PROVIDED_CREDENTIALS"
+      | "AUTH_ERROR_WITH_CREDENTIALS"
+      | "UNKNOWN_ERROR";
+  }
+>("repo/pushCommits", async ({ credentials }, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. push commits
+  const pushCommitResp = await window.api.push_commits({
+    repositoryId,
+    credentials,
+  });
+
+  if (pushCommitResp.status === "error") {
+    console.error(`[thunk/pushCommitResp]: Error deleting draft version`);
+
+    if (pushCommitResp.type === "NO_PROVIDED_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
+    } else if (pushCommitResp.type === "AUTH_ERROR_WITH_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
+    } else {
+      return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    }
+  }
+
+  return {
+    content: pushCommitResp.content,
+  };
+});
 //#endregion

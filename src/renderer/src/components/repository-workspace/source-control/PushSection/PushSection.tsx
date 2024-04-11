@@ -6,7 +6,7 @@ import {
   RepositoryCredentials,
   RepositoryStatus,
 } from "@sharedTypes/index";
-import { CredentialsInputModal } from "../CredentialsInputModal";
+import { RemoteActionCredentialsInputModal } from "../RemoteActionCredentialsInputModal";
 import { useModal } from "react-modal-hook";
 
 export type PushSectionProps = {
@@ -24,13 +24,7 @@ export function PushSection({
   const [pushError, setPushError] = useState<string | null>(null);
 
   const [showPushCredentialsModal, hidePushCredentialsModal] = useModal(
-    () => (
-      <CredentialsInputModal
-        authError={pushError != null}
-        onConfirm={(credentials) => push(credentials)}
-        onCancel={cancelPush}
-      />
-    ),
+    () => <RemoteActionCredentialsInputModal />,
     [pushError, cancelPush, push],
   );
 

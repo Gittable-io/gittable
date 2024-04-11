@@ -22,8 +22,8 @@ export function VersionsSection(): JSX.Element {
     repoSelectors.isContentModified(state),
   );
 
-  const createDraftProgress = useSelector(
-    (state: AppRootState) => state.repo.progress.createDraftProgress,
+  const waitingForNewDraftName = useSelector(
+    (state: AppRootState) => state.repo.waitingForNewDraftName,
   );
 
   const [pendingVersion, setPendingVersion] = useState<Version | null>(null);
@@ -86,14 +86,14 @@ export function VersionsSection(): JSX.Element {
               selectedVersion={currentVersion}
               onVersionChange={confirmSwitchVersion}
             />
-            {createDraftProgress === "NONE" ? (
+            {!waitingForNewDraftName ? (
               <MaterialSymbolButton
                 symbol="add_box"
                 label="Create draft version"
                 tooltip
                 disabled={!canCreateDraft}
                 onClick={() => {
-                  dispatch(repoActions.startNewDraft());
+                  dispatch(repoActions.setWaitingForNewDraftName(true));
                 }}
               />
             ) : (
@@ -102,12 +102,12 @@ export function VersionsSection(): JSX.Element {
                 label="Cancel creating draft"
                 tooltip
                 onClick={() => {
-                  dispatch(repoActions.cancelNewDraft());
+                  dispatch(repoActions.setWaitingForNewDraftName(false));
                 }}
               />
             )}
           </div>
-          {createDraftProgress !== "NONE" && (
+          {waitingForNewDraftName && (
             <div className="new-draft-section">
               <NewDraftForm />
             </div>

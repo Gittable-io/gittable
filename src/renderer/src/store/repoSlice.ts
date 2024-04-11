@@ -10,13 +10,13 @@ import {
 import { appActions } from "./appSlice";
 import {
   commit,
-  createAndSwitchToDraft,
-  deleteDraft,
   discardChanges,
   fetchRepositoryDetails,
   switchVersion,
   updateVersionContent,
+  updateVersions,
 } from "./thunks";
+import { remoteAction } from "./remoteThunks";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -39,26 +39,31 @@ export type PanelDescription =
 
 export type Panel = { id: string } & PanelDescription;
 
+export type RemoteAction =
+  | {
+      type: "CREATE_DRAFT";
+      draftName: string;
+    }
+  | { type: "DELETE_DRAFT"; draftVersion: DraftVersion };
+
 export type RepoState = {
   repository: Repository | null;
 
   progress: {
-    createDraftProgress:
-      | "NONE"
-      | "WAITING_FOR_DRAFT_NAME"
-      | "IN_PROGRESS"
-      | "REQUESTING_CREDENTIALS"
-      | "AUTH_ERROR"
-      | "UNKOWN_ERROR";
-    deleteDraftProgress:
-      | "NONE"
-      | "IN_PROGRESS"
-      | "REQUESTING_CREDENTIALS"
-      | "AUTH_ERROR"
-      | "UNKOWN_ERROR";
-
     discardInProgress: boolean;
     commitInProgress: boolean;
+  };
+
+  //TODO: this variable should be removed when I refactor the UI
+  waitingForNewDraftName: boolean;
+
+  remoteActionSequence: null | {
+    action: RemoteAction;
+    step:
+      | "IN_PROGRESS"
+      | "REQUESTING_CREDENTIALS"
+      | "AUTH_ERROR"
+      | "UNKOWN_ERROR";
   };
 
   versions: Version[] | null;
@@ -74,11 +79,13 @@ function initState(repository: Repository | null): RepoState {
     repository,
 
     progress: {
-      createDraftProgress: "NONE",
-      deleteDraftProgress: "NONE",
       discardInProgress: false,
       commitInProgress: false,
     },
+
+    waitingForNewDraftName: false,
+
+    remoteActionSequence: null,
 
     versions: null,
     currentVersion: null,
@@ -93,14 +100,12 @@ export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
   reducers: {
-    startNewDraft: (state) => {
-      state.progress.createDraftProgress = "WAITING_FOR_DRAFT_NAME";
+    cancelRemoteAction: (state) => {
+      state.remoteActionSequence = null;
     },
-    cancelNewDraft: (state) => {
-      state.progress.createDraftProgress = "NONE";
-    },
-    cancelDeleteDraft: (state) => {
-      state.progress.deleteDraftProgress = "NONE";
+
+    setWaitingForNewDraftName: (state, action: PayloadAction<boolean>) => {
+      state.waitingForNewDraftName = action.payload;
     },
 
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
@@ -163,30 +168,14 @@ export const repoSlice = createSlice({
         state.selectedPanelId = null;
       })
       .addCase(switchVersion.fulfilled, (state, action) => {
-        state.progress.createDraftProgress = "NONE";
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
-      })
-      .addCase(createAndSwitchToDraft.pending, (state) => {
-        state.progress.createDraftProgress = "IN_PROGRESS";
-      })
-      .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
-        state.progress.createDraftProgress = "NONE";
-        state.versions = action.payload.versions;
-        state.currentVersion = action.payload.currentVersion;
-        state.currentVersionContent = action.payload.content;
-      })
-      .addCase(createAndSwitchToDraft.rejected, (state, action) => {
-        if (action.payload === "NO_PROVIDED_CREDENTIALS") {
-          state.progress.createDraftProgress = "REQUESTING_CREDENTIALS";
-        } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
-          state.progress.createDraftProgress = "AUTH_ERROR";
-        } else {
-          state.progress.createDraftProgress = "UNKOWN_ERROR";
-        }
       })
       .addCase(updateVersionContent.fulfilled, (state, action) => {
         state.currentVersionContent = action.payload.content;
+      })
+      .addCase(updateVersions.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
       })
       .addCase(discardChanges.pending, (state) => {
         state.progress.discardInProgress = true;
@@ -202,20 +191,22 @@ export const repoSlice = createSlice({
         state.progress.commitInProgress = false;
         state.currentVersionContent = action.payload.content;
       })
-      .addCase(deleteDraft.pending, (state) => {
-        state.progress.deleteDraftProgress = "IN_PROGRESS";
+      .addCase(remoteAction.pending, (state, action) => {
+        state.remoteActionSequence = {
+          action: action.meta.arg.action,
+          step: "IN_PROGRESS",
+        };
       })
-      .addCase(deleteDraft.fulfilled, (state, action) => {
-        state.progress.deleteDraftProgress = "NONE";
-        state.versions = action.payload.versions;
+      .addCase(remoteAction.fulfilled, (state) => {
+        state.remoteActionSequence = null;
       })
-      .addCase(deleteDraft.rejected, (state, action) => {
+      .addCase(remoteAction.rejected, (state, action) => {
         if (action.payload === "NO_PROVIDED_CREDENTIALS") {
-          state.progress.deleteDraftProgress = "REQUESTING_CREDENTIALS";
+          state.remoteActionSequence!.step = "REQUESTING_CREDENTIALS";
         } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
-          state.progress.deleteDraftProgress = "AUTH_ERROR";
+          state.remoteActionSequence!.step = "AUTH_ERROR";
         } else {
-          state.progress.deleteDraftProgress = "UNKOWN_ERROR";
+          state.remoteActionSequence!.step = "UNKOWN_ERROR";
         }
       });
   },
@@ -239,11 +230,10 @@ export const repoActions = {
   ...repoSlice.actions,
   switchVersion,
   fetchRepositoryDetails,
-  createAndSwitchToDraft,
-  deleteDraft,
   updateVersionContent,
   discardChanges,
   commit,
+  remoteAction,
 };
 export const repoReducer = repoSlice.reducer;
 export const repoSelectors = repoSlice.selectors;
