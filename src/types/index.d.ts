@@ -4,17 +4,6 @@ export type Repository = {
   remoteUrl: string;
 };
 
-// TODO: REMOVE WHEN REDESIGN IS OVER
-export type RepositoryStatus = {
-  currentBranch: {
-    name: string;
-    localHeadCommitOid: string;
-    remoteHeadCommitOid: string;
-    isAheadOfRemote: boolean;
-  };
-  tables: TableStatus[];
-};
-
 export type RepositoryCredentials = {
   username: string;
   password: string;
@@ -29,8 +18,6 @@ export type TableMetadata = {
   /** The name of the table, which corresponds currently to the ID (or filename) without the .table.json extension */
   name: string;
 };
-// TODO: REMOVE WHEN REDESIGN IS OVER
-export type TableStatus = TableMetadata & { modified: boolean };
 
 export type TableMetadataWithStatus = TableMetadata & { modified: boolean };
 
