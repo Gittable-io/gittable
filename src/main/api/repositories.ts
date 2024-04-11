@@ -13,6 +13,7 @@ import {
 import { UserDataStore } from "../db";
 import { get_last_published_version, switch_version } from "./repository";
 
+//#region API: clone_repository
 export type CloneRepositoryParameters = {
   remoteUrl: string;
   credentials?: RepositoryCredentials;
@@ -267,6 +268,9 @@ export async function clone_repository({
   }
 }
 
+//#endregion
+
+//#region API: list_repositories
 export type ListRepositoriesReponse = {
   status: "success";
   repositories: Repository[];
@@ -278,7 +282,9 @@ export async function list_repositories(): Promise<ListRepositoriesReponse> {
   const repositories = await UserDataStore.getRepositories();
   return { status: "success", repositories: repositories };
 }
+//#endregion
 
+//#region API: list_repositories
 export type DeleteRepositoryParameters = {
   repositoryId: string;
 };
@@ -329,3 +335,4 @@ export async function delete_repository({
     };
   }
 }
+//#endregion

@@ -1,30 +1,40 @@
 import { RepositoryContentItem } from "../RepositoryContentItem";
-import { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
-import { List } from "gittable-editor";
+import { List, Spinner } from "gittable-editor";
 import "./RepositoryContent.css";
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { repoActions } from "@renderer/store/repoSlice";
 
-export type RepositoryContentProps = {
-  repositoryId: string;
-  repositoryStatus: RepositoryStatus;
-  onTableSelect: (tableMetadata: TableMetadata) => void;
-};
+export function RepositoryContent(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
 
-export function RepositoryContent({
-  repositoryStatus,
-  onTableSelect,
-}: RepositoryContentProps): JSX.Element {
+  const tables = useSelector(
+    (state: AppRootState) => state.repo.currentVersionContent?.tables,
+  )!;
+
   return (
-    <SidebarSection id="repository-content" title="Tables">
-      <List>
-        {repositoryStatus.tables.map((tableMetadata) => (
-          <RepositoryContentItem
-            key={tableMetadata.id}
-            tableName={tableMetadata.name}
-            onTableSelect={() => onTableSelect(tableMetadata)}
-          />
-        ))}
-      </List>
+    <SidebarSection id="repository-content">
+      {tables ? (
+        <List>
+          {tables.map((tableMetadata) => (
+            <RepositoryContentItem
+              key={tableMetadata.id}
+              tableName={tableMetadata.name}
+              onTableSelect={() =>
+                dispatch(
+                  repoActions.openPanel({
+                    type: "table",
+                    table: tableMetadata,
+                  }),
+                )
+              }
+            />
+          ))}
+        </List>
+      ) : (
+        <Spinner />
+      )}
     </SidebarSection>
   );
 }

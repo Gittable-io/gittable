@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { DiffDescription } from "../EditorPanelGroup";
 import "./TableDiffViewerPanel.css";
 import { Table, TableDiffViewer } from "gittable-editor";
 import { useSelector } from "react-redux";
 import { AppRootState } from "@renderer/store/store";
+import { DiffDescription } from "@renderer/store/repoSlice";
 
 type TableDiffViewerPanelProps = {
   diffDescription: DiffDescription;

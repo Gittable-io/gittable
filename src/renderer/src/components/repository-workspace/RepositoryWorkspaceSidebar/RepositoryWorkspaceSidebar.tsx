@@ -1,59 +1,36 @@
-import { TitleBar } from "../../ui-components/TitleBar";
+import { MaterialSymbolButton } from "gittable-editor";
 import "./RepositoryWorkspaceSidebar.css";
-import { RepositoryStatus, TableMetadata } from "@sharedTypes/index";
-import { RepositoryContent } from "../RepositoryContent";
-import { SourceControl } from "../source-control/SourceControl";
-import { DiffDescription } from "../editor-panel-group/EditorPanelGroup";
+import { appActions } from "@renderer/store/appSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
-import { appActions } from "@renderer/store/appSlice";
+import { RepositoryContent } from "../RepositoryContent";
+import { VersionsSection } from "../VersionsSection";
 
-export type RepositoryWorkspaceSidebarProps = {
-  repositoryStatus: RepositoryStatus;
-  onRepositoryStatusChange: () => void;
-  onTableSelect: (tableMetadata: TableMetadata) => void;
-  onDiffSelect: (diff: DiffDescription) => void;
-  onHistorySelect: () => void;
-};
-
-export function RepositoryWorkspaceSidebar({
-  repositoryStatus,
-  onTableSelect,
-  onDiffSelect,
-  onRepositoryStatusChange,
-  onHistorySelect,
-}: RepositoryWorkspaceSidebarProps): JSX.Element {
-  const openedRepository = useSelector(
-    (state: AppRootState) => state.app.openedRepository,
-  )!;
+export function RepositoryWorkspaceSidebar(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
+  //#region Selectors
+  const repository = useSelector(
+    (state: AppRootState) => state.repo.repository!,
+  )!;
+
+  //#endregion
+
   return (
-    <div
-      className="repository-workspace-sidebar"
-      aria-label="Repository workspace sidebar"
-    >
-      <TitleBar
-        title={openedRepository.name}
-        aria-label="Title"
-        action={{
-          materialSymbol: "close",
-          onClick: () => dispatch(appActions.closeRepository()),
-          label: "close repository",
-        }}
-      />
-      <RepositoryContent
-        repositoryId={openedRepository.id}
-        repositoryStatus={repositoryStatus}
-        onTableSelect={onTableSelect}
-      />
-      <SourceControl
-        repository={openedRepository}
-        repositoryStatus={repositoryStatus}
-        onRepositoryStatusChange={onRepositoryStatusChange}
-        onDiffSelect={onDiffSelect}
-        onHistorySelect={onHistorySelect}
-      />
+    <div className="repository-workspace-sidebar">
+      <div className="toolbar">
+        <MaterialSymbolButton
+          symbol="close"
+          onClick={() => dispatch(appActions.closeRepository())}
+        />
+      </div>
+      <div className="title">
+        <h2>{repository.name}</h2>
+      </div>
+      <VersionsSection />
+      <div className="content">
+        <RepositoryContent />
+      </div>
     </div>
   );
 }

@@ -17,21 +17,6 @@ import {
   save_table,
   type SaveTableParameters,
   type SaveTableResponse,
-  list_tables,
-  type ListTablesParameters,
-  type ListTablesResponse,
-  get_repository_status,
-  type GetRepositoryStatusParameters,
-  type GetRepositoryStatusResponse,
-  get_history,
-  type GetHistoryParameters,
-  type GetHistoryResponse,
-  push,
-  type PushParameters,
-  type PushResponse,
-  pull,
-  type PullParameters,
-  type PullResponse,
 } from "./table";
 import {
   get_git_config,
@@ -93,22 +78,10 @@ const gittableElectronAPI = {
   ): Promise<DeleteRepositoryReponse> =>
     ipcRenderer.invoke("delete_repository", params),
 
-  list_tables: (params: ListTablesParameters): Promise<ListTablesResponse> =>
-    ipcRenderer.invoke("list_tables", params),
   get_table_data: (params: GetTableParameters): Promise<GetTableResponse> =>
     ipcRenderer.invoke("get_table_data", params),
   save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
     ipcRenderer.invoke("save_table", params),
-  get_repository_status: (
-    params: GetRepositoryStatusParameters,
-  ): Promise<GetRepositoryStatusResponse> =>
-    ipcRenderer.invoke("get_repository_status", params),
-  get_history: (params: GetHistoryParameters): Promise<GetHistoryResponse> =>
-    ipcRenderer.invoke("get_history", params),
-  push: (params: PushParameters): Promise<PushResponse> =>
-    ipcRenderer.invoke("push", params),
-  pull: (params: PullParameters): Promise<PullResponse> =>
-    ipcRenderer.invoke("pull", params),
 
   list_versions: (
     params: ListVersionsParameters,
@@ -162,15 +135,8 @@ const addHandlesForGittableElectronAPICall = (): void => {
     delete_repository(params),
   );
 
-  ipcMain.handle("list_tables", (_event, params) => list_tables(params));
   ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
   ipcMain.handle("save_table", (_event, params) => save_table(params));
-  ipcMain.handle("get_repository_status", (_event, params) =>
-    get_repository_status(params),
-  );
-  ipcMain.handle("get_history", (_event, params) => get_history(params));
-  ipcMain.handle("push", (_event, params) => push(params));
-  ipcMain.handle("pull", (_event, params) => pull(params));
 
   ipcMain.handle("list_versions", (_event, params) => list_versions(params));
   ipcMain.handle("get_current_version", (_event, params) =>
