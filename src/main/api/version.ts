@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
-import git from "isomorphic-git";
+import git, { ReadCommitResult } from "isomorphic-git";
 import { getConfig } from "../config";
 import {
+  Commit,
   PublishedVersion,
   TableMetadataWithStatus,
   VersionContent,
@@ -57,7 +58,7 @@ export async function get_current_version_content({
         modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
       }));
 
-      // 2. Get the commit log from the HEAD to the oid of the last published version
+      // 2. Get the commit log from the branch HEAD to the oid of the last published version
       const listVersionsResp = await list_versions({ repositoryId });
       if (listVersionsResp.status === "error") {
         throw new Error();
@@ -73,19 +74,26 @@ export async function get_current_version_content({
         ref: lastPublishedVersion.tag,
       });
 
-      const log = await git.log({
+      const log: ReadCommitResult[] = await git.log({
         fs,
         dir: getRepositoryPath(repositoryId),
       });
       // Only return the log from the HEAD of the branch to the last published tag
-      const branchLog = log.slice(
+      const branchLog: ReadCommitResult[] = log.slice(
         0,
         log.findIndex((commit) => commit.oid === lastPublishedVersionOid),
       );
 
+      const commits: Commit[] = branchLog.map((r) => ({
+        oid: r.oid,
+        message: r.commit.message,
+        // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
+        author: r.commit.author,
+      }));
+
       return {
         status: "success",
-        content: { tables, commits: branchLog },
+        content: { tables, commits },
       };
     } else {
       const [FILE] = [0];

@@ -51,7 +51,18 @@ export type DraftVersion = {
 
 export type Version = PublishedVersion | DraftVersion;
 
+export type Commit = {
+  oid: string;
+  message: string;
+  author: {
+    name: string;
+    email: string;
+    timestamp: number;
+    timezoneOffset: number;
+  };
+};
+
 export type VersionContent = {
   tables: TableMetadataWithStatus[];
-  commits: ReadCommitResult[];
+  commits: Commit[];
 };

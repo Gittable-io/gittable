@@ -47,17 +47,11 @@ export function ReviewCommits(): JSX.Element {
         <tbody>
           {commits.map((c) => (
             <tr key={c.oid}>
-              <td>{c.commit.message}</td>
-              {/*
-              // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
-              */}
+              <td>{c.message}</td>
               <td>
-                {formatTimestamp(
-                  c.commit.author.timestamp,
-                  c.commit.author.timezoneOffset,
-                )}
+                {formatTimestamp(c.author.timestamp, c.author.timezoneOffset)}
               </td>
-              <td>{`${c.commit.author.name} (${c.commit.author.email})`}</td>
+              <td>{`${c.author.name} (${c.author.email})`}</td>
               <td>{/* TODO: Mark which commits were not pushed */}</td>
             </tr>
           ))}
