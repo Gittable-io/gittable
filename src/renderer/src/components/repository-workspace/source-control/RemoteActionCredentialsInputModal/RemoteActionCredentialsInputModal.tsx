@@ -1,32 +1,44 @@
-import "./CredentialsInputModal.css";
+import "./RemoteActionCredentialsInputModal.css";
 import { Modal } from "../../../ui-components/Modal";
 import { Button, InputAndValidation } from "gittable-editor";
-import { RepositoryCredentials } from "@sharedTypes/index";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { repoActions } from "@renderer/store/repoSlice";
 
-export type CredentialsInputModalProps = {
-  errorMessage: string | null;
-  onConfirm: (credentials: RepositoryCredentials) => void;
-  onCancel: () => void;
-};
+export function RemoteActionCredentialsInputModal(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
 
-export function CredentialsInputModal({
-  errorMessage,
-  onConfirm,
-  onCancel,
-}: CredentialsInputModalProps): JSX.Element {
+  const currentRemoteAction = useSelector(
+    (state: AppRootState) => state.repo.remoteActionSequence!,
+  )!;
+
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
   const confirm = (): void => {
-    onConfirm({ username, password });
+    dispatch(
+      repoActions.remoteAction({
+        action: currentRemoteAction.action,
+        credentials: { username, password },
+      }),
+    );
+  };
+
+  const cancel = (): void => {
+    dispatch(repoActions.cancelRemoteAction());
   };
 
   const isConfirmDisabled: boolean = username === "" || password === "";
 
+  const errorMessage =
+    currentRemoteAction.step === "AUTH_ERROR"
+      ? "Error authenticating with provided credentials"
+      : null;
+
   return (
     <Modal>
-      <div className="credentials-input-modal">
+      <div className="remote-action-credentials-input-modal">
         <h1>Credentials needed</h1>
         <p>You need to enter your credentials to share your changes</p>
         <div className="credentials-input-fields">
@@ -44,7 +56,7 @@ export function CredentialsInputModal({
           />
         </div>
         <div className="button-group">
-          <Button text="Cancel" variant="outlined" onClick={onCancel} />
+          <Button text="Cancel" variant="outlined" onClick={cancel} />
           <Button
             text="Push"
             variant="contained"

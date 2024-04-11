@@ -1,6 +1,8 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import "./ReviewCommits.css";
-import { AppRootState } from "@renderer/store/store";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { Button, MaterialSymbol } from "gittable-editor";
+import { repoActions } from "@renderer/store/repoSlice";
 
 function formatTimestamp(timestamp: number, timezoneOffset: number): string {
   // Convert timestamp from seconds to milliseconds
@@ -28,13 +30,34 @@ function formatTimestamp(timestamp: number, timezoneOffset: number): string {
 }
 
 export function ReviewCommits(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const commits = useSelector(
     (state: AppRootState) => state.repo.currentVersionContent!.commits,
   );
+  const isPushCommitInProgress: boolean = useSelector(
+    (state: AppRootState) =>
+      state.repo.remoteActionSequence?.action.type === "PUSH_COMMITS",
+  );
+
+  const unpushedCommits = commits.some((c) => !c.inRemote);
 
   return (
     <div className="review-commits">
       <h2>Commits included in this version</h2>
+      <Button
+        text="Share your commits"
+        variant="outlined"
+        disabled={!unpushedCommits}
+        onClick={() =>
+          dispatch(
+            repoActions.remoteAction({
+              action: { type: "PUSH_COMMITS" },
+            }),
+          )
+        }
+        loading={isPushCommitInProgress}
+      />
       <table>
         <thead>
           <tr>
@@ -47,18 +70,12 @@ export function ReviewCommits(): JSX.Element {
         <tbody>
           {commits.map((c) => (
             <tr key={c.oid}>
-              <td>{c.commit.message}</td>
-              {/*
-              // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
-              */}
+              <td>{c.message}</td>
               <td>
-                {formatTimestamp(
-                  c.commit.author.timestamp,
-                  c.commit.author.timezoneOffset,
-                )}
+                {formatTimestamp(c.author.timestamp, c.author.timezoneOffset)}
               </td>
-              <td>{`${c.commit.author.name} (${c.commit.author.email})`}</td>
-              <td>{/* TODO: Mark which commits were not pushed */}</td>
+              <td>{`${c.author.name} (${c.author.email})`}</td>
+              <td>{!c.inRemote && <MaterialSymbol symbol="cloud_upload" />}</td>
             </tr>
           ))}
         </tbody>

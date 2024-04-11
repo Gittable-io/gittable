@@ -1,3 +1,13 @@
+.review-commits {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-commits .button {
+  align-self: flex-start;
+}
+
 .review-commits table {
   width: 100%;
   border-collapse: collapse;

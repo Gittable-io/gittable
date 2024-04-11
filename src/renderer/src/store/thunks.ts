@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { DraftVersion, Version, VersionContent } from "@sharedTypes/index";
+import { Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
 //#region fetchRepositoryDetails
@@ -95,65 +95,6 @@ export const switchVersion = createAsyncThunk<
 });
 //#endregion
 
-//#region createAndSwitchToDraft
-/**
- * Create a switch to a new draft version.
- *
- */
-export const createAndSwitchToDraft = createAsyncThunk<
-  {
-    versions: Version[];
-    currentVersion: Version;
-    content: VersionContent;
-  },
-  string, // The name of the draft
-  { state: AppRootState; rejectValue: string }
->("repo/createAndSwitchToDraft", async (draftName, thunkAPI) => {
-  const repositoryId = thunkAPI.getState().repo.repository!.id;
-
-  // 1. Create Draft version
-  const createDraftResp = await window.api.create_draft({
-    repositoryId,
-    name: draftName,
-  });
-
-  if (createDraftResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error creating draft version");
-  }
-
-  // 2. Switch to new draft version
-  const switchVersionResp = await window.api.switch_version({
-    repositoryId: repositoryId,
-    version: createDraftResp.version,
-  });
-
-  if (switchVersionResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error switching to new draft version");
-  }
-
-  // 3. Fetch new list of versions
-  const listVersionsResp = await window.api.list_versions({ repositoryId });
-  if (listVersionsResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching versions");
-  }
-  // 3. Fetch checked out content
-  // * Might be necessary if I created a draft version but I'm not on the latest tag
-  const currentContentResp = await window.api.get_current_version_content({
-    repositoryId,
-  });
-
-  if (currentContentResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching checked out content");
-  }
-
-  return {
-    versions: listVersionsResp.versions,
-    currentVersion: createDraftResp.version,
-    content: currentContentResp.content,
-  };
-});
-//#endregion
-
 //#region updateVersionContent
 export const updateVersionContent = createAsyncThunk<
   {
@@ -180,34 +121,30 @@ export const updateVersionContent = createAsyncThunk<
 
 //#endregion
 
-//#region deleteDraft
-/**
- * Delete draft
- *
- */
-export const deleteDraft = createAsyncThunk<
+//#region updateVersions
+export const updateVersions = createAsyncThunk<
   {
     versions: Version[];
   },
-  DraftVersion, // The draft to delete
+  void, // No payload expected
   { state: AppRootState; rejectValue: string }
->("repo/deleteDraft", async (draftVersion, thunkAPI) => {
+>("repo/updateVersions", async (_, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 1. Delete draft version
-  const deleteDraftResp = await window.api.delete_draft({
+  // 3. Fetch versions
+  const versionsResp = await window.api.list_versions({
     repositoryId,
-    version: draftVersion,
   });
 
-  if (deleteDraftResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error deleting draft version");
+  if (versionsResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
   return {
-    versions: deleteDraftResp.versions,
+    versions: versionsResp.versions,
   };
 });
+
 //#endregion
 
 //#region discardChanges

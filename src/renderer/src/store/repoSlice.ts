@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
+  DraftVersion,
   Repository,
   TableMetadata,
   Version,
@@ -9,13 +10,13 @@ import {
 import { appActions } from "./appSlice";
 import {
   commit,
-  createAndSwitchToDraft,
-  deleteDraft,
   discardChanges,
   fetchRepositoryDetails,
   switchVersion,
   updateVersionContent,
+  updateVersions,
 } from "./thunks";
+import { remoteAction } from "./remoteThunks";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -38,13 +39,32 @@ export type PanelDescription =
 
 export type Panel = { id: string } & PanelDescription;
 
+export type RemoteAction =
+  | {
+      type: "CREATE_DRAFT";
+      draftName: string;
+    }
+  | { type: "DELETE_DRAFT"; draftVersion: DraftVersion }
+  | { type: "PUSH_COMMITS" };
+
 export type RepoState = {
   repository: Repository | null;
 
   progress: {
     discardInProgress: boolean;
     commitInProgress: boolean;
-    deleteDraftInProgress: boolean;
+  };
+
+  //TODO: this variable should be removed when I refactor the UI
+  waitingForNewDraftName: boolean;
+
+  remoteActionSequence: null | {
+    action: RemoteAction;
+    step:
+      | "IN_PROGRESS"
+      | "REQUESTING_CREDENTIALS"
+      | "AUTH_ERROR"
+      | "UNKOWN_ERROR";
   };
 
   versions: Version[] | null;
@@ -62,8 +82,11 @@ function initState(repository: Repository | null): RepoState {
     progress: {
       discardInProgress: false,
       commitInProgress: false,
-      deleteDraftInProgress: false,
     },
+
+    waitingForNewDraftName: false,
+
+    remoteActionSequence: null,
 
     versions: null,
     currentVersion: null,
@@ -78,6 +101,14 @@ export const repoSlice = createSlice({
   name: "repo",
   initialState: initState(null),
   reducers: {
+    cancelRemoteAction: (state) => {
+      state.remoteActionSequence = null;
+    },
+
+    setWaitingForNewDraftName: (state, action: PayloadAction<boolean>) => {
+      state.waitingForNewDraftName = action.payload;
+    },
+
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
       const panel = action.payload;
 
@@ -141,20 +172,11 @@ export const repoSlice = createSlice({
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
       })
-      .addCase(createAndSwitchToDraft.pending, (state) => {
-        state.currentVersion = null;
-        state.currentVersionContent = null;
-
-        state.panels = [];
-        state.selectedPanelId = null;
-      })
-      .addCase(createAndSwitchToDraft.fulfilled, (state, action) => {
-        state.versions = action.payload.versions;
-        state.currentVersion = action.payload.currentVersion;
-        state.currentVersionContent = action.payload.content;
-      })
       .addCase(updateVersionContent.fulfilled, (state, action) => {
         state.currentVersionContent = action.payload.content;
+      })
+      .addCase(updateVersions.fulfilled, (state, action) => {
+        state.versions = action.payload.versions;
       })
       .addCase(discardChanges.pending, (state) => {
         state.progress.discardInProgress = true;
@@ -170,12 +192,23 @@ export const repoSlice = createSlice({
         state.progress.commitInProgress = false;
         state.currentVersionContent = action.payload.content;
       })
-      .addCase(deleteDraft.pending, (state) => {
-        state.progress.deleteDraftInProgress = true;
+      .addCase(remoteAction.pending, (state, action) => {
+        state.remoteActionSequence = {
+          action: action.meta.arg.action,
+          step: "IN_PROGRESS",
+        };
       })
-      .addCase(deleteDraft.fulfilled, (state, action) => {
-        state.progress.deleteDraftInProgress = false;
-        state.versions = action.payload.versions;
+      .addCase(remoteAction.fulfilled, (state) => {
+        state.remoteActionSequence = null;
+      })
+      .addCase(remoteAction.rejected, (state, action) => {
+        if (action.payload === "NO_PROVIDED_CREDENTIALS") {
+          state.remoteActionSequence!.step = "REQUESTING_CREDENTIALS";
+        } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
+          state.remoteActionSequence!.step = "AUTH_ERROR";
+        } else {
+          state.remoteActionSequence!.step = "UNKOWN_ERROR";
+        }
       });
   },
   selectors: {
@@ -187,6 +220,10 @@ export const repoSlice = createSlice({
 
       return false;
     },
+    draftVersion: (state): DraftVersion | null => {
+      const draftVersion = state.versions?.find((v) => v.type === "draft");
+      return draftVersion ? (draftVersion as DraftVersion) : null;
+    },
   },
 });
 
@@ -194,11 +231,10 @@ export const repoActions = {
   ...repoSlice.actions,
   switchVersion,
   fetchRepositoryDetails,
-  createAndSwitchToDraft,
-  deleteDraft,
   updateVersionContent,
   discardChanges,
   commit,
+  remoteAction,
 };
 export const repoReducer = repoSlice.reducer;
 export const repoSelectors = repoSlice.selectors;
