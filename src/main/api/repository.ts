@@ -17,6 +17,7 @@ import {
   pushBranch,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
+import { repoBackup } from "../utils/gitdb/repoBackup";
 
 //#region API: get_repository_status
 export type GetRepositoryStatusParameters = {
@@ -99,12 +100,16 @@ export async function init_repository({
     `[API/init_repository] Called with repositoryId=${repositoryId}`,
   );
 
+  let errorResponse: InitRepositoryResponse | null = null;
   try {
     // 0. Check that repository is empty
     const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
     if (!isRepositoryEmpty) {
       return { status: "error", type: "REPOSITORY_NOT_EMPTY" };
     }
+
+    // Before doing anything, backup the repo
+    repoBackup.backup(repositoryId);
 
     // 1. Init repository so that init.defaultBranch is set up correctly to main
     await git.init({
@@ -140,12 +145,8 @@ export async function init_repository({
       dir: getRepositoryPath(repositoryId),
       ref: "draft/initial",
     });
-  } catch (error) {
-    return { status: "error", type: "UNKNOWN" };
-  }
 
-  // 2.1 Push main and draft/initial branches
-  try {
+    // 2.1 Push main and draft/initial branches
     await pushBranch({
       repositoryId,
       branchName: "main",
@@ -162,13 +163,21 @@ export async function init_repository({
       `[API/init_repository] Error pushing newly created main branch`,
     );
     if (error instanceof NoCredentialsProvidedError) {
-      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
     } else if (error instanceof AuthWithProvidedCredentialsError) {
-      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
     } else {
-      return { status: "error", type: "UNKNOWN" };
+      errorResponse = { status: "error", type: "UNKNOWN" };
+    }
+  } finally {
+    if (errorResponse) {
+      repoBackup.restore(repositoryId);
+    } else {
+      repoBackup.clear(repositoryId);
     }
   }
+
+  if (errorResponse) return errorResponse;
 
   return { status: "success" };
 }
