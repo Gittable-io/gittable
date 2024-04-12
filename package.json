@@ -29,7 +29,7 @@
     "email-validator": "^2.0.4",
     "gittable-editor": "file:../gittable-editor",
     "immer": "^10.0.4",
-    "isomorphic-git": "^1.25.3",
+    "isomorphic-git": "^1.25.7",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
