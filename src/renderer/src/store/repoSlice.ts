@@ -3,6 +3,7 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   DraftVersion,
   Repository,
+  RepositoryStatus,
   TableMetadata,
   Version,
   VersionContent,
@@ -48,8 +49,14 @@ export type RemoteAction =
   | { type: "PUSH_COMMITS" };
 
 export type RepoState = {
+  // Repository information
   repository: Repository | null;
+  status: RepositoryStatus | null;
+  versions: Version[] | null;
+  currentVersion: Version | null;
+  currentVersionContent: VersionContent | null;
 
+  // UI information
   progress: {
     discardInProgress: boolean;
     commitInProgress: boolean;
@@ -67,10 +74,6 @@ export type RepoState = {
       | "UNKOWN_ERROR";
   };
 
-  versions: Version[] | null;
-  currentVersion: Version | null;
-  currentVersionContent: VersionContent | null;
-
   panels: Panel[];
   selectedPanelId: string | null;
 };
@@ -78,6 +81,10 @@ export type RepoState = {
 function initState(repository: Repository | null): RepoState {
   return {
     repository,
+    status: null,
+    versions: null,
+    currentVersion: null,
+    currentVersionContent: null,
 
     progress: {
       discardInProgress: false,
@@ -87,10 +94,6 @@ function initState(repository: Repository | null): RepoState {
     waitingForNewDraftName: false,
 
     remoteActionSequence: null,
-
-    versions: null,
-    currentVersion: null,
-    currentVersionContent: null,
 
     panels: [],
     selectedPanelId: null,
@@ -157,6 +160,7 @@ export const repoSlice = createSlice({
         return initState(null);
       })
       .addCase(fetchRepositoryDetails.fulfilled, (state, action) => {
+        state.status = action.payload.status;
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
@@ -176,6 +180,7 @@ export const repoSlice = createSlice({
         state.currentVersionContent = action.payload.content;
       })
       .addCase(updateVersions.fulfilled, (state, action) => {
+        state.status = action.payload.status;
         state.versions = action.payload.versions;
       })
       .addCase(discardChanges.pending, (state) => {

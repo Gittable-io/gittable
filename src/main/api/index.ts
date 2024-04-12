@@ -1,6 +1,13 @@
 import { ipcRenderer, ipcMain } from "electron";
 import { ping, type PingResponse } from "./ping";
 import {
+  get_git_config,
+  type GetGitConfigReponse,
+  save_git_config,
+  type SaveGitConfigParameters,
+  type SaveGitConfigResponse,
+} from "./user";
+import {
   clone_repository,
   type CloneRepositoryParameters,
   type CloneRepositoryResponse,
@@ -11,21 +18,9 @@ import {
   type DeleteRepositoryReponse,
 } from "./repositories";
 import {
-  get_table_data,
-  type GetTableParameters,
-  type GetTableResponse,
-  save_table,
-  type SaveTableParameters,
-  type SaveTableResponse,
-} from "./table";
-import {
-  get_git_config,
-  type GetGitConfigReponse,
-  save_git_config,
-  type SaveGitConfigParameters,
-  type SaveGitConfigResponse,
-} from "./user";
-import {
+  get_repository_status,
+  type GetRepositoryStatusParameters,
+  type GetRepositoryStatusResponse,
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
@@ -56,6 +51,14 @@ import {
   type PushCommitsParameters,
   type PushCommitsResponse,
 } from "./version";
+import {
+  get_table_data,
+  type GetTableParameters,
+  type GetTableResponse,
+  save_table,
+  type SaveTableParameters,
+  type SaveTableResponse,
+} from "./table";
 
 /**
  * TODO: I was able to remove boilerplate when adding or modifying an endpoint. But there's room for improvement
@@ -65,8 +68,18 @@ import {
 // Define the API functions that the Renderer can call
 // Each API function result in an ipcRenderer.invoke()
 const gittableElectronAPI = {
+  // ping API
   ping: (): Promise<PingResponse> => ipcRenderer.invoke("ping"),
 
+  // user API
+  get_git_config: (): Promise<GetGitConfigReponse> =>
+    ipcRenderer.invoke("get_git_config"),
+  save_git_config: (
+    params: SaveGitConfigParameters,
+  ): Promise<SaveGitConfigResponse> =>
+    ipcRenderer.invoke("save_git_config", params),
+
+  // repositories API
   clone_repository: (
     params: CloneRepositoryParameters,
   ): Promise<CloneRepositoryResponse> =>
@@ -78,11 +91,11 @@ const gittableElectronAPI = {
   ): Promise<DeleteRepositoryReponse> =>
     ipcRenderer.invoke("delete_repository", params),
 
-  get_table_data: (params: GetTableParameters): Promise<GetTableResponse> =>
-    ipcRenderer.invoke("get_table_data", params),
-  save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
-    ipcRenderer.invoke("save_table", params),
-
+  // repository API
+  get_repository_status: (
+    params: GetRepositoryStatusParameters,
+  ): Promise<GetRepositoryStatusResponse> =>
+    ipcRenderer.invoke("get_repository_status", params),
   list_versions: (
     params: ListVersionsParameters,
   ): Promise<ListVersionsResponse> =>
@@ -100,6 +113,7 @@ const gittableElectronAPI = {
   delete_draft: (params: DeleteDraftParameters): Promise<DeleteDraftResponse> =>
     ipcRenderer.invoke("delete_draft", params),
 
+  // version API
   get_current_version_content: (
     params: GetCurrentVersionContentParameters,
   ): Promise<GetCurrentVersionContentResponse> =>
@@ -113,20 +127,27 @@ const gittableElectronAPI = {
   push_commits: (params: PushCommitsParameters): Promise<PushCommitsResponse> =>
     ipcRenderer.invoke("push_commits", params),
 
-  get_git_config: (): Promise<GetGitConfigReponse> =>
-    ipcRenderer.invoke("get_git_config"),
-  save_git_config: (
-    params: SaveGitConfigParameters,
-  ): Promise<SaveGitConfigResponse> =>
-    ipcRenderer.invoke("save_git_config", params),
+  // table API
+  get_table_data: (params: GetTableParameters): Promise<GetTableResponse> =>
+    ipcRenderer.invoke("get_table_data", params),
+  save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
+    ipcRenderer.invoke("save_table", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
 
 // When Renderer calls an API endpoint, Main should map it to the corresponding function in /api
 const addHandlesForGittableElectronAPICall = (): void => {
+  // ping API
   ipcMain.handle("ping", ping);
 
+  // user API
+  ipcMain.handle("get_git_config", get_git_config);
+  ipcMain.handle("save_git_config", (_event, params) =>
+    save_git_config(params),
+  );
+
+  // repositories API
   ipcMain.handle("clone_repository", (_event, params) =>
     clone_repository(params),
   );
@@ -135,9 +156,10 @@ const addHandlesForGittableElectronAPICall = (): void => {
     delete_repository(params),
   );
 
-  ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
-  ipcMain.handle("save_table", (_event, params) => save_table(params));
-
+  // repository API
+  ipcMain.handle("get_repository_status", (_event, params) =>
+    get_repository_status(params),
+  );
   ipcMain.handle("list_versions", (_event, params) => list_versions(params));
   ipcMain.handle("get_current_version", (_event, params) =>
     get_current_version(params),
@@ -146,6 +168,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("create_draft", (_event, params) => create_draft(params));
   ipcMain.handle("delete_draft", (_event, params) => delete_draft(params));
 
+  // version API
   ipcMain.handle("get_current_version_content", (_event, params) =>
     get_current_version_content(params),
   );
@@ -155,10 +178,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("commit", (_event, params) => commit(params));
   ipcMain.handle("push_commits", (_event, params) => push_commits(params));
 
-  ipcMain.handle("get_git_config", get_git_config);
-  ipcMain.handle("save_git_config", (_event, params) =>
-    save_git_config(params),
-  );
+  // table API
+  ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
+  ipcMain.handle("save_table", (_event, params) => save_table(params));
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };

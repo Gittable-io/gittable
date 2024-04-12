@@ -1,32 +1,52 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { Version, VersionContent } from "@sharedTypes/index";
+import { RepositoryStatus, Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
 
 //#region fetchRepositoryDetails
 /**
  * Init workspace by retrieving:
+ * - The repository status
+ * if repository is not empty: fetch:
  * - The list of versions
  * - The current checked out version
  * - The current checked out version content
  */
 export const fetchRepositoryDetails = createAsyncThunk<
   {
-    versions: Version[];
-    currentVersion: Version;
-    content: VersionContent;
+    status: RepositoryStatus;
+    versions: Version[] | null;
+    currentVersion: Version | null;
+    content: VersionContent | null;
   },
   void, // No payload expected
   { state: AppRootState; rejectValue: string }
 >("repo/fetchRepositoryDetails", async (_, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 1. Fetch versions
+  // 1. Fetch repository Status
+  const repoStatusResp = await window.api.get_repository_status({
+    repositoryId,
+  });
+  if (repoStatusResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching repsoitory status");
+  }
+
+  if (repoStatusResp.repositoryStatus.isEmpty) {
+    return {
+      status: repoStatusResp.repositoryStatus,
+      versions: null,
+      currentVersion: null,
+      content: null,
+    };
+  }
+
+  // 2. Fetch versions
   const listVersionsResp = await window.api.list_versions({ repositoryId });
   if (listVersionsResp.status === "error") {
     return thunkAPI.rejectWithValue("Error fetching versions");
   }
 
-  // 2. Fetch current version
+  // 3. Fetch current version
   const currentVersionResp = await window.api.get_current_version({
     repositoryId,
   });
@@ -36,7 +56,7 @@ export const fetchRepositoryDetails = createAsyncThunk<
     );
   }
 
-  // 3. Fetch checked out content
+  // 4. Fetch checked out content
   const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
@@ -46,6 +66,7 @@ export const fetchRepositoryDetails = createAsyncThunk<
   }
 
   return {
+    status: repoStatusResp.repositoryStatus,
     versions: listVersionsResp.versions,
     currentVersion: currentVersionResp.version,
     content: currentContentResp.content,
@@ -124,6 +145,7 @@ export const updateVersionContent = createAsyncThunk<
 //#region updateVersions
 export const updateVersions = createAsyncThunk<
   {
+    status: RepositoryStatus;
     versions: Version[];
   },
   void, // No payload expected
@@ -131,7 +153,16 @@ export const updateVersions = createAsyncThunk<
 >("repo/updateVersions", async (_, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 3. Fetch versions
+  // 1. Fetch repository Status
+  // why? because when we update version, the repository status may get updated too
+  const repoStatusResp = await window.api.get_repository_status({
+    repositoryId,
+  });
+  if (repoStatusResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error fetching repsoitory status");
+  }
+
+  // 2. Fetch versions
   const versionsResp = await window.api.list_versions({
     repositoryId,
   });
@@ -141,6 +172,7 @@ export const updateVersions = createAsyncThunk<
   }
 
   return {
+    status: repoStatusResp.repositoryStatus,
     versions: versionsResp.versions,
   };
 });

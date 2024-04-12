@@ -74,6 +74,7 @@ export async function clone_repository({
   const trimmedRemoteUrl = remoteUrl.trim();
 
   // 1. check that the git config: user name and email are configured
+  console.debug(`[API/clone_repository] Check that git user is configured`);
   const gitConfig = await UserDataStore.getGitConfig();
   if (gitConfig.user.name.trim() === "" || gitConfig.user.email.trim() === "") {
     console.debug(`[API/clone_repository] Git user is not configured`);
@@ -83,6 +84,9 @@ export async function clone_repository({
     };
   }
   // 2. Check that we didn't already clone this repository
+  console.debug(
+    `[API/clone_repository] Check that repository doesn't already exist`,
+  );
   const repositories = await UserDataStore.getRepositories();
   const existingRepository = repositories.find(
     (repo) => repo.remoteUrl === trimmedRemoteUrl,
@@ -105,6 +109,7 @@ export async function clone_repository({
   //* it seems that the git.clone() creates the dir if it doesn't exist. So we don't need to create the folder beforehand
   try {
     // 3. Clone the repository
+    console.debug(`[API/clone_repository] Start cloning`);
     await git.clone({
       fs,
       http,
@@ -125,13 +130,18 @@ export async function clone_repository({
           };
         }
       },
-      onAuthFailure: (url: string, auth: GitAuth) =>
-        console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
-      onAuthSuccess: (url: string, auth: GitAuth) =>
-        console.log(`onAuthFailure: url=${url}, auth=${JSON.stringify(auth)}`),
+      onAuthFailure: () => {
+        console.debug(`[API/clone_repository] Authentication failure`);
+      },
+      onAuthSuccess: () => {
+        console.debug(`[API/clone_repository] Authentication success`);
+      },
     });
 
     // 4. Configure the user name and email
+    console.debug(
+      `[API/clone_repository] Configure the git local user name and email`,
+    );
     await git.setConfig({
       fs,
       dir: repositoryPath,
@@ -148,6 +158,7 @@ export async function clone_repository({
     /*
      5. Now that the repository is cloned, There's some steps to make our local repository usable
 
+     if repository is not empty
       - 5.1 : Create a local branch for every draft branch
         - Why? When cloning a remote repo, by default, git creates a local branch "main" that tracks "origin/main", but it does not create a local branch for other remotes branches
         - However, to detect versions, our app only looks at local branches
@@ -158,58 +169,68 @@ export async function clone_repository({
         - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
         - We correct this by making HEAD point to the latest published tag or to a draft branch
         TODO: need to change this when cloning an empty repository
+
+      Note : if repository is empty we don't do nothing, as we should wait the user to initialize the repo
     */
+    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
+    console.debug(
+      `[API/clone_repository] Repository is ${isRepositoryEmpty ? "" : "not "}empty`,
+    );
+    if (!isRepositoryEmpty) {
+      console.debug(
+        `[API/clone_repository] Preparing repository to be usable (repo is not empty)`,
+      );
 
-    // 5.1 For every remote draft branch: create a local draft branch that tracks the remote branch
-    const remoteBranches = await git.listBranches({
-      fs,
-      dir: repositoryPath,
-      remote: "origin",
-    });
+      // 5.1 For every remote draft branch: create a local draft branch that tracks the remote branch
+      const remoteBranches = await git.listBranches({
+        fs,
+        dir: repositoryPath,
+        remote: "origin",
+      });
 
-    for (const remoteBranch of remoteBranches) {
-      if (remoteBranch.startsWith("draft/")) {
-        /*
+      for (const remoteBranch of remoteBranches) {
+        if (remoteBranch.startsWith("draft/")) {
+          /*
          * - If I just create a local branch of the same name, it won't work, as isogit (or git) doesn't automatically set it to track the remote branch of the same name
          * - isogit doesn't have a command like git branch --set-upstream-to=<remote branch> that allows me to create a local branch and set its upstream branch
          * - The solution I found is to checkout the branch, and here isogit will automatically create the local branch correctly set its upstream branch
          *
          TODO: For the future : Modify isogit and to add a --set-upstream-to option
          */
-        await git.checkout({
-          fs,
-          dir: getRepositoryPath(repositoryId),
-          ref: remoteBranch,
-        });
+          await git.checkout({
+            fs,
+            dir: getRepositoryPath(repositoryId),
+            ref: remoteBranch,
+          });
+        }
       }
-    }
 
-    // 5.2 : Checkout the last published version (tag) or draft
+      // 5.2 : Checkout the last published version (tag) or draft
 
-    let versionToSwitchTo: Version | null = await gitdb.getLastPublishedVersion(
-      {
-        repositoryId,
-      },
-    );
-    if (!versionToSwitchTo) {
-      const draftVersions = await gitdb.getDraftVersions({ repositoryId });
-      versionToSwitchTo = draftVersions[0];
-    }
-    if (!versionToSwitchTo) {
-      errorResponse = {
-        status: "error",
-        type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
-      };
-    } else {
-      const switchResp = await switch_version({
-        repositoryId,
-        version: versionToSwitchTo,
-      });
-      if (switchResp.status === "error")
+      let versionToSwitchTo: Version | null =
+        await gitdb.getLastPublishedVersion({
+          repositoryId,
+        });
+      if (!versionToSwitchTo) {
+        const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+        versionToSwitchTo = draftVersions[0];
+      }
+      if (!versionToSwitchTo) {
         errorResponse = {
           status: "error",
           type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
         };
+      } else {
+        const switchResp = await switch_version({
+          repositoryId,
+          version: versionToSwitchTo,
+        });
+        if (switchResp.status === "error")
+          errorResponse = {
+            status: "error",
+            type: "COULD_NOT_SWITCH_TO_LATEST_PUBLISHED_VERSION",
+          };
+      }
     }
   } catch (error) {
     if (error instanceof Error) {

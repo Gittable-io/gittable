@@ -5,6 +5,7 @@ import {
   DraftVersion,
   PublishedVersion,
   RepositoryCredentials,
+  RepositoryStatus,
   Version,
   VersionContent,
 } from "@sharedTypes/index";
@@ -16,6 +17,48 @@ import {
   pushBranch,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
+
+//#region API: get_repository_status
+export type GetRepositoryStatusParameters = {
+  repositoryId: string;
+};
+
+export type GetRepositoryStatusResponse =
+  | {
+      status: "success";
+      repositoryStatus: RepositoryStatus;
+    }
+  | {
+      status: "error";
+      type: "UNKNOWN";
+    };
+
+export async function get_repository_status({
+  repositoryId,
+}: GetRepositoryStatusParameters): Promise<GetRepositoryStatusResponse> {
+  console.debug(
+    `[API/get_repository_status] Called with repositoryId=${repositoryId}`,
+  );
+
+  try {
+    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
+    const isRepositoryInitial = await gitdb.isRepositoryInitial({
+      repositoryId,
+    });
+
+    return {
+      status: "success",
+      repositoryStatus: {
+        isEmpty: isRepositoryEmpty,
+        isInitial: isRepositoryInitial,
+      },
+    };
+  } catch (error) {
+    return { status: "error", type: "UNKNOWN" };
+  }
+}
+
+//#endregion
 
 //#region API: list_versions
 export type ListVersionsParameters = {

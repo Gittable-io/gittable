@@ -4,6 +4,11 @@ export type Repository = {
   remoteUrl: string;
 };
 
+export type RepositoryStatus = {
+  isEmpty: boolean;
+  isInitial: boolean;
+};
+
 export type RepositoryCredentials = {
   username: string;
   password: string;

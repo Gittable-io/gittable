@@ -274,6 +274,48 @@ async function getInitialCommitOid({
   return initialCommit.oid;
 }
 
+/**
+ *
+ * @returns if the repository is empty. i.e. it has just been created in the Git server and this is the first clone
+ * We determine that a repository is empty when it doesn't have any branch
+ */
+async function isRepositoryEmpty({
+  repositoryId,
+}: {
+  repositoryId: string;
+}): Promise<boolean> {
+  console.debug(
+    `[gitdb/isRepositoryEmpty] Called with repositoryId=${repositoryId}`,
+  );
+
+  const branches = await git.listBranches({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+  });
+
+  if (branches.length === 0) return true;
+  else return false;
+}
+
+/**
+ *
+ * @returns if the repository is initial. i.e. it doesn't have any published versions and a single draft version
+ */
+async function isRepositoryInitial({
+  repositoryId,
+}: {
+  repositoryId: string;
+}): Promise<boolean> {
+  console.debug(
+    `[gitdb/isRepositoryInitial] Called with repositoryId=${repositoryId}`,
+  );
+
+  const publishedVersions = await getPublishedVersions({ repositoryId });
+
+  if (publishedVersions.length === 0) return true;
+  else return false;
+}
+
 export const gitdb = {
   getDraftVersionCommits,
   getPublishedVersions,
@@ -282,4 +324,6 @@ export const gitdb = {
   getDraftVersions,
   getDraftVersion,
   getInitialCommitOid,
+  isRepositoryEmpty,
+  isRepositoryInitial,
 };
