@@ -41,6 +41,7 @@ export type PanelDescription =
 export type Panel = { id: string } & PanelDescription;
 
 export type RemoteAction =
+  | { type: "INIT_REPO" }
   | {
       type: "CREATE_DRAFT";
       draftName: string;

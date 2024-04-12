@@ -60,6 +60,121 @@ export async function get_repository_status({
 
 //#endregion
 
+//#region API: init repository
+export type InitRepositoryParameters = {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type InitRepositoryResponse =
+  | {
+      status: "success";
+      // repositoryStatus: RepositoryStatus;
+    }
+  | {
+      status: "error";
+      type:
+        | "REPOSITORY_NOT_EMPTY"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
+    };
+
+/**
+ * Initialize an empty repsitory: i.e. transform it from an Empty repo to an Initial repo
+ *
+ * To do that :
+ * 1. Init repo and setup init.defaultBranch to "main"
+ * 1. Create a branch named "main"
+ * 1. Create an empty commit on "main"
+ * 2. Create a draft branch "draft/initial" from that empty commit
+ * 4. Push "main" and "draft/initial"
+ * 3. Checkout to the draft branch "draft/initial"
+ */
+export async function init_repository({
+  repositoryId,
+  credentials,
+}: InitRepositoryParameters): Promise<InitRepositoryResponse> {
+  console.debug(
+    `[API/init_repository] Called with repositoryId=${repositoryId}`,
+  );
+
+  try {
+    // 0. Check that repository is empty
+    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
+    if (!isRepositoryEmpty) {
+      return { status: "error", type: "REPOSITORY_NOT_EMPTY" };
+    }
+
+    // 1. Init repository so that init.defaultBranch is set up correctly to main
+    await git.init({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      defaultBranch: "main",
+    });
+
+    await git.branch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "main",
+      checkout: true,
+    });
+
+    // 2. Create an empty commit on "main" and push it
+    await git.commit({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      message: "INITIAL_COMMIT",
+    });
+
+    // 3. Create a draft branch "draft/initial" from that empty commit
+    await git.branch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "draft/initial",
+    });
+
+    // 3. Checkout to the draft branch "draft/initial"
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "draft/initial",
+    });
+  } catch (error) {
+    return { status: "error", type: "UNKNOWN" };
+  }
+
+  // 2.1 Push main and draft/initial branches
+  try {
+    await pushBranch({
+      repositoryId,
+      branchName: "main",
+      credentials,
+    });
+
+    await pushBranch({
+      repositoryId,
+      branchName: "draft/initial",
+      credentials,
+    });
+  } catch (error) {
+    console.debug(
+      `[API/init_repository] Error pushing newly created main branch`,
+    );
+    if (error instanceof NoCredentialsProvidedError) {
+      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      return { status: "error", type: "UNKNOWN" };
+    }
+  }
+
+  return { status: "success" };
+}
+
+//#endregion
+
 //#region API: list_versions
 export type ListVersionsParameters = {
   repositoryId: string;

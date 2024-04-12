@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import fsync from "node:fs";
-import git, { GitAuth } from "isomorphic-git";
+import git from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 import type {
@@ -138,7 +138,7 @@ export async function clone_repository({
       },
     });
 
-    // 4. Configure the user name and email
+    // 4. Configure the local Git repo : user name and email
     console.debug(
       `[API/clone_repository] Configure the git local user name and email`,
     );

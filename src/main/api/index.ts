@@ -21,6 +21,9 @@ import {
   get_repository_status,
   type GetRepositoryStatusParameters,
   type GetRepositoryStatusResponse,
+  init_repository,
+  type InitRepositoryParameters,
+  type InitRepositoryResponse,
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
@@ -96,6 +99,10 @@ const gittableElectronAPI = {
     params: GetRepositoryStatusParameters,
   ): Promise<GetRepositoryStatusResponse> =>
     ipcRenderer.invoke("get_repository_status", params),
+  init_repository: (
+    params: InitRepositoryParameters,
+  ): Promise<InitRepositoryResponse> =>
+    ipcRenderer.invoke("init_repository", params),
   list_versions: (
     params: ListVersionsParameters,
   ): Promise<ListVersionsResponse> =>
@@ -159,6 +166,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   // repository API
   ipcMain.handle("get_repository_status", (_event, params) =>
     get_repository_status(params),
+  );
+  ipcMain.handle("init_repository", (_event, params) =>
+    init_repository(params),
   );
   ipcMain.handle("list_versions", (_event, params) => list_versions(params));
   ipcMain.handle("get_current_version", (_event, params) =>
