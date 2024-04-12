@@ -7,6 +7,7 @@ import { RepositoryWorkspaceSidebar } from "../RepositoryWorkspaceSidebar";
 import { MainWorkspace } from "../MainWorkspace";
 import { RemoteActionCredentialsInputModal } from "../RemoteActionCredentialsInputModal";
 import { Spinner } from "gittable-editor";
+import { MainEmptyRepoWorkspace } from "../MainEmptyRepoWorkspace";
 
 export function RepositoryWorkspace(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,13 +32,11 @@ export function RepositoryWorkspace(): JSX.Element {
     <div className="repository-workspace">
       {repositoryStatus ? (
         <>
+          <RepositoryWorkspaceSidebar />
           {!repositoryStatus.isEmpty ? (
-            <>
-              <RepositoryWorkspaceSidebar />
-              <MainWorkspace />
-            </>
+            <MainWorkspace />
           ) : (
-            <div>Repo is empty</div>
+            <MainEmptyRepoWorkspace />
           )}
           {(remoteActionSequence?.step === "REQUESTING_CREDENTIALS" ||
             remoteActionSequence?.step === "AUTH_ERROR") && (
