@@ -2,7 +2,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RemoteAction, repoActions } from "./repoSlice";
 import { AppRootState } from "./store";
 import { DraftVersion, RepositoryCredentials } from "@sharedTypes/index";
-import { switchVersion, updateVersionContent, updateVersions } from "./thunks";
+import {
+  fetchRepositoryDetails,
+  switchVersion,
+  updateVersionContent,
+  updateVersions,
+} from "./thunks";
 
 export const remoteAction = createAsyncThunk<
   void,
@@ -19,11 +24,19 @@ export const remoteAction = createAsyncThunk<
 
   // 1. Do the remote action
   let response:
+    | Awaited<ReturnType<typeof window.api.init_repository>>
     | Awaited<ReturnType<typeof window.api.create_draft>>
     | Awaited<ReturnType<typeof window.api.delete_draft>>
     | Awaited<ReturnType<typeof window.api.push_commits>>
     | null = null;
   switch (action.type) {
+    case "INIT_REPO": {
+      response = await window.api.init_repository({
+        repositoryId,
+        credentials,
+      });
+      break;
+    }
     case "CREATE_DRAFT": {
       response = await window.api.create_draft({
         repositoryId,
@@ -66,6 +79,10 @@ export const remoteAction = createAsyncThunk<
 
   // 3. If success, dispatch an action that will update
   switch (action.type) {
+    case "INIT_REPO": {
+      await thunkAPI.dispatch(fetchRepositoryDetails());
+      break;
+    }
     case "CREATE_DRAFT": {
       thunkAPI.dispatch(repoActions.setWaitingForNewDraftName(false));
       await thunkAPI.dispatch(updateVersions());

@@ -14,6 +14,10 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
     (state: AppRootState) => state.repo.repository!,
   )!;
 
+  const isRepositoryEmpty = useSelector(
+    (state: AppRootState) => state.repo.status!.isEmpty,
+  );
+
   //#endregion
 
   return (
@@ -27,10 +31,14 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
       <div className="title">
         <h2>{repository.name}</h2>
       </div>
-      <VersionsSection />
-      <div className="content">
-        <RepositoryContent />
-      </div>
+      {!isRepositoryEmpty && (
+        <>
+          <VersionsSection />
+          <div className="content">
+            <RepositoryContent />
+          </div>
+        </>
+      )}
     </div>
   );
 }
