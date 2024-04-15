@@ -37,6 +37,7 @@
     "react-modal": "^3.16.1",
     "react-modal-hook": "^3.0.2",
     "react-redux": "^9.1.0",
+    "react-select": "^5.8.0",
     "redux-logger": "^3.0.6"
   },
   "devDependencies": {
