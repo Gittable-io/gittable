@@ -183,10 +183,13 @@ export async function get_current_version_content({
       });
 
       const tablesWithStatus: TableMetadataWithStatus[] = tables.map(
-        (table) => ({
-          ...table,
-          modified: workdirDiff[table.id] === "modified",
-        }),
+        (table) => {
+          const diff = workdirDiff.find((wd) => wd.table.id === table.id)?.diff;
+          return {
+            ...table,
+            modified: diff === "modified",
+          };
+        },
       );
 
       // 2. Get all commits in the draft branch

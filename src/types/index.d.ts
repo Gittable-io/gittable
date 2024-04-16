@@ -26,10 +26,6 @@ export type TableMetadata = {
 
 export type TableMetadataWithStatus = TableMetadata & { modified: boolean };
 
-export type VersionContentComparison = {
-  [string]: "none" | "modified" | "added" | "deleted";
-};
-
 export type PublishedVersion = {
   type: "published";
   name: string;
@@ -42,7 +38,7 @@ export type DraftVersion = {
   name: string;
   branch: string;
   baseOid: string;
-  basePublishedVersion: PublishedVersion | null;
+  basePublishedVersion: PublishedVersion | "INITIAL";
 };
 
 export type Version = PublishedVersion | DraftVersion;
@@ -64,3 +60,8 @@ export type VersionContent = {
   tables: TableMetadataWithStatus[];
   commits: Commit[];
 };
+
+export type VersionContentComparison = {
+  table: TableMetadata;
+  diff: "none" | "modified" | "added" | "deleted";
+}[];

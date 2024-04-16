@@ -212,13 +212,19 @@ async function getDraftVersions({
         branch: branch,
         name: branch.slice(6),
         baseOid,
-        basePublishedVersion: null,
+        basePublishedVersion: "INITIAL",
       });
     } else {
       const basePublishedVersion = await getPublishedVersion({
         repositoryId,
         tagName,
       });
+
+      if (!basePublishedVersion) {
+        throw new Error(
+          `Cannot retreive base published version of draft ${branch} `,
+        );
+      }
 
       versions.push({
         type: "draft",
@@ -358,12 +364,15 @@ async function compareCommits({
     },
   });
 
-  const result = walkResult
+  const result: VersionContentComparison = walkResult
     .filter((r) => r.filepath !== ".")
-    .reduce<VersionContentComparison>((acc, item) => {
-      acc[getTableIdFromFileName(item.filepath)] = item.diff;
-      return acc;
-    }, {});
+    .map((r) => ({
+      table: {
+        id: getTableIdFromFileName(r.filepath),
+        name: getTableIdFromFileName(r.filepath),
+      },
+      diff: r.diff,
+    }));
 
   return result;
 }

@@ -8,6 +8,7 @@ import {
   RepositoryStatus,
   Version,
   VersionContent,
+  VersionContentComparison,
 } from "@sharedTypes/index";
 import { get_current_version, get_current_version_content } from "./version";
 import _ from "lodash";
@@ -505,6 +506,57 @@ export async function delete_draft({
     return { status: "error", type: "UNKNOWN" };
   }
   return { status: "success", versions: versionsResp.versions };
+}
+
+//#endregion
+
+//#region API: compare_versions
+export type CompareVersionsParameters = {
+  repositoryId: string;
+  fromVersion: Version;
+  toVersion: Version | "INITIAL";
+};
+
+export type CompareVersionsResponse =
+  | {
+      status: "success";
+      diff: VersionContentComparison;
+    }
+  | {
+      status: "error";
+      type: "UNKNOWN";
+    };
+
+export async function compare_versions({
+  repositoryId,
+  fromVersion,
+  toVersion,
+}: CompareVersionsParameters): Promise<CompareVersionsResponse> {
+  console.debug(
+    `[API/compare_versions] Called with repositoryId=${repositoryId}, fromVersion=${fromVersion.name}, toVersion=${toVersion === "INITIAL" ? "INITIAL" : toVersion.name}`,
+  );
+
+  try {
+    const fromRef =
+      fromVersion.type === "published" ? fromVersion.tag : fromVersion.branch;
+    const toRef =
+      toVersion === "INITIAL"
+        ? await gitdb.getInitialCommitOid({ repositoryId })
+        : toVersion.type === "published"
+          ? toVersion.tag
+          : toVersion.branch;
+
+    const diff = await gitdb.compareCommits({
+      repositoryId,
+      fromRef,
+      toRef,
+    });
+
+    return { status: "success", diff };
+  } catch (error) {
+    console.debug(`[API/compare_versions] Error computing diff`);
+    return { status: "error", type: "UNKNOWN" };
+  }
 }
 
 //#endregion

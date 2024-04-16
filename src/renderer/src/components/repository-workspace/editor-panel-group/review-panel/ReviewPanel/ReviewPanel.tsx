@@ -1,15 +1,14 @@
 import "./ReviewPanel.css";
 import { ReviewWorkingDir } from "../ReviewWorkingDir";
 import { ReviewCommits } from "../ReviewCommits";
+import { ReviewVersionChanges } from "../ReviewVersionChanges";
 
 export function ReviewPanel(): JSX.Element {
   return (
     <div className="review-panel">
       <ReviewWorkingDir />
       <ReviewCommits />
-      <div className="review-version-changes">
-        <h2>Changes from last published version</h2>
-      </div>
+      <ReviewVersionChanges />
     </div>
   );
 }
