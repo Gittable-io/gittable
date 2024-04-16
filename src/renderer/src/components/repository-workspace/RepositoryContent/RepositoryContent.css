@@ -10,6 +10,8 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  gap: 10px;
+
   padding: 0 10px;
 }
 

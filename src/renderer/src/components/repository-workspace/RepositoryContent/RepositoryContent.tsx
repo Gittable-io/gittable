@@ -5,6 +5,7 @@ import { SidebarSection } from "@renderer/components/ui-components/SidebarSectio
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { repoActions } from "@renderer/store/repoSlice";
+import { NewTableForm } from "../NewTableForm";
 
 export function RepositoryContent(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -12,17 +13,32 @@ export function RepositoryContent(): JSX.Element {
   const tables = useSelector(
     (state: AppRootState) => state.repo.currentVersionContent?.tables,
   )!;
+  const isDraft = useSelector(
+    (state: AppRootState) => state.repo.currentVersion?.type === "draft",
+  )!;
+  const newTableInProgress = useSelector(
+    (state: AppRootState) => state.repo.progress.addTable != null,
+  )!;
 
   return (
     <div className="repository-content">
-      <div className="repository-content-toolbar">
-        <MaterialSymbolButton
-          symbol="note_add"
-          label="Add table"
-          tooltip
-          onClick={() => {}}
-        />
-      </div>
+      {isDraft && (
+        <div className="repository-content-toolbar">
+          <MaterialSymbolButton
+            symbol="note_add"
+            label="Add table"
+            tooltip
+            onClick={() => {
+              if (!newTableInProgress) {
+                dispatch(repoActions.beginCreateTable());
+              } else {
+                dispatch(repoActions.cancelCreateTable());
+              }
+            }}
+          />
+        </div>
+      )}
+      {newTableInProgress && <NewTableForm />}
       <SidebarSection>
         {tables ? (
           <List>

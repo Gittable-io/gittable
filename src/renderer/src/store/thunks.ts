@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RepositoryStatus, Version, VersionContent } from "@sharedTypes/index";
 import { AppRootState } from "./store";
+import { repoActions } from "./repoSlice";
 
 //#region fetchRepositoryDetails
 /**
@@ -246,6 +247,33 @@ export const commit = createAsyncThunk<
   return {
     content: contentResp.content,
   };
+});
+
+//#endregion
+
+//#region addTable
+export const addTable = createAsyncThunk<
+  void,
+  string,
+  { state: AppRootState; rejectValue: string }
+>("repo/addTable", async (name, thunkAPI) => {
+  const repositoryId = thunkAPI.getState().repo.repository!.id;
+
+  // 1. Add table
+  const addTableResp = await window.api.add_table({ repositoryId, name });
+
+  if (addTableResp.status === "error") {
+    return thunkAPI.rejectWithValue("Error creating table");
+  }
+
+  const addedTable = addTableResp.table;
+
+  // 2. Update content
+  await thunkAPI.dispatch(updateVersionContent());
+  thunkAPI.dispatch(
+    repoActions.openPanel({ type: "table", table: addedTable }),
+  );
+  return;
 });
 
 //#endregion

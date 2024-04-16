@@ -10,6 +10,7 @@ import {
 } from "@sharedTypes/index";
 import { appActions } from "./appSlice";
 import {
+  addTable,
   commit,
   discardChanges,
   fetchRepositoryDetails,
@@ -61,6 +62,7 @@ export type RepoState = {
   progress: {
     discardInProgress: boolean;
     commitInProgress: boolean;
+    addTable: "WAITING_FOR_INPUT" | "WAITING_FOR_REQUEST" | null;
   };
 
   //TODO: this variable should be removed when I refactor the UI
@@ -90,6 +92,7 @@ function initState(repository: Repository | null): RepoState {
     progress: {
       discardInProgress: false,
       commitInProgress: false,
+      addTable: null,
     },
 
     waitingForNewDraftName: false,
@@ -111,6 +114,12 @@ export const repoSlice = createSlice({
 
     setWaitingForNewDraftName: (state, action: PayloadAction<boolean>) => {
       state.waitingForNewDraftName = action.payload;
+    },
+    beginCreateTable: (state) => {
+      state.progress.addTable = "WAITING_FOR_INPUT";
+    },
+    cancelCreateTable: (state) => {
+      state.progress.addTable = null;
     },
 
     openPanel: (state, action: PayloadAction<PanelDescription>) => {
@@ -174,6 +183,7 @@ export const repoSlice = createSlice({
         state.selectedPanelId = null;
       })
       .addCase(switchVersion.fulfilled, (state, action) => {
+        state.progress.addTable = null;
         state.currentVersion = action.payload.currentVersion;
         state.currentVersionContent = action.payload.content;
       })
@@ -197,6 +207,12 @@ export const repoSlice = createSlice({
       .addCase(commit.fulfilled, (state, action) => {
         state.progress.commitInProgress = false;
         state.currentVersionContent = action.payload.content;
+      })
+      .addCase(addTable.pending, (state) => {
+        state.progress.addTable = "WAITING_FOR_REQUEST";
+      })
+      .addCase(addTable.fulfilled, (state) => {
+        state.progress.addTable = null;
       })
       .addCase(remoteAction.pending, (state, action) => {
         state.remoteActionSequence = {
@@ -240,6 +256,7 @@ export const repoActions = {
   updateVersionContent,
   discardChanges,
   commit,
+  addTable,
   remoteAction,
 };
 export const repoReducer = repoSlice.reducer;
