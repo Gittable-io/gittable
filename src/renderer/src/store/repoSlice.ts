@@ -197,9 +197,8 @@ export const repoSlice = createSlice({
       .addCase(discardChanges.pending, (state) => {
         state.progress.discardInProgress = true;
       })
-      .addCase(discardChanges.fulfilled, (state, action) => {
+      .addCase(discardChanges.fulfilled, (state) => {
         state.progress.discardInProgress = false;
-        state.currentVersionContent = action.payload.content;
       })
       .addCase(commit.pending, (state) => {
         state.progress.commitInProgress = true;

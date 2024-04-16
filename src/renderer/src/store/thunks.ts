@@ -1,5 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { RepositoryStatus, Version, VersionContent } from "@sharedTypes/index";
+import {
+  RepositoryStatus,
+  TableMetadata,
+  Version,
+  VersionContent,
+} from "@sharedTypes/index";
 import { AppRootState } from "./store";
 import { repoActions } from "./repoSlice";
 
@@ -127,7 +132,7 @@ export const updateVersionContent = createAsyncThunk<
 >("repo/updateVersionContent", async (_, thunkAPI) => {
   const repositoryId = thunkAPI.getState().repo.repository!.id;
 
-  // 3. Fetch content
+  // 1. Fetch content
   const currentContentResp = await window.api.get_current_version_content({
     repositoryId,
   });
@@ -136,8 +141,23 @@ export const updateVersionContent = createAsyncThunk<
     return thunkAPI.rejectWithValue("Error fetching checked out content");
   }
 
+  const content = currentContentResp.content;
+
+  // Check that there's no open panel for a deleted content
+  const panels = thunkAPI.getState().repo.panels;
+  for (const panel of panels) {
+    if (panel.type === "table" || panel.type === "diff") {
+      const panelTable: TableMetadata =
+        panel.type === "table" ? panel.table : panel.diff.table;
+
+      if (!content.tables.find((table) => table.id === panelTable.id)) {
+        thunkAPI.dispatch(repoActions.closePanel(panel.id));
+      }
+    }
+  }
+
   return {
-    content: currentContentResp.content,
+    content,
   };
 });
 
@@ -182,9 +202,7 @@ export const updateVersions = createAsyncThunk<
 
 //#region discardChanges
 export const discardChanges = createAsyncThunk<
-  {
-    content: VersionContent;
-  },
+  void,
   void, // No payload expected
   { state: AppRootState; rejectValue: string }
 >("repo/discardChanges", async (_, thunkAPI) => {
@@ -199,18 +217,9 @@ export const discardChanges = createAsyncThunk<
     return thunkAPI.rejectWithValue("Error discarding");
   }
 
-  // 2. Update content
-  const contentResp = await window.api.get_current_version_content({
-    repositoryId,
-  });
+  await thunkAPI.dispatch(updateVersionContent());
 
-  if (contentResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching checked out content");
-  }
-
-  return {
-    content: contentResp.content,
-  };
+  return;
 });
 
 //#endregion
