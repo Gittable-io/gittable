@@ -7,6 +7,8 @@ import { addHandlesForGittableElectronAPICall } from "./api";
 import installExtension, {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-assembler";
+// ! do not remove, see src/main/polyfills/crypto.js for an explanation
+import "./polyfills/crypto";
 
 function createWindow(): void {
   // Create the browser window.
