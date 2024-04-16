@@ -211,7 +211,7 @@ export async function get_current_version_content({
           filter: (f) => f.endsWith(getConfig().fileExtensions.table),
         })
       ).map((tableStatus) => ({
-        id: tableStatus[FILE] as string,
+        id: getTableIdFromFileName(tableStatus[FILE] as string),
         name: getTableIdFromFileName(tableStatus[FILE] as string),
         modified: false,
       }));
