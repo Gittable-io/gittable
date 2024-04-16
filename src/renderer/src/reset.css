@@ -54,3 +54,22 @@ ul {
 :focus-visible {
   outline: none;
 }
+
+/*
+  Style vertical scrollbar
+*/
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  border: 1px solid #fff;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 0;
+  background: var(--color-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 0;
+  background: var(--color-secondary-hover);
+}
