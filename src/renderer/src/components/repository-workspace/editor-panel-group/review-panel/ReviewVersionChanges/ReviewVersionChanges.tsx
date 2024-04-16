@@ -1,8 +1,25 @@
-import { DraftVersion, VersionContentComparison } from "@sharedTypes/index";
+import {
+  DocumentChangeType,
+  DraftVersion,
+  VersionContentComparison,
+} from "@sharedTypes/index";
 import { useEffect, useState } from "react";
 import { List, ListItem } from "gittable-editor";
 import { useSelector } from "react-redux";
 import { AppRootState } from "@renderer/store/store";
+
+const getChangeAbbreviation = (change: DocumentChangeType): string => {
+  switch (change) {
+    case "added":
+      return "(A)";
+    case "deleted":
+      return "(D)";
+    case "modified":
+      return "(M)";
+    default:
+      return "";
+  }
+};
 
 export function ReviewVersionChanges(): JSX.Element {
   const [diff, setDiff] = useState<VersionContentComparison>([]);
@@ -23,8 +40,8 @@ export function ReviewVersionChanges(): JSX.Element {
       if (currentVersion.type === "draft") {
         const diffResp = await window.api.compare_versions({
           repositoryId,
-          fromVersion: currentVersion,
-          toVersion: currentVersion.basePublishedVersion,
+          fromVersion: currentVersion.basePublishedVersion,
+          toVersion: currentVersion,
         });
         if (diffResp.status === "success") {
           setDiff(diffResp.diff);
@@ -51,7 +68,7 @@ export function ReviewVersionChanges(): JSX.Element {
         {diff.map((tableDiff) => (
           <ListItem
             key={tableDiff.table.id}
-            text={tableDiff.table.name}
+            text={`${tableDiff.table.name} ${getChangeAbbreviation(tableDiff.change)}`}
             materialSymbol="table"
           ></ListItem>
         ))}

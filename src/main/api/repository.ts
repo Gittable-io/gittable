@@ -522,8 +522,8 @@ export async function delete_draft({
 //#region API: compare_versions
 export type CompareVersionsParameters = {
   repositoryId: string;
-  fromVersion: Version;
-  toVersion: Version | "INITIAL";
+  fromVersion: Version | "INITIAL";
+  toVersion: Version;
 };
 
 export type CompareVersionsResponse =
@@ -542,18 +542,19 @@ export async function compare_versions({
   toVersion,
 }: CompareVersionsParameters): Promise<CompareVersionsResponse> {
   console.debug(
-    `[API/compare_versions] Called with repositoryId=${repositoryId}, fromVersion=${fromVersion.name}, toVersion=${toVersion === "INITIAL" ? "INITIAL" : toVersion.name}`,
+    `[API/compare_versions] Called with repositoryId=${repositoryId}, fromVersion=${fromVersion === "INITIAL" ? "INITIAL" : fromVersion.name}, toVersion=${toVersion.name}`,
   );
 
   try {
     const fromRef =
-      fromVersion.type === "published" ? fromVersion.tag : fromVersion.branch;
-    const toRef =
-      toVersion === "INITIAL"
+      fromVersion === "INITIAL"
         ? await gitdb.getInitialCommitOid({ repositoryId })
-        : toVersion.type === "published"
-          ? toVersion.tag
-          : toVersion.branch;
+        : fromVersion.type === "published"
+          ? fromVersion.tag
+          : fromVersion.branch;
+
+    const toRef =
+      toVersion.type === "published" ? toVersion.tag : toVersion.branch;
 
     const diff = await gitdb.compareCommits({
       repositoryId,

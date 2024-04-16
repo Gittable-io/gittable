@@ -311,7 +311,7 @@ export async function commit({
   try {
     // 1. Add each file to the staging area
     const modifiedTables = tableStatuses.filter(
-      (table) => table.change === "modified",
+      (table) => table.change !== "none",
     );
 
     for (const table of modifiedTables) {
