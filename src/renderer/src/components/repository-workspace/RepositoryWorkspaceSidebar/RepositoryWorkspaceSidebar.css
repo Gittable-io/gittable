@@ -26,13 +26,3 @@
 
   padding: 0 10px;
 }
-
-.repository-workspace-sidebar .content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  gap: 20px;
-
-  padding: 0 10px;
-}

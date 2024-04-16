@@ -38,9 +38,7 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
       {isRepositoryInitialized && (
         <>
           <VersionsSection />
-          <div className="content">
-            <RepositoryContent />
-          </div>
+          <RepositoryContent />
         </>
       )}
     </div>

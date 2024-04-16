@@ -1,5 +1,5 @@
 import { RepositoryContentItem } from "../RepositoryContentItem";
-import { List, Spinner } from "gittable-editor";
+import { List, MaterialSymbolButton, Spinner } from "gittable-editor";
 import "./RepositoryContent.css";
 import { SidebarSection } from "@renderer/components/ui-components/SidebarSection";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,27 +14,37 @@ export function RepositoryContent(): JSX.Element {
   )!;
 
   return (
-    <SidebarSection id="repository-content">
-      {tables ? (
-        <List>
-          {tables.map((tableMetadata) => (
-            <RepositoryContentItem
-              key={tableMetadata.id}
-              tableName={tableMetadata.name}
-              onTableSelect={() =>
-                dispatch(
-                  repoActions.openPanel({
-                    type: "table",
-                    table: tableMetadata,
-                  }),
-                )
-              }
-            />
-          ))}
-        </List>
-      ) : (
-        <Spinner />
-      )}
-    </SidebarSection>
+    <div className="repository-content">
+      <div className="repository-content-toolbar">
+        <MaterialSymbolButton
+          symbol="note_add"
+          label="Add table"
+          tooltip
+          onClick={() => {}}
+        />
+      </div>
+      <SidebarSection>
+        {tables ? (
+          <List>
+            {tables.map((tableMetadata) => (
+              <RepositoryContentItem
+                key={tableMetadata.id}
+                tableName={tableMetadata.name}
+                onTableSelect={() =>
+                  dispatch(
+                    repoActions.openPanel({
+                      type: "table",
+                      table: tableMetadata,
+                    }),
+                  )
+                }
+              />
+            ))}
+          </List>
+        ) : (
+          <Spinner />
+        )}
+      </SidebarSection>
+    </div>
   );
 }
