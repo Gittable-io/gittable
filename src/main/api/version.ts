@@ -20,6 +20,7 @@ import {
   pushBranch,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
+import path from "node:path";
 
 //#region API: get_current_version
 export type GetCurrentVersionParameters = {
@@ -251,12 +252,31 @@ export async function discard_changes({
     `[API/discard_changes] Called with repositoryId=${repositoryId}`,
   );
 
+  const repositoryPath = getRepositoryPath(repositoryId);
+
   try {
+    // Checkout to revert tracked files
     await git.checkout({
       fs,
-      dir: getRepositoryPath(repositoryId),
+      dir: repositoryPath,
       force: true, // If I remove force:true, discard doesn't work
     });
+
+    // Get the status to find untracked files
+    const [FILE, HEAD, WORKDIR] = [0, 1, 2];
+    const status = await git.statusMatrix({
+      fs,
+      dir: repositoryPath,
+    });
+    // Remove each untracked file
+    const untrackedFiles = status.filter(
+      (file) => file[HEAD] === 0 && file[WORKDIR] === 2,
+    );
+
+    for (const file of untrackedFiles) {
+      await fs.unlink(path.join(repositoryPath, file[FILE] as string));
+    }
+
     return { status: "success" };
   } catch (err) {
     return { status: "error", type: "unknown" };

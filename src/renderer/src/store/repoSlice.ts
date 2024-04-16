@@ -237,9 +237,7 @@ export const repoSlice = createSlice({
     isContentModified: (state): boolean => {
       if (state.currentVersionContent == null) return false;
 
-      if (
-        state.currentVersionContent.tables.some((t) => t.change === "modified")
-      )
+      if (state.currentVersionContent.tables.some((t) => t.change !== "none"))
         return true;
 
       return false;
