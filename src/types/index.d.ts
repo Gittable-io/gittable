@@ -4,10 +4,10 @@ export type Repository = {
   remoteUrl: string;
 };
 
-export type RepositoryStatus = {
-  isEmpty: boolean;
-  isInitial: boolean;
-};
+export type RepositoryStatus =
+  | "NOT_INITIALIZED"
+  | "DRAFT_ONLY"
+  | "HAS_PUBLISHED";
 
 export type RepositoryCredentials = {
   username: string;

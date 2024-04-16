@@ -158,7 +158,7 @@ export async function clone_repository({
     /*
      5. Now that the repository is cloned, There's some steps to make our local repository usable
 
-     if repository is not empty
+     if repository is not intialized
       - 5.1 : Create a local branch for every draft branch
         - Why? When cloning a remote repo, by default, git creates a local branch "main" that tracks "origin/main", but it does not create a local branch for other remotes branches
         - However, to detect versions, our app only looks at local branches
@@ -168,17 +168,18 @@ export async function clone_repository({
         - Why? When cloning a remote repo, by default, HEAD points to main.
         - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
         - We correct this by making HEAD point to the latest published tag or to a draft branch
-        TODO: need to change this when cloning an empty repository
 
-      Note : if repository is empty we don't do nothing, as we should wait the user to initialize the repo
+      Note : if repository is not initialized we don't do nothing, as we should wait the user to initialize the repo
     */
-    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
+    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+      repositoryId,
+    });
     console.debug(
-      `[API/clone_repository] Repository is ${isRepositoryEmpty ? "" : "not "}empty`,
+      `[API/clone_repository] Repository is ${isRepositoryInitialized ? "" : "not "}initialized`,
     );
-    if (!isRepositoryEmpty) {
+    if (isRepositoryInitialized) {
       console.debug(
-        `[API/clone_repository] Preparing repository to be usable (repo is not empty)`,
+        `[API/clone_repository] Preparing repository to be usable (repo is already initialized)`,
       );
 
       // 5.1 For every remote draft branch: create a local draft branch that tracks the remote branch

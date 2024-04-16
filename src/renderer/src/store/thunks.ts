@@ -31,7 +31,7 @@ export const fetchRepositoryDetails = createAsyncThunk<
     return thunkAPI.rejectWithValue("Error fetching repsoitory status");
   }
 
-  if (repoStatusResp.repositoryStatus.isEmpty) {
+  if (repoStatusResp.repositoryStatus === "NOT_INITIALIZED") {
     return {
       status: repoStatusResp.repositoryStatus,
       versions: null,

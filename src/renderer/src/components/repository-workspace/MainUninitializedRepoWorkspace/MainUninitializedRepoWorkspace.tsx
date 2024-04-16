@@ -1,10 +1,10 @@
 import { Button } from "gittable-editor";
-import "./MainEmptyRepoWorkspace.css";
+import "./MainUninitializedRepoWorkspace.css";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { repoActions } from "@renderer/store/repoSlice";
 
-export function MainEmptyRepoWorkspace(): JSX.Element {
+export function MainUninitializedRepoWorkspace(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
 
   const isInitRepoInProgress: boolean = useSelector(
@@ -13,7 +13,7 @@ export function MainEmptyRepoWorkspace(): JSX.Element {
   );
 
   return (
-    <div className="main-empty-repo-workspace">
+    <div className="main-uninitialized-repo-workspace">
       <div className="required-action">
         <h3>One more step to setup your workspace</h3>
         <p>

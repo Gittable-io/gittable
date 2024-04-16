@@ -1,4 +1,4 @@
-.main-empty-repo-workspace {
+.main-uninitialized-repo-workspace {
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -8,15 +8,15 @@
   margin-top: 20px;
 }
 
-.main-empty-repo-workspace .required-action {
+.main-uninitialized-repo-workspace .required-action {
   background-color: var(--color-primary-shadow);
   padding: var(--padding);
 }
 
-.main-empty-repo-workspace .required-action button {
+.main-uninitialized-repo-workspace .required-action button {
   margin-top: 10px;
 }
 
-.main-empty-repo-workspace .required-action p {
+.main-uninitialized-repo-workspace .required-action p {
   margin-top: var(--padding);
 }

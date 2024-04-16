@@ -287,16 +287,17 @@ async function getInitialCommitOid({
 
 /**
  *
- * @returns if the repository is empty. i.e. it has just been created in the Git server and this is the first clone
- * We determine that a repository is empty when it doesn't have any branch
+ * @returns if the repository is initialized.
+ * A non-initialized repository has just been created in the Git server and this is the first clone
+ * We determine that a repository is non-initialized when it doesn't have any branch (not even a main)
  */
-async function isRepositoryEmpty({
+async function isRepositoryInitialized({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryEmpty] Called with repositoryId=${repositoryId}`,
+    `[gitdb/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
   );
 
   const branches = await git.listBranches({
@@ -304,27 +305,25 @@ async function isRepositoryEmpty({
     dir: getRepositoryPath(repositoryId),
   });
 
-  if (branches.length === 0) return true;
-  else return false;
+  return branches.length > 0;
 }
 
 /**
  *
- * @returns if the repository is initial. i.e. it doesn't have any published versions and a single draft version
+ * @returns if the repository has a published version.
  */
-async function isRepositoryInitial({
+async function hasPublished({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryInitial] Called with repositoryId=${repositoryId}`,
+    `[gitdb/hasPublished] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
 
-  if (publishedVersions.length === 0) return true;
-  else return false;
+  return publishedVersions.length > 0;
 }
 
 async function compareCommits({
@@ -385,7 +384,7 @@ export const gitdb = {
   getDraftVersions,
   getDraftVersion,
   getInitialCommitOid,
-  isRepositoryEmpty,
-  isRepositoryInitial,
+  isRepositoryInitialized,
+  hasPublished,
   compareCommits,
 };

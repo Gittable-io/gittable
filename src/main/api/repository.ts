@@ -43,17 +43,24 @@ export async function get_repository_status({
   );
 
   try {
-    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
-    const isRepositoryInitial = await gitdb.isRepositoryInitial({
+    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+      repositoryId,
+    });
+
+    if (!isRepositoryInitialized) {
+      return {
+        status: "success",
+        repositoryStatus: "NOT_INITIALIZED",
+      };
+    }
+
+    const hasPublished = await gitdb.hasPublished({
       repositoryId,
     });
 
     return {
       status: "success",
-      repositoryStatus: {
-        isEmpty: isRepositoryEmpty,
-        isInitial: isRepositoryInitial,
-      },
+      repositoryStatus: hasPublished ? "HAS_PUBLISHED" : "DRAFT_ONLY",
     };
   } catch (error) {
     return { status: "error", type: "UNKNOWN" };
@@ -76,7 +83,7 @@ export type InitRepositoryResponse =
   | {
       status: "error";
       type:
-        | "REPOSITORY_NOT_EMPTY"
+        | "ALREADY_INITIALIZED"
         | "NO_PROVIDED_CREDENTIALS"
         | "AUTH_ERROR_WITH_CREDENTIALS"
         | "UNKNOWN";
@@ -103,10 +110,12 @@ export async function init_repository({
 
   let errorResponse: InitRepositoryResponse | null = null;
   try {
-    // 0. Check that repository is empty
-    const isRepositoryEmpty = await gitdb.isRepositoryEmpty({ repositoryId });
-    if (!isRepositoryEmpty) {
-      return { status: "error", type: "REPOSITORY_NOT_EMPTY" };
+    // 0. Check that repository is not initialized
+    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+      repositoryId,
+    });
+    if (isRepositoryInitialized) {
+      return { status: "error", type: "ALREADY_INITIALIZED" };
     }
 
     // Before doing anything, backup the repo

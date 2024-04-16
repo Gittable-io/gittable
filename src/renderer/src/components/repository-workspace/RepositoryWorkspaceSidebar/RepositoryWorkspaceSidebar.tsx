@@ -14,8 +14,8 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
     (state: AppRootState) => state.repo.repository!,
   )!;
 
-  const isRepositoryEmpty = useSelector(
-    (state: AppRootState) => state.repo.status!.isEmpty,
+  const isRepositoryInitialized = useSelector(
+    (state: AppRootState) => state.repo.status !== "NOT_INITIALIZED",
   );
 
   //#endregion
@@ -35,7 +35,7 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
       <div className="title">
         <h2>{repository.name}</h2>
       </div>
-      {!isRepositoryEmpty && (
+      {isRepositoryInitialized && (
         <>
           <VersionsSection />
           <div className="content">
