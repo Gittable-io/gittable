@@ -6,6 +6,20 @@ import { repoActions } from "@renderer/store/repoSlice";
 import { useModal } from "react-modal-hook";
 import { ConfirmationModal } from "@renderer/components/ui-components/ConfirmationModal";
 import { useState } from "react";
+import { DocumentChangeType } from "@sharedTypes/index";
+
+const getChangeAbbreviation = (change: DocumentChangeType): string => {
+  switch (change) {
+    case "added":
+      return "(A)";
+    case "deleted":
+      return "(D)";
+    case "modified":
+      return "(M)";
+    default:
+      return "";
+  }
+};
 
 export function ReviewWorkingDir(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -42,8 +56,8 @@ export function ReviewWorkingDir(): JSX.Element {
     setCommitMessage("");
   };
 
-  const modifiedTables = tables.filter((table) => table.change === "modified");
-  const isWorkingDirModified = modifiedTables.length > 0;
+  const changedTables = tables.filter((table) => table.change !== "none");
+  const isWorkingDirModified = changedTables.length > 0;
   const canCommit = isWorkingDirModified && commitMessage !== "";
 
   return (
@@ -76,20 +90,27 @@ export function ReviewWorkingDir(): JSX.Element {
       <div>
         {isWorkingDirModified ? (
           <List>
-            {modifiedTables.map((table) => (
+            {changedTables.map((table) => (
               <ListItem
                 key={table.id}
-                text={table.name}
+                text={`${table.name} ${getChangeAbbreviation(table.change)}`}
                 materialSymbol="table"
-                onClick={() =>
-                  dispatch(
-                    repoActions.openPanel({
-                      type: "diff",
-                      diff: { table, fromRef: "HEAD", toRef: "WorkingDir" },
-                    }),
-                  )
-                }
-              ></ListItem>
+                {...(table.change === "modified"
+                  ? {
+                      onClick: () =>
+                        dispatch(
+                          repoActions.openPanel({
+                            type: "diff",
+                            diff: {
+                              table,
+                              fromRef: "HEAD",
+                              toRef: "WorkingDir",
+                            },
+                          }),
+                        ),
+                    }
+                  : {})}
+              />
             ))}
           </List>
         ) : (

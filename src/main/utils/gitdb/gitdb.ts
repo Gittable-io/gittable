@@ -350,12 +350,12 @@ async function compareCommits({
       if (filepath.startsWith(".git")) return null;
 
       if (!fromEntry || !toEntry) {
-        return { filepath, diff: fromEntry ? "deleted" : "added" };
+        return { filepath, change: fromEntry ? "deleted" : "added" };
       } else {
         const fromOid = await fromEntry.oid();
         const toOid = await toEntry.oid();
         if (fromOid !== toOid) {
-          return { filepath, diff: "modified" };
+          return { filepath, change: "modified" };
         } else {
           return null;
         }
