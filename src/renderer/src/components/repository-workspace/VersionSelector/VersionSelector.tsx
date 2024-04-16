@@ -10,7 +10,11 @@ type OptionType = {
 
 // see https://stackoverflow.com/a/56171762/471461
 const formatOptionLabel = ({ value, label }): JSX.Element => (
-  <IconAndText materialSymbol={getVersionMaterialSymbol(value)} text={label} />
+  <IconAndText
+    materialSymbol={getVersionMaterialSymbol(value)}
+    text={label}
+    testId={`version-${label}`}
+  />
 );
 
 export type VersionSelectorProps = {

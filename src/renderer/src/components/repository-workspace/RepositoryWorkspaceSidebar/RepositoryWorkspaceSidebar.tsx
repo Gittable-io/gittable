@@ -21,10 +21,14 @@ export function RepositoryWorkspaceSidebar(): JSX.Element {
   //#endregion
 
   return (
-    <div className="repository-workspace-sidebar">
+    <div
+      className="repository-workspace-sidebar"
+      aria-label="Repository workspace sidebar"
+    >
       <div className="toolbar">
         <MaterialSymbolButton
           symbol="close"
+          label="close repository"
           onClick={() => dispatch(appActions.closeRepository())}
         />
       </div>
