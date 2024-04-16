@@ -4,6 +4,7 @@ import { getConfig } from "../config";
 import {
   DraftVersion,
   RepositoryCredentials,
+  TableMetadata,
   TableMetadataWithStatus,
   Version,
   VersionContent,
@@ -11,7 +12,7 @@ import {
 import {
   getRepositoryPath,
   getRepositoryRelativeTablePath,
-  getTableNameFromFileName,
+  getTableIdFromFileName,
 } from "../utils/utils";
 import {
   AuthWithProvidedCredentialsError,
@@ -156,20 +157,39 @@ export async function get_current_version_content({
     const currentVersion = currentVersionResp.version;
 
     if (currentVersion.type === "draft") {
-      // 1. Get tables and their statuses
-      const [FILE, HEAD, WORKDIR] = [0, 1, 2];
-      const tables: TableMetadataWithStatus[] = (
+      /*
+        1. Get tables and the diff between HEAD and WORKDIR
+  
+        ! Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
+        ! instead to centralize diff logic. It may cause extra computation. 
+        ! If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
+      */
+      const [FILE, _HEAD, _WORKDIR] = [0, 1, 2];
+      const tables: TableMetadata[] = (
         await git.statusMatrix({
           fs,
           dir: getRepositoryPath(repositoryId),
           filter: (f) => f.endsWith(getConfig().fileExtensions.table),
         })
       ).map((tableStatus) => ({
-        id: tableStatus[FILE] as string,
-        name: getTableNameFromFileName(tableStatus[FILE] as string),
-        modified: tableStatus[HEAD] !== tableStatus[WORKDIR],
+        id: getTableIdFromFileName(tableStatus[FILE] as string),
+        name: getTableIdFromFileName(tableStatus[FILE] as string),
       }));
 
+      const workdirDiff = await gitdb.compareCommits({
+        repositoryId,
+        fromRef: "HEAD",
+        toRef: "WORKDIR",
+      });
+
+      const tablesWithStatus: TableMetadataWithStatus[] = tables.map(
+        (table) => ({
+          ...table,
+          modified: workdirDiff[table.id] === "modified",
+        }),
+      );
+
+      // 2. Get all commits in the draft branch
       const branchCommits = await gitdb.getDraftVersionCommits({
         repositoryId,
         draftVersion: currentVersion,
@@ -177,7 +197,7 @@ export async function get_current_version_content({
 
       return {
         status: "success",
-        content: { tables, commits: branchCommits },
+        content: { tables: tablesWithStatus, commits: branchCommits },
       };
     } else {
       const [FILE] = [0];
@@ -189,7 +209,7 @@ export async function get_current_version_content({
         })
       ).map((tableStatus) => ({
         id: tableStatus[FILE] as string,
-        name: getTableNameFromFileName(tableStatus[FILE] as string),
+        name: getTableIdFromFileName(tableStatus[FILE] as string),
         modified: false,
       }));
 

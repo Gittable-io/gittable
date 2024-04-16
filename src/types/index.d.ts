@@ -26,6 +26,10 @@ export type TableMetadata = {
 
 export type TableMetadataWithStatus = TableMetadata & { modified: boolean };
 
+export type VersionContentComparison = {
+  [string]: "none" | "modified" | "added" | "deleted";
+};
+
 export type PublishedVersion = {
   type: "published";
   name: string;
