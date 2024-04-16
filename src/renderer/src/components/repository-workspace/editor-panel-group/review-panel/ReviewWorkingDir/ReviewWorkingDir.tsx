@@ -42,7 +42,7 @@ export function ReviewWorkingDir(): JSX.Element {
     setCommitMessage("");
   };
 
-  const modifiedTables = tables.filter((table) => table.modified);
+  const modifiedTables = tables.filter((table) => table.change === "modified");
   const isWorkingDirModified = modifiedTables.length > 0;
   const canCommit = isWorkingDirModified && commitMessage !== "";
 

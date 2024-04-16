@@ -65,7 +65,12 @@ export async function get_table_data({
       ) as Table;
       return { status: "success", tableData: tableContent };
     }
-  } catch (err: unknown) {
+  } catch (error) {
+    if (error instanceof Error)
+      console.debug(
+        `[API/get_table_data] Error reading table data: ${error.message}`,
+      );
+
     return { status: "error", type: "unknown" };
   }
 }

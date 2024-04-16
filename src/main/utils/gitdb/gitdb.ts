@@ -341,7 +341,7 @@ async function compareCommits({
   // Using walk to traverse commits
   const walkResult: {
     filepath: string;
-    diff: "modified" | "deleted" | "added";
+    change: "modified" | "deleted" | "added";
   }[] = await git.walk({
     fs,
     dir: getRepositoryPath(repositoryId),
@@ -370,7 +370,7 @@ async function compareCommits({
         id: getTableIdFromFileName(r.filepath),
         name: getTableIdFromFileName(r.filepath),
       },
-      diff: r.diff,
+      change: r.change,
     }));
 
   return result;

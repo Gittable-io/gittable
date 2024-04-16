@@ -160,9 +160,9 @@ export async function get_current_version_content({
       /*
         1. Get tables and the diff between HEAD and WORKDIR
   
-        ! Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
-        ! instead to centralize diff logic. It may cause extra computation. 
-        ! If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
+        * Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
+        * instead to centralize diff logic. But it may cause extra computation. 
+        * If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
       */
       const [FILE, _HEAD, _WORKDIR] = [0, 1, 2];
       const tables: TableMetadata[] = (
@@ -184,10 +184,12 @@ export async function get_current_version_content({
 
       const tablesWithStatus: TableMetadataWithStatus[] = tables.map(
         (table) => {
-          const diff = workdirDiff.find((wd) => wd.table.id === table.id)?.diff;
+          const change = workdirDiff.find(
+            (wd) => wd.table.id === table.id,
+          )?.change;
           return {
             ...table,
-            modified: diff === "modified",
+            change: change ?? "none",
           };
         },
       );
@@ -213,7 +215,7 @@ export async function get_current_version_content({
       ).map((tableStatus) => ({
         id: getTableIdFromFileName(tableStatus[FILE] as string),
         name: getTableIdFromFileName(tableStatus[FILE] as string),
-        modified: false,
+        change: "none",
       }));
 
       return {
@@ -298,7 +300,7 @@ export async function commit({
   }
 
   const tableStatuses: TableMetadataWithStatus[] = contentResp.content.tables;
-  if (tableStatuses.every((table) => !table.modified)) {
+  if (tableStatuses.every((table) => table.change === "none")) {
     return {
       status: "error",
       type: "NOTHING_TO_COMMIT",
@@ -308,7 +310,9 @@ export async function commit({
   // If there's a change in the working dir => stage each file and then commit it
   try {
     // 1. Add each file to the staging area
-    const modifiedTables = tableStatuses.filter((table) => table.modified);
+    const modifiedTables = tableStatuses.filter(
+      (table) => table.change === "modified",
+    );
 
     for (const table of modifiedTables) {
       await git.add({
