@@ -1,7 +1,12 @@
 import fs from "node:fs/promises";
 import git, { ReadCommitResult } from "isomorphic-git";
-import { Commit, DraftVersion, PublishedVersion } from "@sharedTypes/index";
-import { getRepositoryPath } from "../utils";
+import {
+  Commit,
+  DraftVersion,
+  PublishedVersion,
+  VersionContentComparison,
+} from "@sharedTypes/index";
+import { getRepositoryPath, getTableIdFromFileName } from "../utils";
 import { gitUtils } from "./gitutils";
 
 /**
@@ -207,13 +212,19 @@ async function getDraftVersions({
         branch: branch,
         name: branch.slice(6),
         baseOid,
-        basePublishedVersion: null,
+        basePublishedVersion: "INITIAL",
       });
     } else {
       const basePublishedVersion = await getPublishedVersion({
         repositoryId,
         tagName,
       });
+
+      if (!basePublishedVersion) {
+        throw new Error(
+          `Cannot retreive base published version of draft ${branch} `,
+        );
+      }
 
       versions.push({
         type: "draft",
@@ -316,6 +327,56 @@ async function isRepositoryInitial({
   else return false;
 }
 
+async function compareCommits({
+  repositoryId,
+  fromRef,
+  toRef,
+}: {
+  repositoryId: string;
+  fromRef: string;
+  toRef: string | "WORKDIR";
+}): Promise<VersionContentComparison> {
+  const treeFrom = git.TREE({ ref: fromRef });
+  const treeTo = toRef === "WORKDIR" ? git.WORKDIR() : git.TREE({ ref: toRef });
+
+  // Using walk to traverse commits
+  const walkResult: {
+    filepath: string;
+    diff: "modified" | "deleted" | "added";
+  }[] = await git.walk({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    trees: [treeFrom, treeTo],
+    map: async function (filepath, [fromEntry, toEntry]) {
+      if (filepath.startsWith(".git")) return null;
+
+      if (!fromEntry || !toEntry) {
+        return { filepath, diff: fromEntry ? "deleted" : "added" };
+      } else {
+        const fromOid = await fromEntry.oid();
+        const toOid = await toEntry.oid();
+        if (fromOid !== toOid) {
+          return { filepath, diff: "modified" };
+        } else {
+          return null;
+        }
+      }
+    },
+  });
+
+  const result: VersionContentComparison = walkResult
+    .filter((r) => r.filepath !== ".")
+    .map((r) => ({
+      table: {
+        id: getTableIdFromFileName(r.filepath),
+        name: getTableIdFromFileName(r.filepath),
+      },
+      diff: r.diff,
+    }));
+
+  return result;
+}
+
 export const gitdb = {
   getDraftVersionCommits,
   getPublishedVersions,
@@ -326,4 +387,5 @@ export const gitdb = {
   getInitialCommitOid,
   isRepositoryEmpty,
   isRepositoryInitial,
+  compareCommits,
 };

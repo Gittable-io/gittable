@@ -38,7 +38,7 @@ export type DraftVersion = {
   name: string;
   branch: string;
   baseOid: string;
-  basePublishedVersion: PublishedVersion | null;
+  basePublishedVersion: PublishedVersion | "INITIAL";
 };
 
 export type Version = PublishedVersion | DraftVersion;
@@ -60,3 +60,8 @@ export type VersionContent = {
   tables: TableMetadataWithStatus[];
   commits: Commit[];
 };
+
+export type VersionContentComparison = {
+  table: TableMetadata;
+  diff: "none" | "modified" | "added" | "deleted";
+}[];
