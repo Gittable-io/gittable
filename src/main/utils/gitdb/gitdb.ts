@@ -367,17 +367,22 @@ async function compareCommits({
     },
   });
 
-  const result: VersionContentComparison = walkResult
-    .filter((r) => r.filepath !== ".")
-    .map((r) => ({
-      table: {
-        id: getTableIdFromFileName(r.filepath),
-        name: getTableIdFromFileName(r.filepath),
-      },
-      change: r.change,
-    }));
+  // It seems that if there's no difference, git.walk() returns undefined
+  if (walkResult) {
+    const result: VersionContentComparison = walkResult
+      .filter((r) => r.filepath !== ".")
+      .map((r) => ({
+        table: {
+          id: getTableIdFromFileName(r.filepath),
+          name: getTableIdFromFileName(r.filepath),
+        },
+        change: r.change,
+      }));
 
-  return result;
+    return result;
+  } else {
+    return [];
+  }
 }
 
 export const gitdb = {
