@@ -29,14 +29,14 @@ export class UnknownPushError extends Error {
   }
 }
 
-export async function pushBranch({
+export async function pushBranchOrTag({
   repositoryId,
-  branchName,
+  branchOrTagName,
   credentials: providedCredentials,
   deleteBranch = false,
 }: {
   repositoryId: string;
-  branchName: string;
+  branchOrTagName: string;
   credentials?: RepositoryCredentials;
   deleteBranch?: boolean;
 }): Promise<void> {
@@ -55,7 +55,7 @@ export async function pushBranch({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
-      ref: branchName,
+      ref: branchOrTagName,
       delete: deleteBranch,
       onAuth: () => {
         return credentials;

@@ -15,7 +15,7 @@ import _ from "lodash";
 import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
-  pushBranch,
+  pushBranchOrTag,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
 import { repoBackup } from "../utils/gitdb/repoBackup";
@@ -157,15 +157,15 @@ export async function init_repository({
     });
 
     // 2.1 Push main and draft/initial branches
-    await pushBranch({
+    await pushBranchOrTag({
       repositoryId,
-      branchName: "main",
+      branchOrTagName: "main",
       credentials,
     });
 
-    await pushBranch({
+    await pushBranchOrTag({
       repositoryId,
-      branchName: "draft/initial",
+      branchOrTagName: "draft/initial",
       credentials,
     });
   } catch (error) {
@@ -379,7 +379,11 @@ export async function create_draft({
   let errorResponse: CreateDraftResponse | null = null;
   try {
     // 2. Push branch
-    await pushBranch({ repositoryId, branchName, credentials });
+    await pushBranchOrTag({
+      repositoryId,
+      branchOrTagName: branchName,
+      credentials,
+    });
   } catch (error) {
     console.debug(`[API/create_draft] Error pushing local branch`);
     if (error instanceof NoCredentialsProvidedError) {
@@ -477,12 +481,14 @@ export async function delete_draft({
   /*
    * We're first deleting the remote, before deleting the local branch
    * In case of error in deleting a remote branch, there's no need to recover the local branch
+   ! I also think that isomorphic-git cannot delete a remote branch if it was deleted in local repository beforehand
+   ! see https://github.com/isomorphic-git/isomorphic-git/issues/40#issuecomment-1593728372
    */
   try {
     // 3. Delete remote branch
-    await pushBranch({
+    await pushBranchOrTag({
       repositoryId,
-      branchName: versionToDelete.branch,
+      branchOrTagName: versionToDelete.branch,
       credentials,
       deleteBranch: true,
     });
@@ -577,7 +583,7 @@ export async function compare_versions({
 export type PublishDraftParameters = {
   repositoryId: string;
   draftVersion: DraftVersion;
-  publishingName: string;
+  newPublishedVersionName: string;
   credentials?: RepositoryCredentials;
 };
 
@@ -587,21 +593,26 @@ export type PublishDraftResponse =
     }
   | {
       status: "error";
-      type: "PUBLISHED_VERSION_ALREADY_EXISTS" | "UNKNOWN";
+      type:
+        | "PUBLISHED_VERSION_ALREADY_EXISTS"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
     };
 
 export async function publish_draft({
   repositoryId,
   draftVersion,
-  publishingName,
+  newPublishedVersionName,
+  credentials,
 }: PublishDraftParameters): Promise<PublishDraftResponse> {
   console.debug(
-    `[API/publish_draft] Called with repositoryId=${repositoryId}, draftVersion=${draftVersion.name}, publishingName=${publishingName}`,
+    `[API/publish_draft] Called with repositoryId=${repositoryId}, draftVersion=${draftVersion.name}, publishingName=${newPublishedVersionName}`,
   );
 
   // 0. Check that there are no tags with the same name
   const publishedVersions = await gitdb.getPublishedVersions({ repositoryId });
-  if (publishedVersions.find((v) => v.tag === publishingName)) {
+  if (publishedVersions.find((v) => v.tag === newPublishedVersionName)) {
     return { status: "error", type: "PUBLISHED_VERSION_ALREADY_EXISTS" };
   }
 
@@ -617,40 +628,70 @@ export async function publish_draft({
       ours: "main",
       theirs: draftVersion.branch,
       fastForward: false,
-      message: `Merge and publish draft ${publishingName}`,
+      message: `Merge and publish draft ${newPublishedVersionName}`,
     });
 
     // 3. Create tag on main
-    await git.tag({
+    await git.annotatedTag({
       fs,
       dir: getRepositoryPath(repositoryId),
       object: "main",
-      ref: publishingName,
+      ref: newPublishedVersionName,
     });
 
-    // 4. Checkout to tag
+    // 4. Checkout to the newly created tag
     await git.checkout({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: publishingName,
+      ref: newPublishedVersionName,
     });
 
-    // 5. Delete draft branch
+    /*
+    ! This is not atomic : If one of the 3 pushes fails (I had a scenario where the 3rd one failed),
+    ! then the remote repo is in an illegal state. And since we rollbacked the local repo, it's unsynchronized with remote
+    TODO: we should solve those issues
+    */
+    // 5. Push main
+    await pushBranchOrTag({
+      repositoryId,
+      branchOrTagName: "main",
+      credentials,
+    });
+
+    // 6. Push new tag
+    await pushBranchOrTag({
+      repositoryId,
+      branchOrTagName: newPublishedVersionName,
+      credentials,
+    });
+
+    // 7. Push delete remote branch
+    await pushBranchOrTag({
+      repositoryId,
+      branchOrTagName: draftVersion.branch,
+      credentials,
+      deleteBranch: true,
+    });
+
+    // ! it seems that isomorphic-git cannot delete a remote branch if it was deleted in local repository beforehand
+    // ! see https://github.com/isomorphic-git/isomorphic-git/issues/40#issuecomment-1593728372
+    // 8. Delete draft branch
     await git.deleteBranch({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: draftVersion.branch,
     });
-
-    // 6. Push main
-
-    // 7. Push new tag
-
-    // 8. Push delete branch
   } catch (error) {
-    console.debug(`[API/publish_draft] Error Publishin draft`);
-
-    errorResponse = { status: "error", type: "UNKNOWN" };
+    if (error instanceof NoCredentialsProvidedError) {
+      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      console.error(
+        `[API/publish_draft] Error Publishing draft: ${error instanceof Error ? error.message : ""}`,
+      );
+      errorResponse = { status: "error", type: "UNKNOWN" };
+    }
   } finally {
     if (errorResponse) {
       repoBackup.restore(repositoryId);

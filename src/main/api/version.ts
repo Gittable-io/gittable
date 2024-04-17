@@ -17,7 +17,7 @@ import {
 import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
-  pushBranch,
+  pushBranchOrTag,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
 import path from "node:path";
@@ -395,9 +395,9 @@ export async function push_commits({
   const currentDraftVersion: DraftVersion = currentVersionResp.version;
 
   try {
-    await pushBranch({
+    await pushBranchOrTag({
       repositoryId,
-      branchName: currentDraftVersion.branch,
+      branchOrTagName: currentDraftVersion.branch,
       credentials,
     });
 

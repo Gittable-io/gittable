@@ -65,7 +65,7 @@ export const remoteAction = createAsyncThunk<
       response = await window.api.publish_draft({
         repositoryId,
         draftVersion: action.draftVersion,
-        publishingName: action.publishingName,
+        newPublishedVersionName: action.publishingName,
         credentials,
       });
       break;
