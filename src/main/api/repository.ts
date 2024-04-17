@@ -360,19 +360,19 @@ export async function create_draft({
       repositoryId,
     });
 
-    const branchBaseRef = lastPublishedVersion
-      ? lastPublishedVersion.tag
+    const branchBaseCommitOid = lastPublishedVersion
+      ? lastPublishedVersion.mainCommitOid
       : await gitdb.getInitialCommitOid({ repositoryId });
 
     await git.branch({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: branchName,
-      object: branchBaseRef,
+      object: branchBaseCommitOid,
     });
     console.debug(`[API/create_draft] Created local branch`);
   } catch (error) {
-    console.debug(`[API/create_draft] Error creating local branch`);
+    console.error(`[API/create_draft] Error creating local branch`);
     return { status: "error", type: "UNKNOWN" };
   }
 
@@ -387,14 +387,17 @@ export async function create_draft({
     } else if (error instanceof AuthWithProvidedCredentialsError) {
       errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
     } else {
+      if (error instanceof Error) {
+        console.error(
+          `[API/create_draft] Unexpected Error pushing local branch: ${error.message}`,
+        );
+      }
       errorResponse = { status: "error", type: "UNKNOWN" };
     }
   } finally {
     // If there's an error in pushing branch, delete created branch
     if (errorResponse) {
-      console.debug(
-        `[API/create_draft] Error pushing local branch: deleting local branch`,
-      );
+      console.debug(`[API/create_draft] Rollback: deleting local branch`);
       await git.deleteBranch({
         fs,
         dir: getRepositoryPath(repositoryId),
@@ -404,11 +407,9 @@ export async function create_draft({
   }
 
   if (errorResponse) {
-    console.debug(`[API/create_draft] Returning error`);
     return errorResponse;
   } else {
     // 3. Return newly created version
-    console.debug(`[API/create_draft] Returning success`);
     const version = (await gitdb.getDraftVersion({
       repositoryId,
       branch: branchName,
