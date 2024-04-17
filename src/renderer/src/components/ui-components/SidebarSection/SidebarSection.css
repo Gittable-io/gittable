@@ -19,19 +19,3 @@
   flex-grow: 1;
   overflow: auto;
 }
-
-.sidebar-section .section-content::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-  border: 1px solid #fff;
-}
-
-.sidebar-section .section-content::-webkit-scrollbar-track {
-  border-radius: 0;
-  background: var(--color-secondary);
-}
-
-.sidebar-section .section-content::-webkit-scrollbar-thumb {
-  border-radius: 0;
-  background: var(--color-secondary-hover);
-}

@@ -278,7 +278,8 @@ async function getInitialCommitOid({
   });
 
   const initialCommit = mainLog[mainLog.length - 1];
-  if (initialCommit.commit.message !== "INITIAL_COMMIT") {
+  //! Git adds automatically a /n to commit messages. Be careful how you read commit messages
+  if (!initialCommit.commit.message.startsWith("INITIAL_COMMIT")) {
     throw new Error("Coudln't find initial commit");
   }
 
@@ -287,16 +288,17 @@ async function getInitialCommitOid({
 
 /**
  *
- * @returns if the repository is empty. i.e. it has just been created in the Git server and this is the first clone
- * We determine that a repository is empty when it doesn't have any branch
+ * @returns if the repository is initialized.
+ * A non-initialized repository has just been created in the Git server and this is the first clone
+ * We determine that a repository is non-initialized when it doesn't have any branch (not even a main)
  */
-async function isRepositoryEmpty({
+async function isRepositoryInitialized({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryEmpty] Called with repositoryId=${repositoryId}`,
+    `[gitdb/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
   );
 
   const branches = await git.listBranches({
@@ -304,27 +306,25 @@ async function isRepositoryEmpty({
     dir: getRepositoryPath(repositoryId),
   });
 
-  if (branches.length === 0) return true;
-  else return false;
+  return branches.length > 0;
 }
 
 /**
  *
- * @returns if the repository is initial. i.e. it doesn't have any published versions and a single draft version
+ * @returns if the repository has a published version.
  */
-async function isRepositoryInitial({
+async function hasPublished({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryInitial] Called with repositoryId=${repositoryId}`,
+    `[gitdb/hasPublished] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
 
-  if (publishedVersions.length === 0) return true;
-  else return false;
+  return publishedVersions.length > 0;
 }
 
 async function compareCommits({
@@ -342,7 +342,7 @@ async function compareCommits({
   // Using walk to traverse commits
   const walkResult: {
     filepath: string;
-    diff: "modified" | "deleted" | "added";
+    change: "modified" | "deleted" | "added";
   }[] = await git.walk({
     fs,
     dir: getRepositoryPath(repositoryId),
@@ -351,12 +351,12 @@ async function compareCommits({
       if (filepath.startsWith(".git")) return null;
 
       if (!fromEntry || !toEntry) {
-        return { filepath, diff: fromEntry ? "deleted" : "added" };
+        return { filepath, change: fromEntry ? "deleted" : "added" };
       } else {
         const fromOid = await fromEntry.oid();
         const toOid = await toEntry.oid();
         if (fromOid !== toOid) {
-          return { filepath, diff: "modified" };
+          return { filepath, change: "modified" };
         } else {
           return null;
         }
@@ -371,7 +371,7 @@ async function compareCommits({
         id: getTableIdFromFileName(r.filepath),
         name: getTableIdFromFileName(r.filepath),
       },
-      diff: r.diff,
+      change: r.change,
     }));
 
   return result;
@@ -385,7 +385,7 @@ export const gitdb = {
   getDraftVersions,
   getDraftVersion,
   getInitialCommitOid,
-  isRepositoryEmpty,
-  isRepositoryInitial,
+  isRepositoryInitialized,
+  hasPublished,
   compareCommits,
 };

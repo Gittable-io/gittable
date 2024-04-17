@@ -4,15 +4,17 @@ export type Repository = {
   remoteUrl: string;
 };
 
-export type RepositoryStatus = {
-  isEmpty: boolean;
-  isInitial: boolean;
-};
+export type RepositoryStatus =
+  | "NOT_INITIALIZED"
+  | "DRAFT_ONLY"
+  | "HAS_PUBLISHED";
 
 export type RepositoryCredentials = {
   username: string;
   password: string;
 };
+
+export type DocumentChangeType = "none" | "modified" | "added" | "deleted";
 
 /**
  * Represent information (metadata) about a Table without the table data itself
@@ -24,7 +26,9 @@ export type TableMetadata = {
   name: string;
 };
 
-export type TableMetadataWithStatus = TableMetadata & { modified: boolean };
+export type TableMetadataWithStatus = TableMetadata & {
+  change: DocumentChangeType;
+};
 
 export type PublishedVersion = {
   type: "published";
@@ -63,5 +67,5 @@ export type VersionContent = {
 
 export type VersionContentComparison = {
   table: TableMetadata;
-  diff: "none" | "modified" | "added" | "deleted";
+  change: DocumentChangeType;
 }[];

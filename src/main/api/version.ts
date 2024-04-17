@@ -20,6 +20,7 @@ import {
   pushBranch,
 } from "../utils/gitdb/push";
 import { gitdb } from "../utils/gitdb/gitdb";
+import path from "node:path";
 
 //#region API: get_current_version
 export type GetCurrentVersionParameters = {
@@ -160,9 +161,9 @@ export async function get_current_version_content({
       /*
         1. Get tables and the diff between HEAD and WORKDIR
   
-        ! Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
-        ! instead to centralize diff logic. It may cause extra computation. 
-        ! If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
+        * Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
+        * instead to centralize diff logic. But it may cause extra computation. 
+        * If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
       */
       const [FILE, _HEAD, _WORKDIR] = [0, 1, 2];
       const tables: TableMetadata[] = (
@@ -184,10 +185,12 @@ export async function get_current_version_content({
 
       const tablesWithStatus: TableMetadataWithStatus[] = tables.map(
         (table) => {
-          const diff = workdirDiff.find((wd) => wd.table.id === table.id)?.diff;
+          const change = workdirDiff.find(
+            (wd) => wd.table.id === table.id,
+          )?.change;
           return {
             ...table,
-            modified: diff === "modified",
+            change: change ?? "none",
           };
         },
       );
@@ -211,9 +214,9 @@ export async function get_current_version_content({
           filter: (f) => f.endsWith(getConfig().fileExtensions.table),
         })
       ).map((tableStatus) => ({
-        id: tableStatus[FILE] as string,
+        id: getTableIdFromFileName(tableStatus[FILE] as string),
         name: getTableIdFromFileName(tableStatus[FILE] as string),
-        modified: false,
+        change: "none",
       }));
 
       return {
@@ -249,12 +252,31 @@ export async function discard_changes({
     `[API/discard_changes] Called with repositoryId=${repositoryId}`,
   );
 
+  const repositoryPath = getRepositoryPath(repositoryId);
+
   try {
+    // Checkout to revert tracked files
     await git.checkout({
       fs,
-      dir: getRepositoryPath(repositoryId),
+      dir: repositoryPath,
       force: true, // If I remove force:true, discard doesn't work
     });
+
+    // Get the status to find untracked files
+    const [FILE, HEAD, WORKDIR] = [0, 1, 2];
+    const status = await git.statusMatrix({
+      fs,
+      dir: repositoryPath,
+    });
+    // Remove each untracked file
+    const untrackedFiles = status.filter(
+      (file) => file[HEAD] === 0 && file[WORKDIR] === 2,
+    );
+
+    for (const file of untrackedFiles) {
+      await fs.unlink(path.join(repositoryPath, file[FILE] as string));
+    }
+
     return { status: "success" };
   } catch (err) {
     return { status: "error", type: "unknown" };
@@ -298,7 +320,7 @@ export async function commit({
   }
 
   const tableStatuses: TableMetadataWithStatus[] = contentResp.content.tables;
-  if (tableStatuses.every((table) => !table.modified)) {
+  if (tableStatuses.every((table) => table.change === "none")) {
     return {
       status: "error",
       type: "NOTHING_TO_COMMIT",
@@ -308,7 +330,9 @@ export async function commit({
   // If there's a change in the working dir => stage each file and then commit it
   try {
     // 1. Add each file to the staging area
-    const modifiedTables = tableStatuses.filter((table) => table.modified);
+    const modifiedTables = tableStatuses.filter(
+      (table) => table.change !== "none",
+    );
 
     for (const table of modifiedTables) {
       await git.add({

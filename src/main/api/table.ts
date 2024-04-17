@@ -1,13 +1,16 @@
 import fs from "node:fs/promises";
+import fsync from "node:fs";
 import git from "isomorphic-git";
 
-import { Table, tableToJsonString } from "gittable-editor";
+import { Table, initializeTable, tableToJsonString } from "gittable-editor";
 import {
   getRepositoryPath,
   getAbsoluteTablePath,
   getRepositoryRelativeTablePath,
 } from "../utils/utils";
+import { TableMetadata } from "@sharedTypes/index";
 
+//#region API: get_table_data
 export type GetTableParameters = {
   repositoryId: string;
   ref?: "HEAD" | "WorkingDir";
@@ -30,7 +33,7 @@ export async function get_table_data({
   tableId,
 }: GetTableParameters): Promise<GetTableResponse> {
   console.debug(
-    `[API/table] get_table_data: repositoryId=${repositoryId} ref=${ref} tableId=${tableId}`,
+    `[API/get_table_data] Called with repositoryId=${repositoryId} ref=${ref} tableId=${tableId}`,
   );
 
   try {
@@ -62,11 +65,18 @@ export async function get_table_data({
       ) as Table;
       return { status: "success", tableData: tableContent };
     }
-  } catch (err: unknown) {
+  } catch (error) {
+    if (error instanceof Error)
+      console.debug(
+        `[API/get_table_data] Error reading table data: ${error.message}`,
+      );
+
     return { status: "error", type: "unknown" };
   }
 }
+//#endregion
 
+//#region API: save_table
 export type SaveTableParameters = {
   repositoryId: string;
   tableId: string;
@@ -88,7 +98,7 @@ export async function save_table({
   tableData,
 }: SaveTableParameters): Promise<SaveTableResponse> {
   console.debug(
-    `[API/table] save_table: repository_id=${repositoryId}, tableId=${tableId}`,
+    `[API/save_table] Called with repository_id=${repositoryId}, tableId=${tableId}`,
   );
 
   try {
@@ -103,3 +113,53 @@ export async function save_table({
     };
   }
 }
+//#endregion
+
+//#region API: add_table
+export type AddTableParameters = {
+  repositoryId: string;
+  name: string;
+};
+
+export type AddTableResponse =
+  | {
+      status: "success";
+      table: TableMetadata;
+    }
+  | {
+      status: "error";
+      type: "TABLE_ALREADY_EXISTS" | "UNKNNOWN";
+    };
+
+export async function add_table({
+  repositoryId,
+  name,
+}: AddTableParameters): Promise<AddTableResponse> {
+  console.debug(
+    `[API/add_table] Called with repositoryId=${repositoryId} name=${name}`,
+  );
+
+  // 1. Check if table already exists
+  const tableId = name;
+  const tablePath = getAbsoluteTablePath(repositoryId, tableId);
+  if (fsync.existsSync(tablePath))
+    return { status: "error", type: "TABLE_ALREADY_EXISTS" };
+
+  // 2. Create table
+  try {
+    const newTable: Table = initializeTable();
+    const tableDataJson = tableToJsonString(newTable);
+    await fs.writeFile(tablePath, tableDataJson, { encoding: "utf8" });
+    return { status: "success", table: { id: tableId, name } };
+  } catch (error) {
+    if (error instanceof Error)
+      console.debug(`[API/add_table] Error creating table: ${error.message}`);
+
+    return {
+      status: "error",
+      type: "UNKNNOWN",
+    };
+  }
+}
+
+//#endregion

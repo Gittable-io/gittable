@@ -64,6 +64,9 @@ import {
   save_table,
   type SaveTableParameters,
   type SaveTableResponse,
+  add_table,
+  type AddTableParameters,
+  type AddTableResponse,
 } from "./table";
 
 /**
@@ -146,6 +149,8 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("get_table_data", params),
   save_table: (params: SaveTableParameters): Promise<SaveTableResponse> =>
     ipcRenderer.invoke("save_table", params),
+  add_table: (params: AddTableParameters): Promise<AddTableResponse> =>
+    ipcRenderer.invoke("add_table", params),
 };
 
 type GittableElectronAPI = typeof gittableElectronAPI;
@@ -201,6 +206,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
   // table API
   ipcMain.handle("get_table_data", (_event, params) => get_table_data(params));
   ipcMain.handle("save_table", (_event, params) => save_table(params));
+  ipcMain.handle("add_table", (_event, params) => add_table(params));
 };
 
 export { gittableElectronAPI, addHandlesForGittableElectronAPICall };
