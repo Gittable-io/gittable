@@ -87,7 +87,7 @@ export function ReviewWorkingDir(): JSX.Element {
           />
         </div>
       </div>
-      <div>
+      <div className="working-dir-changes">
         {isWorkingDirModified ? (
           <List>
             {changedTables.map((table) => (

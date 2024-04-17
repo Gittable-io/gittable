@@ -58,7 +58,7 @@ export function ReviewCommits(): JSX.Element {
         }
         loading={isPushCommitInProgress}
       />
-      <table>
+      <table className="commits-table">
         <thead>
           <tr>
             <th scope="col">Description</th>
