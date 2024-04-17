@@ -571,3 +571,96 @@ export async function compare_versions({
 }
 
 //#endregion
+
+//#region API: Publish draft
+export type PublishDraftParameters = {
+  repositoryId: string;
+  draftVersion: DraftVersion;
+  publishingName: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type PublishDraftResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type: "PUBLISHED_VERSION_ALREADY_EXISTS" | "UNKNOWN";
+    };
+
+export async function publish_draft({
+  repositoryId,
+  draftVersion,
+  publishingName,
+}: PublishDraftParameters): Promise<PublishDraftResponse> {
+  console.debug(
+    `[API/publish_draft] Called with repositoryId=${repositoryId}, draftVersion=${draftVersion.name}, publishingName=${publishingName}`,
+  );
+
+  // 0. Check that there are no tags with the same name
+  const publishedVersions = await gitdb.getPublishedVersions({ repositoryId });
+  if (publishedVersions.find((v) => v.tag === publishingName)) {
+    return { status: "error", type: "PUBLISHED_VERSION_ALREADY_EXISTS" };
+  }
+
+  let errorResponse: PublishDraftResponse | null = null;
+  try {
+    // 1. Backup repository
+    repoBackup.backup(repositoryId);
+
+    // 2. Merge draft branch to main
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: "main",
+      theirs: draftVersion.branch,
+      fastForward: false,
+      message: `Merge and publish draft ${publishingName}`,
+    });
+
+    // 3. Create tag on main
+    await git.tag({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      object: "main",
+      ref: publishingName,
+    });
+
+    // 4. Checkout to tag
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: publishingName,
+    });
+
+    // 5. Delete draft branch
+    await git.deleteBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: draftVersion.branch,
+    });
+
+    // 6. Push main
+
+    // 7. Push new tag
+
+    // 8. Push delete branch
+  } catch (error) {
+    console.debug(`[API/publish_draft] Error Publishin draft`);
+
+    errorResponse = { status: "error", type: "UNKNOWN" };
+  } finally {
+    if (errorResponse) {
+      repoBackup.restore(repositoryId);
+    } else {
+      repoBackup.clear(repositoryId);
+    }
+  }
+
+  if (errorResponse) return errorResponse;
+
+  return { status: "success" };
+}
+
+//#endregion

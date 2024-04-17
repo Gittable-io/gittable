@@ -3,10 +3,12 @@ import {
   DraftVersion,
   VersionContentComparison,
 } from "@sharedTypes/index";
+import "./ReviewVersionChanges.css";
 import { useEffect, useState } from "react";
-import { List, ListItem } from "gittable-editor";
-import { useSelector } from "react-redux";
-import { AppRootState } from "@renderer/store/store";
+import { Button, InputAndValidation, List, ListItem } from "gittable-editor";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { repoActions } from "@renderer/store/repoSlice";
 
 const getChangeAbbreviation = (change: DocumentChangeType): string => {
   switch (change) {
@@ -22,6 +24,8 @@ const getChangeAbbreviation = (change: DocumentChangeType): string => {
 };
 
 export function ReviewVersionChanges(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
   const [diff, setDiff] = useState<VersionContentComparison>([]);
 
   const repositoryId = useSelector(
@@ -30,10 +34,17 @@ export function ReviewVersionChanges(): JSX.Element {
   const currentVersion: DraftVersion = useSelector(
     (state: AppRootState) => state.repo.currentVersion! as DraftVersion,
   );
-
   const commits = useSelector(
     (state: AppRootState) => state.repo.currentVersionContent?.commits,
   );
+  const isPublishDraftInProgress: boolean = useSelector(
+    (state: AppRootState) =>
+      state.repo.remoteActionSequence?.action.type === "PUBLISH_DRAFT",
+  );
+
+  const [publishName, setPublishName] = useState<string>(currentVersion.name);
+
+  const canPublish = currentVersion.type === "draft";
 
   useEffect(() => {
     const fetchDiff = async (): Promise<void> => {
@@ -64,6 +75,34 @@ export function ReviewVersionChanges(): JSX.Element {
           ? "start"
           : currentVersion.basePublishedVersion.name}
       </h2>
+      <div className="review-version-changes-actions">
+        <div className="review-version-changes-publish">
+          <InputAndValidation
+            value={publishName}
+            onChange={setPublishName}
+            placeholder="Name your published version"
+            maxLength={72}
+          />
+          <Button
+            text="Publish"
+            variant="outlined"
+            disabled={!canPublish}
+            onClick={() =>
+              dispatch(
+                repoActions.remoteAction({
+                  action: {
+                    type: "PUBLISH_DRAFT",
+                    draftVersion: currentVersion,
+                    publishingName: publishName,
+                  },
+                }),
+              )
+            }
+            loading={isPublishDraftInProgress}
+          />
+        </div>
+      </div>
+
       <List>
         {diff.map((tableDiff) => (
           <ListItem

@@ -1,0 +1,17 @@
+.review-version-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-version-changes .review-version-changes-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+}
+
+.review-version-changes .review-version-changes-publish {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
