@@ -278,7 +278,8 @@ async function getInitialCommitOid({
   });
 
   const initialCommit = mainLog[mainLog.length - 1];
-  if (initialCommit.commit.message !== "INITIAL_COMMIT") {
+  //! Git adds automatically a /n to commit messages. Be careful how you read commit messages
+  if (!initialCommit.commit.message.startsWith("INITIAL_COMMIT")) {
     throw new Error("Coudln't find initial commit");
   }
 

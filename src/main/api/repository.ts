@@ -564,7 +564,8 @@ export async function compare_versions({
 
     return { status: "success", diff };
   } catch (error) {
-    console.debug(`[API/compare_versions] Error computing diff`);
+    if (error instanceof Error)
+      console.debug(`[API/compare_versions] Error: ${error.message}`);
     return { status: "error", type: "UNKNOWN" };
   }
 }
