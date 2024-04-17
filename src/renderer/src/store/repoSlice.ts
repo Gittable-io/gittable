@@ -48,7 +48,12 @@ export type RemoteAction =
       draftName: string;
     }
   | { type: "DELETE_DRAFT"; draftVersion: DraftVersion }
-  | { type: "PUSH_COMMITS" };
+  | { type: "PUSH_COMMITS" }
+  | {
+      type: "PUBLISH_DRAFT";
+      draftVersion: DraftVersion;
+      publishingName: string;
+    };
 
 export type RepoState = {
   // Repository information
@@ -159,6 +164,10 @@ export const repoSlice = createSlice({
 
         state.panels.splice(positiondIdx, 1);
       }
+    },
+    closeAllPanels: (state) => {
+      state.panels = [];
+      state.selectedPanelId = null;
     },
   },
   extraReducers: (builder) => {

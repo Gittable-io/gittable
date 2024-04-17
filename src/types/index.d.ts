@@ -32,9 +32,10 @@ export type TableMetadataWithStatus = TableMetadata & {
 
 export type PublishedVersion = {
   type: "published";
-  name: string;
+  name: string; // For now, name and tag are the same
   tag: string;
   newest: boolean;
+  mainCommitOid: string;
 };
 
 export type DraftVersion = {

@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import git, { ReadCommitResult } from "isomorphic-git";
+import git, { ReadCommitResult, ReadTagResult } from "isomorphic-git";
 import {
   Commit,
   DraftVersion,
@@ -29,58 +29,67 @@ async function getPublishedVersions({
     dir: getRepositoryPath(repositoryId),
   });
 
-  // If there's no published versions, return an empty array
+  // If there's no tags, return an empty array
   if (tags.length === 0) return [];
 
-  // 2. Loop over all tags and
-  //      Determine which tag is the latest one
-  //      Get the dates of each tag so that it can be sorted
+  // 2. Get the annotated tag objects for each tag
+  const annotatedTags: ReadTagResult[] = [];
+  for (const tag of tags) {
+    const tagOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: tag,
+    });
+
+    const tagObject = await git.readTag({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      oid: tagOid,
+    });
+
+    annotatedTags.push(tagObject);
+  }
+
+  // 3. Sort annotated tags by date
+  annotatedTags.sort((tagA, tagB) => {
+    const utcTimestampA =
+      tagA.tag.tagger.timestamp - tagA.tag.tagger.timezoneOffset * 60;
+    const utcTimestampB =
+      tagB.tag.tagger.timestamp - tagB.tag.tagger.timezoneOffset * 60;
+
+    return utcTimestampB - utcTimestampA;
+  });
+
+  /*
+   Get the main commit Oid, so that I can determine the newest tag
+   Note : why am I not determinaing the newest tag by the tag date?
+   I could, but it may be more future-proof if I look instead at the tag position on main
+   Maybe, there will be a feature where I modify the tag. 
+  */
   const mainCommitOid = await git.resolveRef({
     fs,
     dir: getRepositoryPath(repositoryId),
     ref: "main",
   });
 
-  const tagDates = new Map<string, number>();
-
-  let newestTag: string | null = null;
-  for (const tag of tags) {
-    const tagCommitOid = await git.resolveRef({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: tag,
-    });
-
-    const tagCommit = await git.readCommit({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      oid: tagCommitOid,
-    });
-
-    if (tagCommitOid === mainCommitOid) {
-      newestTag = tag;
-    }
-
-    tagDates.set(tag, tagCommit.commit.author.timestamp);
-  }
-
-  if (newestTag == null) {
-    console.debug(
-      `[API/list_published_versions] Could not determine latest or current version`,
-    );
-    throw new Error("Couldn't find the newest Published version");
-  }
-
-  tags.sort((a, b) => tagDates.get(b)! - tagDates.get(a)!);
-
-  const versions: PublishedVersion[] = tags.map((tag) => ({
+  const publishedVersions: PublishedVersion[] = annotatedTags.map((tag) => ({
     type: "published",
-    name: tag,
-    tag: tag,
-    newest: tag === newestTag,
+    name: tag.tag.tag,
+    tag: tag.tag.tag,
+    mainCommitOid: tag.tag.object,
+    newest: tag.tag.object === mainCommitOid,
   }));
 
-  return versions;
+  if (publishedVersions.filter((v) => v.newest).length !== 1) {
+    console.debug(
+      `[gitdb/getPublishedVersions] Couldn't determine the newest Published version`,
+    );
+    throw new Error(
+      "[gitdb/getPublishedVersions] Couldn't determine the newest Published version",
+    );
+  }
+
+  return publishedVersions;
 }
 
 /**
@@ -102,7 +111,9 @@ async function getLastPublishedVersion({
 
   const latestPublishedVersion = publishedVersions.find((v) => v.newest);
   if (!latestPublishedVersion)
-    throw new Error("No Published version was marked as newest");
+    throw new Error(
+      "[gitdb/getLastPublishedVersion] No Published version was marked as newest",
+    );
 
   return latestPublishedVersion;
 }
@@ -111,6 +122,8 @@ async function getLastPublishedVersion({
  *
  * @returns the published version designated by the tag name.
  * Returns an empty array if there's no published versions that has the tag name
+ *
+ * TODO: This function is no longer used as of 17/04/2024. Delete it if it's still not used
  */
 async function getPublishedVersion({
   repositoryId,
@@ -128,51 +141,6 @@ async function getPublishedVersion({
   const result = publishedVersions.find((v) => v.tag === tagName);
 
   return result ?? null;
-}
-
-async function getDraftVersionCommits({
-  repositoryId,
-  draftVersion,
-}: {
-  repositoryId: string;
-  draftVersion: DraftVersion;
-}): Promise<Commit[]> {
-  // 1. Get the commit log from the branch HEAD to the branch base (excluding the branch base)
-  const localLog: ReadCommitResult[] = await git.log({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-    ref: draftVersion.branch,
-  });
-
-  const localBranchLog: ReadCommitResult[] = localLog.slice(
-    0,
-    localLog.findIndex((commit) => commit.oid === draftVersion.baseOid),
-  );
-
-  // 2. Check which commit is also in remote
-  const remoteBranchLog: ReadCommitResult[] = await git.log({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-    ref: `refs/remotes/origin/${draftVersion.branch}`,
-  });
-
-  const isCommitInRemote = (
-    remoteBranchLog: ReadCommitResult[],
-    localCommit: ReadCommitResult,
-  ): boolean =>
-    remoteBranchLog.findIndex((rcommit) => rcommit.oid === localCommit.oid) >=
-    0;
-
-  // 3. Convert ReadCommitResult object to Commit object
-  const commits: Commit[] = localBranchLog.map((c) => ({
-    oid: c.oid,
-    message: c.commit.message,
-    // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
-    author: c.commit.author,
-    inRemote: isCommitInRemote(remoteBranchLog, c),
-  }));
-
-  return commits;
 }
 
 async function getDraftVersions({
@@ -193,50 +161,40 @@ async function getDraftVersions({
   // 2. Filter draft branches
   const draftBranches = branches.filter((b) => b.startsWith("draft/"));
 
-  const versions: DraftVersion[] = [];
-
+  // 3. Map each branch to a DraftVersion
+  const draftVersions: DraftVersion[] = [];
+  const publishedVersion = await getPublishedVersions({ repositoryId });
   for (const branch of draftBranches) {
+    // Get the draft version base Oid
     const baseOid = await gitUtils.getDraftBranchBaseOid({
       repositoryId,
       draftBranchName: branch,
     });
 
-    const tagName = await gitUtils.getTagFromOid({
-      repositoryId,
-      commitOid: baseOid,
-    });
+    const initialCommitOid = await getInitialCommitOid({ repositoryId });
 
-    if (!tagName) {
-      versions.push({
-        type: "draft",
-        branch: branch,
-        name: branch.slice(6),
-        baseOid,
-        basePublishedVersion: "INITIAL",
-      });
-    } else {
-      const basePublishedVersion = await getPublishedVersion({
-        repositoryId,
-        tagName,
-      });
+    // Get the draft version basePublishedVersion
+    const basePublishedVersion: PublishedVersion | "INITIAL" | undefined =
+      baseOid === initialCommitOid
+        ? "INITIAL"
+        : publishedVersion.find((pv) => pv.mainCommitOid === baseOid);
 
-      if (!basePublishedVersion) {
-        throw new Error(
-          `Cannot retreive base published version of draft ${branch} `,
-        );
-      }
-
-      versions.push({
-        type: "draft",
-        branch: branch,
-        name: branch.slice(6),
-        baseOid,
-        basePublishedVersion,
-      });
+    if (!basePublishedVersion) {
+      throw new Error(
+        `[gitdb/getDraftVersions] Could not determine the base published version of ${branch}`,
+      );
     }
+
+    draftVersions.push({
+      type: "draft",
+      branch: branch,
+      name: branch.slice(6),
+      baseOid,
+      basePublishedVersion,
+    });
   }
 
-  return versions;
+  return draftVersions;
 }
 
 /**
@@ -284,6 +242,51 @@ async function getInitialCommitOid({
   }
 
   return initialCommit.oid;
+}
+
+async function getDraftVersionCommits({
+  repositoryId,
+  draftVersion,
+}: {
+  repositoryId: string;
+  draftVersion: DraftVersion;
+}): Promise<Commit[]> {
+  // 1. Get the commit log from the branch HEAD to the branch base (excluding the branch base)
+  const localLog: ReadCommitResult[] = await git.log({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: draftVersion.branch,
+  });
+
+  const localBranchLog: ReadCommitResult[] = localLog.slice(
+    0,
+    localLog.findIndex((commit) => commit.oid === draftVersion.baseOid),
+  );
+
+  // 2. Check which commit is also in remote
+  const remoteBranchLog: ReadCommitResult[] = await git.log({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: `refs/remotes/origin/${draftVersion.branch}`,
+  });
+
+  const isCommitInRemote = (
+    remoteBranchLog: ReadCommitResult[],
+    localCommit: ReadCommitResult,
+  ): boolean =>
+    remoteBranchLog.findIndex((rcommit) => rcommit.oid === localCommit.oid) >=
+    0;
+
+  // 3. Convert ReadCommitResult object to Commit object
+  const commits: Commit[] = localBranchLog.map((c) => ({
+    oid: c.oid,
+    message: c.commit.message,
+    // ! Read https://stackoverflow.com/a/11857467/471461 for author.timestamp vs committer.timestamp
+    author: c.commit.author,
+    inRemote: isCommitInRemote(remoteBranchLog, c),
+  }));
+
+  return commits;
 }
 
 /**

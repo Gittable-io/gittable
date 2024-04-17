@@ -22,21 +22,21 @@ export class AuthWithProvidedCredentialsError extends Error {
 }
 
 export class UnknownPushError extends Error {
-  constructor() {
-    super("UnknownPushError"); // To set the message
+  constructor(message?: string) {
+    super(`UnknownPushError: ${message}`); // To set the message
     this.name = "UnknownPushError";
     Object.setPrototypeOf(this, UnknownPushError.prototype);
   }
 }
 
-export async function pushBranch({
+export async function pushBranchOrTag({
   repositoryId,
-  branchName,
+  branchOrTagName,
   credentials: providedCredentials,
   deleteBranch = false,
 }: {
   repositoryId: string;
-  branchName: string;
+  branchOrTagName: string;
   credentials?: RepositoryCredentials;
   deleteBranch?: boolean;
 }): Promise<void> {
@@ -55,7 +55,7 @@ export async function pushBranch({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
-      ref: branchName,
+      ref: branchOrTagName,
       delete: deleteBranch,
       onAuth: () => {
         return credentials;
@@ -70,7 +70,7 @@ export async function pushBranch({
         // This only occurs when I cancelled push with onAuthFailure
         throw new AuthWithProvidedCredentialsError();
       } else {
-        throw new UnknownPushError();
+        throw new UnknownPushError(`${error.name}: ${error.message}`);
       }
     } else {
       throw new UnknownPushError();
@@ -79,7 +79,7 @@ export async function pushBranch({
 
   // After Push finished, check if there was an error
   if (!pushResult || pushResult.error) {
-    throw new UnknownPushError();
+    throw new UnknownPushError("Push succeeded but with errors");
   }
 
   // Push was successfull
@@ -90,4 +90,5 @@ export async function pushBranch({
       providedCredentials,
     );
   }
+  return;
 }

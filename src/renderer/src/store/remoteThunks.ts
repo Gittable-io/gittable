@@ -28,6 +28,7 @@ export const remoteAction = createAsyncThunk<
     | Awaited<ReturnType<typeof window.api.create_draft>>
     | Awaited<ReturnType<typeof window.api.delete_draft>>
     | Awaited<ReturnType<typeof window.api.push_commits>>
+    | Awaited<ReturnType<typeof window.api.publish_draft>>
     | null = null;
   switch (action.type) {
     case "INIT_REPO": {
@@ -56,6 +57,15 @@ export const remoteAction = createAsyncThunk<
     case "PUSH_COMMITS": {
       response = await window.api.push_commits({
         repositoryId,
+        credentials,
+      });
+      break;
+    }
+    case "PUBLISH_DRAFT": {
+      response = await window.api.publish_draft({
+        repositoryId,
+        draftVersion: action.draftVersion,
+        newPublishedVersionName: action.publishingName,
         credentials,
       });
       break;
@@ -102,6 +112,12 @@ export const remoteAction = createAsyncThunk<
     }
     case "PUSH_COMMITS": {
       await thunkAPI.dispatch(updateVersionContent());
+      break;
+    }
+    case "PUBLISH_DRAFT": {
+      await thunkAPI.dispatch(repoActions.closeAllPanels());
+      await thunkAPI.dispatch(fetchRepositoryDetails());
+      break;
     }
   }
   return;
