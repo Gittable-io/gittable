@@ -1,134 +1,118 @@
+import { useDispatch, useSelector } from "react-redux";
 import "./EditorPanelGroup.css";
-import { IconAndText, MaterialSymbolButton } from "gittable-editor";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
 import { TabPanel } from "react-headless-tabs";
-import { TableEditorPanel } from "../TableEditorPanel";
-import { TableMetadata } from "@sharedTypes/index";
+import { Panel, repoActions } from "@renderer/store/repoSlice";
+import { IconAndText, MaterialSymbolButton } from "gittable-editor";
 import { TableDiffViewerPanel } from "../TableDiffViewerPanel";
-import { HistoryPanel } from "../HistoryPanel";
+import { TableViewerPanel } from "../TableViewerPanel";
+import { TableEditorPanel } from "../TableEditorPanel";
+import { ReviewPanel } from "../review-panel/ReviewPanel";
 
-export type DiffDescription = {
-  table: TableMetadata;
-  fromRef: "HEAD";
-  toRef: "WorkingDir";
+const getPanelTitle = (panel: Panel): string => {
+  switch (panel.type) {
+    case "table":
+      return panel.table.name;
+    case "diff":
+      return `${panel.diff.table.name} (diff)`;
+    case "review_current_version":
+      return "Review";
+  }
 };
 
-export type EditorPanelDescription =
-  | {
-      type: "table";
-      table: TableMetadata;
+const getPanelSymbol = (panel: Panel): string => {
+  switch (panel.type) {
+    case "table":
+      return "table";
+    case "diff":
+      return "table_view";
+    case "review_current_version":
+      return "fact_check";
+  }
+};
+
+export function EditorPanelGroup(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+
+  const panels = useSelector((state: AppRootState) => state.repo.panels);
+  const selectedPanelId = useSelector(
+    (state: AppRootState) => state.repo.selectedPanelId,
+  );
+  const isDraft = useSelector(
+    (state: AppRootState) => state.repo.currentVersion?.type === "draft",
+  );
+
+  const renderPanel = (panel: Panel): JSX.Element => {
+    switch (panel.type) {
+      case "table": {
+        if (isDraft) {
+          return (
+            <TableEditorPanel
+              key={panel.table.id}
+              tableMetadata={panel.table}
+              hidden={panel.id !== selectedPanelId}
+            />
+          );
+        } else {
+          return (
+            <TableViewerPanel
+              key={panel.table.id}
+              tableMetadata={panel.table}
+              hidden={panel.id !== selectedPanelId}
+            />
+          );
+        }
+      }
+      case "diff": {
+        return (
+          <TableDiffViewerPanel
+            diffDescription={panel.diff}
+            hidden={panel.id !== selectedPanelId}
+          />
+        );
+      }
+      case "review_current_version": {
+        return <ReviewPanel />;
+      }
     }
-  | {
-      type: "diff";
-      diff: DiffDescription;
-    }
-  | {
-      type: "history";
-    };
-
-export type EditorPanel = {
-  id: string;
-  title: string;
-  materialSymbol: string;
-} & EditorPanelDescription;
-
-export const createEditorPanel = (
-  panel: EditorPanelDescription,
-): EditorPanel => {
-  const id =
-    panel.type === "table"
-      ? `${panel.type}_${panel.table.id}`
-      : panel.type === "diff"
-        ? `${panel.type}_${panel.diff.table.id}_${panel.diff.fromRef}_${panel.diff.toRef}`
-        : "history";
-
-  const title =
-    panel.type === "table"
-      ? `${panel.table.name}`
-      : panel.type === "diff"
-        ? `${panel.diff.table.name} (diff)`
-        : "History";
-
-  const materialSymbol =
-    panel.type === "table"
-      ? "table"
-      : panel.type === "diff"
-        ? "table"
-        : "history";
-
-  return {
-    id,
-    title,
-    materialSymbol,
-    ...panel,
   };
-};
 
-export type EditorPanelGroupProps = {
-  repositoryId: string;
-  openedEditorPanels: EditorPanel[];
-  selectedEditorPanelId: string | null;
-  onSelectEditorPanel: (editorPanelId: string) => void;
-  onCloseEditorPanel: (editorPanelId: string) => void;
-};
-
-export function EditorPanelGroup({
-  repositoryId,
-  openedEditorPanels,
-  selectedEditorPanelId,
-  onSelectEditorPanel: onSelectEditorPanel,
-  onCloseEditorPanel: onCloseEditorPanel,
-}: EditorPanelGroupProps): JSX.Element {
   return (
     <div className="editor-panel-group">
-      {openedEditorPanels.length > 0 && (
+      {panels.length > 0 && (
         <>
           <div className="tab-list" role="tablist">
-            {openedEditorPanels.map((panel) => (
+            {panels.map((panel) => (
               <div
                 key={panel.id}
                 role="tab"
-                className={`tab-label ${panel.id === selectedEditorPanelId ? "selected" : ""}`}
+                className={`tab-label ${panel.id === selectedPanelId ? "selected" : ""}`}
                 data-tab-id={panel.id}
-                data-tab-title={panel.title}
-                onClick={() => onSelectEditorPanel(panel.id)}
+                data-tab-title={getPanelTitle(panel)}
+                onClick={() => dispatch(repoActions.selectPanel(panel.id))}
               >
                 <IconAndText
-                  text={panel.title}
-                  materialSymbol={panel.materialSymbol}
+                  text={getPanelTitle(panel)}
+                  materialSymbol={getPanelSymbol(panel)}
                 />
                 <MaterialSymbolButton
                   symbol="close"
                   label="Close tab"
-                  onClick={() => onCloseEditorPanel(panel.id)}
+                  onClick={() => dispatch(repoActions.closePanel(panel.id))}
                 />
               </div>
             ))}
           </div>
           <div className="tab-panels">
-            {openedEditorPanels.map((panel) => (
+            {panels.map((panel) => (
               <TabPanel
                 key={panel.id}
                 className="tab-panel"
                 role="tabpanel"
-                hidden={panel.id !== selectedEditorPanelId}
+                hidden={panel.id !== selectedPanelId}
                 unmount="never"
               >
-                {panel.type === "table" ? (
-                  <TableEditorPanel
-                    key={panel.table.id}
-                    repositoryId={repositoryId}
-                    tableMetadata={panel.table}
-                    hidden={panel.id !== selectedEditorPanelId}
-                  />
-                ) : panel.type === "diff" ? (
-                  <TableDiffViewerPanel
-                    repositoryId={repositoryId}
-                    diffDescription={panel.diff}
-                    hidden={panel.id !== selectedEditorPanelId}
-                  />
-                ) : (
-                  <HistoryPanel repositoryId={repositoryId} />
-                )}
+                {renderPanel(panel)}
               </TabPanel>
             ))}
           </div>

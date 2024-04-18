@@ -1,0 +1,14 @@
+/*
+! In order for TableEditor to work properly (with vertical scrollbar that appears correctly), all its parents and ancestors
+! should have display:flex; and overflow:hidden;
+! I also think they should not have height: 100%
+*/
+
+.table-viewer-panel {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+
+  flex-grow: 1;
+  overflow: hidden;
+}
