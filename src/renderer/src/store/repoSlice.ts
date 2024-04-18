@@ -242,7 +242,7 @@ export const repoSlice = createSlice({
       });
   },
   selectors: {
-    isContentModified: (state): boolean => {
+    isWorkingDirModified: (state): boolean => {
       if (state.currentVersionContent == null) return false;
 
       if (state.currentVersionContent.tables.some((t) => t.change !== "none"))

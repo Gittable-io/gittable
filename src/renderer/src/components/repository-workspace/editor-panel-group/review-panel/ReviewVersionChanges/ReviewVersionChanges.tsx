@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { Button, InputAndValidation, List, ListItem } from "gittable-editor";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState } from "@renderer/store/store";
-import { repoActions } from "@renderer/store/repoSlice";
+import { repoActions, repoSelectors } from "@renderer/store/repoSlice";
 
 const getChangeAbbreviation = (change: DocumentChangeType): string => {
   switch (change) {
@@ -41,10 +41,13 @@ export function ReviewVersionChanges(): JSX.Element {
     (state: AppRootState) =>
       state.repo.remoteActionSequence?.action.type === "PUBLISH_DRAFT",
   );
+  const isWorkingDirModified = useSelector((state: AppRootState) =>
+    repoSelectors.isWorkingDirModified(state),
+  );
 
   const [publishName, setPublishName] = useState<string>(currentVersion.name);
 
-  const canPublish = currentVersion.type === "draft";
+  const canPublish = currentVersion.type === "draft" && !isWorkingDirModified;
 
   useEffect(() => {
     const fetchDiff = async (): Promise<void> => {
