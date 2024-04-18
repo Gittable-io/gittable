@@ -1,4 +1,5 @@
 import { app, shell, BrowserWindow } from "electron";
+import dotenv from "dotenv";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import { optimizer } from "./utils/electron-setup/optimizer";
@@ -11,6 +12,7 @@ import installExtension, {
 import "./polyfills/crypto";
 
 //  Set a specific user data folder if process.env.USER_DATA_FOLDER is set
+dotenv.config(); // Load USER_DATA_FOLDER if specified in a .env file
 if (process.env.USER_DATA_FOLDER) {
   const userDataPath = join(
     app.getPath("appData"),

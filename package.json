@@ -27,6 +27,7 @@
     "@electron-toolkit/utils": "^3.0.0",
     "@reduxjs/toolkit": "^2.2.3",
     "@types/redux-logger": "^3.0.13",
+    "dotenv": "^16.4.5",
     "electron-updater": "^6.1.7",
     "email-validator": "^2.0.4",
     "gittable-editor": "file:../gittable-editor",
