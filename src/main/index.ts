@@ -10,6 +10,15 @@ import installExtension, {
 // ! do not remove, see src/main/polyfills/crypto.js for an explanation
 import "./polyfills/crypto";
 
+//  Set a specific user data folder if process.env.USER_DATA_FOLDER is set
+if (process.env.USER_DATA_FOLDER) {
+  const userDataPath = join(
+    app.getPath("appData"),
+    process.env.USER_DATA_FOLDER.trim(), // important to trim as a script like "set USER_DATA_FOLDER=mary && electron-vite dev" will add a space a cause an error
+  );
+  app.setPath("userData", userDataPath);
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
