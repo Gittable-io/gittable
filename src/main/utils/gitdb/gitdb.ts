@@ -60,34 +60,15 @@ async function getPublishedVersions({
     return utcTimestampB - utcTimestampA;
   });
 
-  /*
-   Get the main commit Oid, so that I can determine the newest tag
-   Note : why am I not determinaing the newest tag by the tag date?
-   I could, but it may be more future-proof if I look instead at the tag position on main
-   Maybe, there will be a feature where I modify the tag. 
-  */
-  const mainCommitOid = await git.resolveRef({
-    fs,
-    dir: getRepositoryPath(repositoryId),
-    ref: "main",
-  });
-
-  const publishedVersions: PublishedVersion[] = annotatedTags.map((tag) => ({
-    type: "published",
-    name: tag.tag.tag,
-    tag: tag.tag.tag,
-    mainCommitOid: tag.tag.object,
-    newest: tag.tag.object === mainCommitOid,
-  }));
-
-  if (publishedVersions.filter((v) => v.newest).length !== 1) {
-    console.debug(
-      `[gitdb/getPublishedVersions] Couldn't determine the newest Published version`,
-    );
-    throw new Error(
-      "[gitdb/getPublishedVersions] Couldn't determine the newest Published version",
-    );
-  }
+  const publishedVersions: PublishedVersion[] = annotatedTags.map(
+    (tag, idx) => ({
+      type: "published",
+      name: tag.tag.tag,
+      tag: tag.tag.tag,
+      mainCommitOid: tag.tag.object,
+      newest: idx === 0, // The newest tag is the first one (array is sorted anti-chronologically)
+    }),
+  );
 
   return publishedVersions;
 }
