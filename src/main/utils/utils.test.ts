@@ -1,6 +1,6 @@
 import {
   getRepositoryNameFromRemoteUrl,
-  getTableNameFromFileName,
+  getTableIdFromFileName,
 } from "./utils";
 
 // Mock app.getPath(), as getConfig() calls it to construct some properties. However we are not running tests in the context of an app
@@ -35,19 +35,19 @@ describe("Test getRepositoryNameFromRemoteUrl()", () => {
   });
 });
 
-describe("Test getTableNameFromFileName()", () => {
+describe("Test getTableIdFromFileName()", () => {
   test("srs.table.json => srs", () => {
-    expect(getTableNameFromFileName("srs.table.json")).toBe("srs");
+    expect(getTableIdFromFileName("srs.table.json")).toBe("srs");
   });
   test("srs.v0.1.table.json => srs.v0.1", () => {
-    expect(getTableNameFromFileName("srs.v0.1.table.json")).toBe("srs.v0.1");
+    expect(getTableIdFromFileName("srs.v0.1.table.json")).toBe("srs.v0.1");
   });
 
-  test("srs.json => srs.json", () => {
-    expect(getTableNameFromFileName("srs.json")).toBe("srs.json");
+  test("srs.json => throw error", () => {
+    expect(() => getTableIdFromFileName("srs.json")).toThrow();
   });
 
-  test("table.json => table.json", () => {
-    expect(getTableNameFromFileName("table.json")).toBe("table.json");
+  test("table.json => throw error", () => {
+    expect(() => getTableIdFromFileName("table.json")).toThrow();
   });
 });

@@ -1,19 +1,23 @@
 import { useCallback } from "react";
-import { DiffDescription } from "../EditorPanelGroup";
 import "./TableDiffViewerPanel.css";
 import { Table, TableDiffViewer } from "gittable-editor";
+import { useSelector } from "react-redux";
+import { AppRootState } from "@renderer/store/store";
+import { DiffDescription } from "@renderer/store/repoSlice";
 
 type TableDiffViewerPanelProps = {
-  repositoryId: string;
   diffDescription: DiffDescription;
   hidden?: boolean;
 };
 
 export function TableDiffViewerPanel({
-  repositoryId,
   diffDescription,
   hidden,
 }: TableDiffViewerPanelProps): JSX.Element {
+  const repositoryId = useSelector(
+    (state: AppRootState) => state.repo.repository!.id,
+  );
+
   const fetchFromTable = useCallback(async (): Promise<Table> => {
     const response = await window.api.get_table_data({
       repositoryId,

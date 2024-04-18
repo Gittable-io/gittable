@@ -2,18 +2,24 @@ import { useCallback } from "react";
 import { TableEditor, type Table } from "gittable-editor";
 import "./TableEditorPanel.css";
 import type { TableMetadata } from "@sharedTypes/index";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, AppRootState } from "@renderer/store/store";
+import { repoActions } from "@renderer/store/repoSlice";
 
 type TableEditorPanelProps = {
-  repositoryId: string;
   tableMetadata: TableMetadata;
   hidden?: boolean;
 };
 
 export function TableEditorPanel({
-  repositoryId,
   tableMetadata,
   hidden,
 }: TableEditorPanelProps): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+  const repositoryId = useSelector(
+    (state: AppRootState) => state.repo.repository!.id,
+  );
+
   const fetchTable = useCallback(async () => {
     const response = await window.api.get_table_data({
       repositoryId,
@@ -37,13 +43,15 @@ export function TableEditorPanel({
         tableData: tableData,
       });
 
-      if (response.status === "success") return;
-      else
+      if (response.status === "success") {
+        dispatch(repoActions.updateVersionContent());
+      } else {
         throw new Error(
           `Error saving table data. repositoryId = ${repositoryId}, tableId=${tableMetadata.id}`,
         );
+      }
     },
-    [repositoryId, tableMetadata.id],
+    [dispatch, repositoryId, tableMetadata.id],
   );
 
   return (

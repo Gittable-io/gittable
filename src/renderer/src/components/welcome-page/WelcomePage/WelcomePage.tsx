@@ -1,35 +1,21 @@
-import { Repository } from "@sharedTypes/index";
 import { NewRepositorySection } from "../NewRepositorySection";
 import { WelcomeSidebar } from "../WelcomeSidebar";
 import "./WelcomePage.css";
 import { InformationPanel } from "../InformationPanel";
+import { useSelector } from "react-redux";
+import { appSelectors } from "@renderer/store/appSlice";
+import { AppRootState } from "@renderer/store/store";
 
-type WelcomePageProps = {
-  onRepositorySelect: (repository: Repository) => void;
-  gitReady: boolean;
-  onGitConfigChange: () => Promise<void>;
-};
+export function WelcomePage(): JSX.Element {
+  const gitReady: boolean = useSelector((state: AppRootState) =>
+    appSelectors.isGitConfigured(state),
+  );
 
-export function WelcomePage({
-  onRepositorySelect,
-  gitReady,
-  onGitConfigChange,
-}: WelcomePageProps): JSX.Element {
   return (
     <div className="welcome-page">
-      <WelcomeSidebar
-        onRepositorySelect={onRepositorySelect}
-        onGitConfigChange={onGitConfigChange}
-      />
-      {gitReady && (
-        <NewRepositorySection
-          onRepositoryClone={(repository) => onRepositorySelect(repository)}
-        />
-      )}
-      <InformationPanel
-        gitReady={gitReady}
-        onGitConfigChange={onGitConfigChange}
-      />
+      <WelcomeSidebar />
+      {gitReady && <NewRepositorySection />}
+      <InformationPanel />
     </div>
   );
 }

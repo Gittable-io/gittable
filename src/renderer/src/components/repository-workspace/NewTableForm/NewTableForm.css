@@ -1,0 +1,14 @@
+.new-table-form {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.new-table-form .input-and-validation {
+  flex-grow: 1;
+}

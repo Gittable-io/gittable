@@ -2,21 +2,17 @@ import { UserSettingsModal } from "@renderer/components/UserSettingsModal";
 import "./InformationPanel.css";
 import { useModal } from "react-modal-hook";
 import { Button } from "gittable-editor";
+import { useSelector } from "react-redux";
+import { AppRootState } from "@renderer/store/store";
+import { appSelectors } from "@renderer/store/appSlice";
 
-export type InformationPanelProps = {
-  gitReady: boolean;
-  onGitConfigChange: () => Promise<void>;
-};
+export function InformationPanel(): JSX.Element {
+  const gitReady: boolean = useSelector((state: AppRootState) =>
+    appSelectors.isGitConfigured(state),
+  );
 
-export function InformationPanel({
-  gitReady,
-  onGitConfigChange,
-}: InformationPanelProps): JSX.Element {
   const [showUserSettingsModal, hideUserSettingsModal] = useModal(() => (
-    <UserSettingsModal
-      onClose={hideUserSettingsModal}
-      onGitConfigChange={onGitConfigChange}
-    />
+    <UserSettingsModal onClose={hideUserSettingsModal} />
   ));
 
   return (

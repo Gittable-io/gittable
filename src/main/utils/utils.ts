@@ -52,7 +52,8 @@ export const getAbsoluteTablePath = (
   tableId: string,
 ): string => {
   const repositoryPath = getRepositoryPath(repositoryId);
-  return path.join(repositoryPath, tableId);
+  const tableFileName = `${tableId}${getConfig().fileExtensions.table}`;
+  return path.join(repositoryPath, tableFileName);
 };
 
 export const getRepositoryRelativeTablePath = (tableId: string): string => {
@@ -61,7 +62,8 @@ export const getRepositoryRelativeTablePath = (tableId: string): string => {
    * - Table ID = table file name
    * - We do not support folders in repositories : all tables are in the repository root folder, just return tableId
    */
-  return tableId;
+  const tableFileName = `${tableId}${getConfig().fileExtensions.table}`;
+  return tableFileName;
 };
 
 /**
@@ -69,17 +71,18 @@ export const getRepositoryRelativeTablePath = (tableId: string): string => {
  * @param tableFileName the Table file name. ex: `srs.table.json`
  * @returns the Table name, which is the file name without the extension. ex: `srs`
  */
-export const getTableNameFromFileName = (tableFileName: string): string => {
+export const getTableIdFromFileName = (tableFileName: string): string => {
   const tableFileExtension = getConfig().fileExtensions.table;
 
-  if (tableFileName.endsWith(tableFileExtension)) {
-    return tableFileName.slice(
-      0,
-      tableFileName.length - tableFileExtension.length,
-    );
-  } else return tableFileName;
-};
+  if (
+    !tableFileName.endsWith(tableFileExtension) ||
+    tableFileName === tableFileExtension
+  ) {
+    throw new Error(`${tableFileName} is not a table`);
+  }
 
-export const getTableFileNameFromId = (tableId: string): string => {
-  return tableId;
+  return tableFileName.slice(
+    0,
+    tableFileName.length - tableFileExtension.length,
+  );
 };

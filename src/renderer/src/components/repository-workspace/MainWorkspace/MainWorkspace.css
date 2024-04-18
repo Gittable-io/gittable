@@ -1,0 +1,19 @@
+.main-workspace {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+
+  width: 100%;
+  overflow: hidden;
+}
+
+.main-workspace .workspace-toolbar {
+  flex-basis: 50px;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.main-workspace .editor-panel-group {
+  flex-grow: 1;
+}

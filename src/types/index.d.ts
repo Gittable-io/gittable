@@ -1,25 +1,20 @@
-import { type Table } from "gittable-editor";
-
 export type Repository = {
   id: string;
   name: string;
   remoteUrl: string;
 };
 
-export type RepositoryStatus = {
-  currentBranch: {
-    name: string;
-    localHeadCommitOid: string;
-    remoteHeadCommitOid: string;
-    isAheadOfRemote: boolean;
-  };
-  tables: TableStatus[];
-};
+export type RepositoryStatus =
+  | "NOT_INITIALIZED"
+  | "DRAFT_ONLY"
+  | "HAS_PUBLISHED";
 
 export type RepositoryCredentials = {
   username: string;
   password: string;
 };
+
+export type DocumentChangeType = "none" | "modified" | "added" | "deleted";
 
 /**
  * Represent information (metadata) about a Table without the table data itself
@@ -31,8 +26,47 @@ export type TableMetadata = {
   name: string;
 };
 
-export type TableWithMetadata = TableMetadata & {
-  tableData: Table;
+export type TableMetadataWithStatus = TableMetadata & {
+  change: DocumentChangeType;
 };
 
-export type TableStatus = TableMetadata & { modified: boolean };
+export type PublishedVersion = {
+  type: "published";
+  name: string; // For now, name and tag are the same
+  tag: string;
+  newest: boolean;
+  mainCommitOid: string;
+};
+
+export type DraftVersion = {
+  type: "draft";
+  name: string;
+  branch: string;
+  baseOid: string;
+  basePublishedVersion: PublishedVersion | "INITIAL";
+};
+
+export type Version = PublishedVersion | DraftVersion;
+
+export type Commit = {
+  oid: string;
+  message: string;
+  author: {
+    name: string;
+    email: string;
+    timestamp: number;
+    timezoneOffset: number;
+  };
+
+  inRemote: boolean;
+};
+
+export type VersionContent = {
+  tables: TableMetadataWithStatus[];
+  commits: Commit[];
+};
+
+export type VersionContentComparison = {
+  table: TableMetadata;
+  change: DocumentChangeType;
+}[];

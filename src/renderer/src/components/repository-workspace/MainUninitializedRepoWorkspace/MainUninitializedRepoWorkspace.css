@@ -1,0 +1,22 @@
+.main-uninitialized-repo-workspace {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+
+  width: 100%;
+  margin-top: 20px;
+}
+
+.main-uninitialized-repo-workspace .required-action {
+  background-color: var(--color-primary-shadow);
+  padding: var(--padding);
+}
+
+.main-uninitialized-repo-workspace .required-action button {
+  margin-top: 10px;
+}
+
+.main-uninitialized-repo-workspace .required-action p {
+  margin-top: var(--padding);
+}

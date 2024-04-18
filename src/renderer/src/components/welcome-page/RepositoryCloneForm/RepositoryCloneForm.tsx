@@ -1,18 +1,13 @@
 import { useState } from "react";
 import "./RepositoryCloneForm.css";
-import { Repository } from "@sharedTypes/index";
 import { Spinner, InputAndValidation, Button } from "gittable-editor";
+import { appActions } from "@renderer/store/appSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@renderer/store/store";
 
-type RepositoryCloneFormProps = {
-  onRepositoryClone: (
-    repository: Repository,
-    alreadyExisting?: boolean,
-  ) => void;
-};
+export function RepositoryCloneForm(): JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
 
-export function RepositoryCloneForm({
-  onRepositoryClone,
-}: RepositoryCloneFormProps): JSX.Element {
   const [url, setUrl] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -34,12 +29,25 @@ export function RepositoryCloneForm({
     setWaitingForResponse(false);
 
     if (response.status === "error") {
-      setError(response.message);
+      const errorType = response.type;
+      if (errorType === "MALFORMED_URL") setError("URL is not valid");
+      else if (errorType === "AUTH_REQUIRED_NO_CREDENTIALS_PROVIDED")
+        setError("Authentication is required but no credentials were provided");
+      else if (errorType === "CONNECTION_ERROR")
+        setError("Error connecting to Git repository");
+      else if (errorType === "GIT_USER_NOT_CONFIGURED")
+        setError("Git user name and email are not configured");
+      else
+        setError(
+          "An error occured. Try contacting your Git administrator or support",
+        );
     } else if (response.status === "success") {
-      onRepositoryClone(
-        response.repository,
-        response.type === "already cloned",
-      );
+      // If the repository wasn't already cloned
+      if (response.type === "cloned") {
+        dispatch(appActions.addRepository(response.repository));
+      }
+
+      dispatch(appActions.openRepository(response.repository));
     }
   };
 
