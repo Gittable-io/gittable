@@ -1,5 +1,5 @@
 import { ipcRenderer, ipcMain } from "electron";
-import { ping, type PingResponse } from "./ping";
+import { ping, type PingResponse, test } from "./ping";
 import {
   get_git_config,
   type GetGitConfigReponse,
@@ -82,6 +82,7 @@ import {
 const gittableElectronAPI = {
   // ping API
   ping: (): Promise<PingResponse> => ipcRenderer.invoke("ping"),
+  test: (): Promise<void> => ipcRenderer.invoke("test"),
 
   // user API
   get_git_config: (): Promise<GetGitConfigReponse> =>
@@ -166,6 +167,7 @@ type GittableElectronAPI = typeof gittableElectronAPI;
 const addHandlesForGittableElectronAPICall = (): void => {
   // ping API
   ipcMain.handle("ping", ping);
+  ipcMain.handle("test", test);
 
   // user API
   ipcMain.handle("get_git_config", get_git_config);
