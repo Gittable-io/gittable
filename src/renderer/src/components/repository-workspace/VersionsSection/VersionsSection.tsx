@@ -18,8 +18,8 @@ export function VersionsSection(): JSX.Element {
   const currentVersion = useSelector(
     (state: AppRootState) => state.repo.currentVersion,
   );
-  const isContentModified = useSelector((state: AppRootState) =>
-    repoSelectors.isContentModified(state),
+  const isWorkingDirModified = useSelector((state: AppRootState) =>
+    repoSelectors.isWorkingDirModified(state),
   );
 
   const waitingForNewDraftName = useSelector(
@@ -53,7 +53,7 @@ export function VersionsSection(): JSX.Element {
   //#endregion
 
   const confirmSwitchVersion = async (version: Version): Promise<void> => {
-    if (isContentModified) {
+    if (isWorkingDirModified) {
       setPendingVersion(version); // Set the version the user intends to switch to
       showSwitchWarningModal();
     } else {
