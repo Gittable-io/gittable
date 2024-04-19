@@ -15,8 +15,9 @@ import _ from "lodash";
 import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
+  fetch,
   pushBranchOrTag,
-} from "../utils/gitdb/push";
+} from "../utils/gitdb/remote";
 import { gitdb } from "../utils/gitdb/gitdb";
 import { repoBackup } from "../utils/gitdb/repoBackup";
 
@@ -689,6 +690,93 @@ export async function publish_draft({
     } else {
       console.error(
         `[API/publish_draft] Error Publishing draft: ${error instanceof Error ? error.message : ""}`,
+      );
+      errorResponse = { status: "error", type: "UNKNOWN" };
+    }
+  } finally {
+    if (errorResponse) {
+      repoBackup.restore(repositoryId);
+    } else {
+      repoBackup.clear(repositoryId);
+    }
+  }
+
+  if (errorResponse) return errorResponse;
+
+  return { status: "success" };
+}
+
+//#endregion
+
+//#region API: Pull
+export type PullParameters = {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type PullResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type:
+        | "PUBLISHED_VERSION_ALREADY_EXISTS"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
+    };
+
+export async function pull({
+  repositoryId,
+  credentials,
+}: PullParameters): Promise<PullResponse> {
+  console.debug(`[API/pull] Called with repositoryId=${repositoryId}`);
+
+  let errorResponse: PullResponse | null = null;
+  try {
+    const getCurrentVersionResponse = await get_current_version({
+      repositoryId,
+    });
+    if (
+      getCurrentVersionResponse.status === "success" &&
+      getCurrentVersionResponse.version.type === "draft"
+    ) {
+      // 1. Backup repository
+      repoBackup.backup(repositoryId);
+
+      // 2. Fetch from remote
+      const { fetchHead } = await fetch({ repositoryId, credentials });
+
+      // TODO: check when fetchHead is null
+      if (fetchHead) {
+        // 3. Then merge
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const mergeResult = await git.merge({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          theirs: fetchHead,
+        });
+
+        console.debug(
+          `[API/pull] Merge success: ${JSON.stringify(mergeResult)}`,
+        );
+
+        await git.checkout({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: getCurrentVersionResponse.version.branch,
+        });
+      }
+    }
+  } catch (error) {
+    if (error instanceof NoCredentialsProvidedError) {
+      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+    } else if (error instanceof AuthWithProvidedCredentialsError) {
+      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    } else {
+      console.error(
+        `[API/pull] Error Pull: ${error instanceof Error ? error.message : ""}`,
       );
       errorResponse = { status: "error", type: "UNKNOWN" };
     }

@@ -18,7 +18,7 @@ import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
   pushBranchOrTag,
-} from "../utils/gitdb/push";
+} from "../utils/gitdb/remote";
 import { gitdb } from "../utils/gitdb/gitdb";
 import path from "node:path";
 
