@@ -158,7 +158,7 @@ export async function clone_repository({
     /*
      5. Now that the repository is cloned, There's some steps to make our local repository usable
 
-     if repository is not intialized
+     if repository is intialized
       - 5.1 : Create a local branch for every draft branch
         - Why? When cloning a remote repo, by default, git creates a local branch "main" that tracks "origin/main", but it does not create a local branch for other remotes branches
         - However, to detect versions, our app only looks at local branches

@@ -434,6 +434,24 @@ export async function create_draft({
       branchOrTagName: branchName,
       credentials,
     });
+
+    /*
+    ! Set the upstream of the new branch: equivalent to git push -u <new_branch>
+    ! In isogit, when I push a new branch that upstream branch is not set automatically
+    ! And this causes issues with fetch (although not for commit as it takes origin if the upstram branch is not found)
+    */
+    await git.setConfig({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      path: `branch.${branchName}.remote`,
+      value: "origin",
+    });
+    await git.setConfig({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      path: `branch.${branchName}.merge`,
+      value: `refs/heads/${branchName}`,
+    });
   } catch (error) {
     console.error(
       `[API/create_draft] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
@@ -828,27 +846,80 @@ export async function pull({
       // 2. Fetch from remote
       const fetchResult = await fetch({ repositoryId, credentials });
 
-      // TODO: check when fetchHead is null
-      if (fetchResult.fetchHead) {
-        // 3. Then merge
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const mergeResult = await git.merge({
+      // ? In the type def of FetchResult, fetchHead can be null. However, I don't know in which case it is null
+      if (fetchResult.fetchHead == null) {
+        throw new Error("[API/pull] fetchResult.fetchHead is null");
+      }
+
+      // 3. Then merge
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const mergeResult = await git.merge({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        theirs: fetchResult.fetchHead,
+      });
+
+      console.debug(`[API/pull] Merge success: ${JSON.stringify(mergeResult)}`);
+
+      // You need to checkout so that isomorphic-git merge works. see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: currentVersion.branch,
+      });
+    } else {
+      // 1. Backup repository
+      await backupService.backup(repositoryId);
+
+      // 2. Fetch from remote
+      const fetchResult = await fetch({ repositoryId, credentials });
+
+      // ? In the type def of FetchResult, fetchHead can be null. However, I don't know in which case it is null
+      if (fetchResult.fetchHead == null) {
+        throw new Error("[API/pull] fetchResult.fetchHead is null");
+      }
+
+      /*
+       3. Check if there are new Draft Versions and create corresponding local branches
+       To do that : 
+        - Get lists of remote draft branches and current draft versions
+        - Check if a remote branch does not have a local branch
+        - In this case, create a local draft branch that tracks the remote draft branch
+
+        Note : we wrote as if we may have multiple draft branches, but for now, we will alwyas have a 0 or 1 draft branch
+      */
+      const remoteBranches = (
+        await git.listBranches({
           fs,
           dir: getRepositoryPath(repositoryId),
-          theirs: fetchResult.fetchHead,
-        });
+          remote: "origin",
+        })
+      ).filter((remoteBranch) => remoteBranch.startsWith("draft/"));
 
-        console.debug(
-          `[API/pull] Merge success: ${JSON.stringify(mergeResult)}`,
-        );
+      const draftVersions = await gitService.getDraftVersions({ repositoryId });
 
-        // You need to checkout so that isomorphic-git merge works. see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
+      const newRemoteBranches = remoteBranches.filter(
+        (remoteBranch) =>
+          draftVersions.find((dv) => dv.branch === remoteBranch) == undefined,
+      );
+
+      for (const newRemoteBranch of newRemoteBranches) {
+        // With isogit, we checkout the remote branch to create a local branch that tracks it (see API/clone_repository())
+        // ! Will those excessive checkouts cause issues?
+        // TODO: the cleanest way is to modify isogit and to add a --set-upstream-to option
         await git.checkout({
           fs,
           dir: getRepositoryPath(repositoryId),
-          ref: currentVersion.branch,
+          ref: newRemoteBranch,
         });
       }
+
+      // 4. Go back to the published version
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: currentVersion.tag,
+      });
     }
   } catch (error) {
     console.error(
