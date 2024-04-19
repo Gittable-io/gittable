@@ -16,7 +16,7 @@ import {
 } from "../utils/utils";
 import { UserDataStore } from "../db";
 import { switch_version } from "./repository";
-import { gitdb } from "../utils/gitdb/gitdb";
+import * as gitService from "../services/git/local";
 
 //#region API: clone_repository
 export type CloneRepositoryParameters = {
@@ -171,7 +171,7 @@ export async function clone_repository({
 
       Note : if repository is not initialized we don't do nothing, as we should wait the user to initialize the repo
     */
-    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+    const isRepositoryInitialized = await gitService.isRepositoryInitialized({
       repositoryId,
     });
     console.debug(
@@ -209,11 +209,13 @@ export async function clone_repository({
       // 5.2 : Checkout the last published version (tag) or draft
 
       let versionToSwitchTo: Version | null =
-        await gitdb.getLastPublishedVersion({
+        await gitService.getLastPublishedVersion({
           repositoryId,
         });
       if (!versionToSwitchTo) {
-        const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+        const draftVersions = await gitService.getDraftVersions({
+          repositoryId,
+        });
         versionToSwitchTo = draftVersions[0];
       }
       if (!versionToSwitchTo) {

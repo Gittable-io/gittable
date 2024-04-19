@@ -1,4 +1,5 @@
 import { app, shell, BrowserWindow } from "electron";
+import dotenv from "dotenv";
 import { join } from "path";
 import { electronApp, is } from "@electron-toolkit/utils";
 import { optimizer } from "./utils/electron-setup/optimizer";
@@ -9,6 +10,16 @@ import installExtension, {
 } from "electron-devtools-assembler";
 // ! do not remove, see src/main/polyfills/crypto.js for an explanation
 import "./polyfills/crypto";
+
+//  Set a specific user data folder if process.env.USER_DATA_FOLDER is set
+dotenv.config(); // Load USER_DATA_FOLDER if specified in a .env file
+if (process.env.USER_DATA_FOLDER) {
+  const userDataPath = join(
+    app.getPath("appData"),
+    process.env.USER_DATA_FOLDER.trim(), // important to trim as a script like "set USER_DATA_FOLDER=mary && electron-vite dev" will add a space a cause an error
+  );
+  app.setPath("userData", userDataPath);
+}
 
 function createWindow(): void {
   // Create the browser window.

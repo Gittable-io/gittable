@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import git from "isomorphic-git";
-import { getRepositoryPath } from "../utils";
+import { getRepositoryPath } from "../../utils/utils";
 
 /**
  *

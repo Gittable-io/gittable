@@ -4,23 +4,25 @@ import {
   Commit,
   DraftVersion,
   PublishedVersion,
+  Version,
   VersionContentComparison,
 } from "@sharedTypes/index";
-import { getRepositoryPath, getTableIdFromFileName } from "../utils";
-import { gitUtils } from "./gitutils";
+import { getRepositoryPath, getTableIdFromFileName } from "../../utils/utils";
+import { gitUtils } from "./utils";
+import { GitServiceError } from "./error";
 
 /**
  *
  * @returns an array of published versions, i.e. tags on the main branch.
  * Returns an empty array if there's no published versions (no tags)
  */
-async function getPublishedVersions({
+export async function getPublishedVersions({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<PublishedVersion[]> {
   console.debug(
-    `[gitdb/getPublishedVersions] Called with repositoryId=${repositoryId}`,
+    `[local/getPublishedVersions] Called with repositoryId=${repositoryId}`,
   );
 
   // 1. Get list of tags
@@ -78,13 +80,13 @@ async function getPublishedVersions({
  * @returns the last published version. i.e. the last tag on the main branch
  * return null if there are no published versions
  */
-async function getLastPublishedVersion({
+export async function getLastPublishedVersion({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<PublishedVersion | null> {
   console.debug(
-    `[gitdb/getLastPublishedVersion] Called with repositoryId=${repositoryId}`,
+    `[local/getLastPublishedVersion] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
@@ -93,7 +95,7 @@ async function getLastPublishedVersion({
   const latestPublishedVersion = publishedVersions.find((v) => v.newest);
   if (!latestPublishedVersion)
     throw new Error(
-      "[gitdb/getLastPublishedVersion] No Published version was marked as newest",
+      "[local/getLastPublishedVersion] No Published version was marked as newest",
     );
 
   return latestPublishedVersion;
@@ -106,7 +108,7 @@ async function getLastPublishedVersion({
  *
  * TODO: This function is no longer used as of 17/04/2024. Delete it if it's still not used
  */
-async function getPublishedVersion({
+export async function getPublishedVersion({
   repositoryId,
   tagName,
 }: {
@@ -114,7 +116,7 @@ async function getPublishedVersion({
   tagName: string;
 }): Promise<PublishedVersion | null> {
   console.debug(
-    `[gitdb/getPublishedVersion] Called with repositoryId=${repositoryId} and tagName=${tagName}`,
+    `[local/getPublishedVersion] Called with repositoryId=${repositoryId} and tagName=${tagName}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
@@ -124,13 +126,13 @@ async function getPublishedVersion({
   return result ?? null;
 }
 
-async function getDraftVersions({
+export async function getDraftVersions({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<DraftVersion[]> {
   console.debug(
-    `[gitdb/getDraftVersions] Called with repositoryId=${repositoryId}`,
+    `[local/getDraftVersions] Called with repositoryId=${repositoryId}`,
   );
 
   // 1. Get list of branches
@@ -162,7 +164,7 @@ async function getDraftVersions({
 
     if (!basePublishedVersion) {
       throw new Error(
-        `[gitdb/getDraftVersions] Could not determine the base published version of ${branch}`,
+        `[local/getDraftVersions] Could not determine the base published version of ${branch}`,
       );
     }
 
@@ -178,12 +180,79 @@ async function getDraftVersions({
   return draftVersions;
 }
 
+export async function getCurrentVersion({
+  repositoryId,
+}: {
+  repositoryId: string;
+}): Promise<Version> {
+  console.debug(
+    `[local/getCurrentVersion] Called with repositoryId=${repositoryId}`,
+  );
+
+  // Check where HEAD is pointing at
+  const currentBranch = await git.currentBranch({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+  });
+
+  const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
+    ? "POINTS_TO_BRANCH"
+    : "POINTS_TO_TAG";
+
+  console.debug(
+    `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
+  );
+
+  const headCommitOid = await git.resolveRef({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: "HEAD",
+  });
+
+  if (headStatus === "POINTS_TO_BRANCH") {
+    const draftVersions = await getDraftVersions({
+      repositoryId,
+    });
+
+    // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
+    for (const version of draftVersions) {
+      const branchCommitOid = await git.resolveRef({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: version.branch,
+      });
+
+      if (branchCommitOid === headCommitOid) {
+        return version;
+      }
+    }
+  } else {
+    const publishedVersions = await getPublishedVersions({
+      repositoryId,
+    });
+
+    for (const version of publishedVersions) {
+      const tagCommitOid = await git.resolveRef({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: version.tag,
+      });
+
+      if (tagCommitOid === headCommitOid) {
+        return version;
+      }
+    }
+  }
+
+  throw new GitServiceError("COULD_NOT_FIND_CURRENT_VERSION");
+}
+
 /**
  *
  * @returns the draft version designated by the branch name.
  * Returns an empty array if there's no draft versions with the branch name
  */
-async function getDraftVersion({
+export async function getDraftVersion({
   repositoryId,
   branch,
 }: {
@@ -191,7 +260,7 @@ async function getDraftVersion({
   branch: string;
 }): Promise<DraftVersion | null> {
   console.debug(
-    `[gitdb/getDraftVersion] Called with repositoryId=${repositoryId} and branch=${branch}`,
+    `[local/getDraftVersion] Called with repositoryId=${repositoryId} and branch=${branch}`,
   );
 
   const draftVersions = await getDraftVersions({ repositoryId });
@@ -201,13 +270,13 @@ async function getDraftVersion({
   return result ?? null;
 }
 
-async function getInitialCommitOid({
+export async function getInitialCommitOid({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<string> {
   console.debug(
-    `[gitdb/getInitialCommitOid] Called with repositoryId=${repositoryId}`,
+    `[local/getInitialCommitOid] Called with repositoryId=${repositoryId}`,
   );
 
   const mainLog = await git.log({
@@ -225,7 +294,7 @@ async function getInitialCommitOid({
   return initialCommit.oid;
 }
 
-async function getDraftVersionCommits({
+export async function getDraftVersionCommits({
   repositoryId,
   draftVersion,
 }: {
@@ -276,13 +345,13 @@ async function getDraftVersionCommits({
  * A non-initialized repository has just been created in the Git server and this is the first clone
  * We determine that a repository is non-initialized when it doesn't have any branch (not even a main)
  */
-async function isRepositoryInitialized({
+export async function isRepositoryInitialized({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
+    `[local/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
   );
 
   const branches = await git.listBranches({
@@ -297,13 +366,13 @@ async function isRepositoryInitialized({
  *
  * @returns if the repository has a published version.
  */
-async function hasPublished({
+export async function hasPublished({
   repositoryId,
 }: {
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/hasPublished] Called with repositoryId=${repositoryId}`,
+    `[local/hasPublished] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
@@ -311,7 +380,7 @@ async function hasPublished({
   return publishedVersions.length > 0;
 }
 
-async function compareCommits({
+export async function compareCommits({
   repositoryId,
   fromRef,
   toRef,
@@ -365,16 +434,3 @@ async function compareCommits({
     return [];
   }
 }
-
-export const gitdb = {
-  getDraftVersionCommits,
-  getPublishedVersions,
-  getPublishedVersion,
-  getLastPublishedVersion,
-  getDraftVersions,
-  getDraftVersion,
-  getInitialCommitOid,
-  isRepositoryInitialized,
-  hasPublished,
-  compareCommits,
-};

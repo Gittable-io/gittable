@@ -10,15 +10,12 @@ import {
   VersionContent,
   VersionContentComparison,
 } from "@sharedTypes/index";
-import { get_current_version, get_current_version_content } from "./version";
+import { get_current_version_content } from "./version";
 import _ from "lodash";
-import {
-  AuthWithProvidedCredentialsError,
-  NoCredentialsProvidedError,
-  pushBranchOrTag,
-} from "../utils/gitdb/push";
-import { gitdb } from "../utils/gitdb/gitdb";
-import { repoBackup } from "../utils/gitdb/repoBackup";
+import { fetch, pushBranchOrTag } from "../services/git/remote";
+import * as gitService from "../services/git/local";
+import * as backupService from "../services/git/backup";
+import { GitServiceError } from "../services/git/error";
 
 //#region API: get_repository_status
 export type GetRepositoryStatusParameters = {
@@ -43,7 +40,7 @@ export async function get_repository_status({
   );
 
   try {
-    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+    const isRepositoryInitialized = await gitService.isRepositoryInitialized({
       repositoryId,
     });
 
@@ -54,7 +51,7 @@ export async function get_repository_status({
       };
     }
 
-    const hasPublished = await gitdb.hasPublished({
+    const hasPublished = await gitService.hasPublished({
       repositoryId,
     });
 
@@ -111,7 +108,7 @@ export async function init_repository({
   let errorResponse: InitRepositoryResponse | null = null;
   try {
     // 0. Check that repository is not initialized
-    const isRepositoryInitialized = await gitdb.isRepositoryInitialized({
+    const isRepositoryInitialized = await gitService.isRepositoryInitialized({
       repositoryId,
     });
     if (isRepositoryInitialized) {
@@ -119,7 +116,7 @@ export async function init_repository({
     }
 
     // Before doing anything, backup the repo
-    repoBackup.backup(repositoryId);
+    await backupService.backup(repositoryId);
 
     // 1. Init repository so that init.defaultBranch is set up correctly to main
     await git.init({
@@ -169,21 +166,29 @@ export async function init_repository({
       credentials,
     });
   } catch (error) {
-    console.debug(
-      `[API/init_repository] Error pushing newly created main branch`,
+    console.error(
+      `[API/init_repository] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
     );
-    if (error instanceof NoCredentialsProvidedError) {
-      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
-    } else if (error instanceof AuthWithProvidedCredentialsError) {
-      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        errorResponse = {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        errorResponse = { status: "error", type: "UNKNOWN" };
+      }
     } else {
       errorResponse = { status: "error", type: "UNKNOWN" };
     }
   } finally {
     if (errorResponse) {
-      repoBackup.restore(repositoryId);
+      await backupService.restore(repositoryId);
     } else {
-      repoBackup.clear(repositoryId);
+      await backupService.clear(repositoryId);
     }
   }
 
@@ -224,8 +229,8 @@ export async function list_versions({
 
   try {
     const publishedVersions: PublishedVersion[] =
-      await gitdb.getPublishedVersions({ repositoryId });
-    const draftVersions: DraftVersion[] = await gitdb.getDraftVersions({
+      await gitService.getPublishedVersions({ repositoryId });
+    const draftVersions: DraftVersion[] = await gitService.getDraftVersions({
       repositoryId,
     });
 
@@ -234,6 +239,49 @@ export async function list_versions({
     return { status: "success", versions };
   } catch (error) {
     return { status: "error", type: "unknown" };
+  }
+}
+//#endregion
+
+//#region API: get_current_version
+export type GetCurrentVersionParameters = {
+  repositoryId: string;
+};
+
+export type GetCurrentVersionResponse =
+  | {
+      status: "success";
+      version: Version;
+    }
+  | {
+      status: "error";
+      type: "COULD NOT FIND CURRENT VERSION";
+    }
+  | {
+      status: "error";
+      type: "UNKNOWN";
+    };
+
+export async function get_current_version({
+  repositoryId,
+}: GetCurrentVersionParameters): Promise<GetCurrentVersionResponse> {
+  console.debug(
+    `[API/get_current_version] Called with repositoryId=${repositoryId}`,
+  );
+
+  try {
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    return { status: "success", version: currentVersion };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(
+        `[API/get_current_version] Error : ${error.name}, ${error.message}`,
+      );
+    } else {
+      console.debug(`[API/get_current_version] Error`);
+    }
+
+    return { status: "error", type: "UNKNOWN" };
   }
 }
 //#endregion
@@ -345,7 +393,9 @@ export async function create_draft({
   try {
     // 1. Create branch
     // 1.1. First check that a draft version of the same name is not already created
-    const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+    const draftVersions = await gitService.getDraftVersions({
+      repositoryId,
+    });
     const versionExists = draftVersions.some((v) => v.name === draftName);
     if (versionExists) {
       console.debug(`[API/create_draft] Version already exists`);
@@ -356,13 +406,13 @@ export async function create_draft({
     }
 
     // 1.2 Create a new branch from the latest published version or the initial commit if there's no published version
-    const lastPublishedVersion = await gitdb.getLastPublishedVersion({
+    const lastPublishedVersion = await gitService.getLastPublishedVersion({
       repositoryId,
     });
 
     const branchBaseCommitOid = lastPublishedVersion
       ? lastPublishedVersion.mainCommitOid
-      : await gitdb.getInitialCommitOid({ repositoryId });
+      : await gitService.getInitialCommitOid({ repositoryId });
 
     await git.branch({
       fs,
@@ -385,17 +435,22 @@ export async function create_draft({
       credentials,
     });
   } catch (error) {
-    console.debug(`[API/create_draft] Error pushing local branch`);
-    if (error instanceof NoCredentialsProvidedError) {
-      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
-    } else if (error instanceof AuthWithProvidedCredentialsError) {
-      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
-    } else {
-      if (error instanceof Error) {
-        console.error(
-          `[API/create_draft] Unexpected Error pushing local branch: ${error.message}`,
-        );
+    console.error(
+      `[API/create_draft] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        errorResponse = {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        errorResponse = { status: "error", type: "UNKNOWN" };
       }
+    } else {
       errorResponse = { status: "error", type: "UNKNOWN" };
     }
   } finally {
@@ -414,7 +469,7 @@ export async function create_draft({
     return errorResponse;
   } else {
     // 3. Return newly created version
-    const version = (await gitdb.getDraftVersion({
+    const version = (await gitService.getDraftVersion({
       repositoryId,
       branch: branchName,
     }))!;
@@ -457,25 +512,36 @@ export async function delete_draft({
     `[API/delete_draft] Called with repositoryId=${repositoryId} and version=${JSON.stringify(versionToDelete)}`,
   );
 
-  // 1. Check that draft version exists
-  const draftVersions = await gitdb.getDraftVersions({ repositoryId });
-  if (!draftVersions.find((dv) => _.isEqual(dv, versionToDelete))) {
-    return {
-      status: "error",
-      type: "DRAFT_VERSION_DO_NOT_EXIST",
-    };
-  }
+  try {
+    // 1. Check that draft version exists
+    const draftVersions = await gitService.getDraftVersions({
+      repositoryId,
+    });
+    if (!draftVersions.find((dv) => _.isEqual(dv, versionToDelete))) {
+      return {
+        status: "error",
+        type: "DRAFT_VERSION_DO_NOT_EXIST",
+      };
+    }
 
-  // 2. Check that we're not in actual draft version
-  const currentVersionResp = await get_current_version({ repositoryId });
-  if (currentVersionResp.status === "error") {
+    // 2. Check that we're not in actual draft version
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    if (_.isEqual(currentVersion, versionToDelete)) {
+      return {
+        status: "error",
+        type: "DRAFT_VERSION_OPENED",
+      };
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(
+        `[API/delete_draft] Error : ${error.name}, ${error.message}`,
+      );
+    } else {
+      console.debug(`[API/delete_draft] Error`);
+    }
+
     return { status: "error", type: "UNKNOWN" };
-  }
-  if (_.isEqual(currentVersionResp.version, versionToDelete)) {
-    return {
-      status: "error",
-      type: "DRAFT_VERSION_OPENED",
-    };
   }
 
   /*
@@ -493,11 +559,21 @@ export async function delete_draft({
       deleteBranch: true,
     });
   } catch (error) {
-    console.debug(`[API/delete_draft] Error deleting remote branch`);
-    if (error instanceof NoCredentialsProvidedError) {
-      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
-    } else if (error instanceof AuthWithProvidedCredentialsError) {
-      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    console.error(
+      `[API/delete_draft] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        return {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        return { status: "error", type: "UNKNOWN" };
+      }
     } else {
       return { status: "error", type: "UNKNOWN" };
     }
@@ -555,7 +631,7 @@ export async function compare_versions({
   try {
     const fromRef =
       fromVersion === "INITIAL"
-        ? await gitdb.getInitialCommitOid({ repositoryId })
+        ? await gitService.getInitialCommitOid({ repositoryId })
         : fromVersion.type === "published"
           ? fromVersion.tag
           : fromVersion.branch;
@@ -563,7 +639,7 @@ export async function compare_versions({
     const toRef =
       toVersion.type === "published" ? toVersion.tag : toVersion.branch;
 
-    const diff = await gitdb.compareCommits({
+    const diff = await gitService.compareCommits({
       repositoryId,
       fromRef,
       toRef,
@@ -611,7 +687,9 @@ export async function publish_draft({
   );
 
   // 0. Check that there are no tags with the same name
-  const publishedVersions = await gitdb.getPublishedVersions({ repositoryId });
+  const publishedVersions = await gitService.getPublishedVersions({
+    repositoryId,
+  });
   if (publishedVersions.find((v) => v.tag === newPublishedVersionName)) {
     return { status: "error", type: "PUBLISHED_VERSION_ALREADY_EXISTS" };
   }
@@ -619,7 +697,7 @@ export async function publish_draft({
   let errorResponse: PublishDraftResponse | null = null;
   try {
     // 1. Backup repository
-    repoBackup.backup(repositoryId);
+    await backupService.backup(repositoryId);
 
     // 2. Merge draft branch to main
     await git.merge({
@@ -682,21 +760,120 @@ export async function publish_draft({
       ref: draftVersion.branch,
     });
   } catch (error) {
-    if (error instanceof NoCredentialsProvidedError) {
-      errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
-    } else if (error instanceof AuthWithProvidedCredentialsError) {
-      errorResponse = { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    console.error(
+      `[API/publish_draft] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        errorResponse = {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        errorResponse = { status: "error", type: "UNKNOWN" };
+      }
     } else {
-      console.error(
-        `[API/publish_draft] Error Publishing draft: ${error instanceof Error ? error.message : ""}`,
-      );
       errorResponse = { status: "error", type: "UNKNOWN" };
     }
   } finally {
     if (errorResponse) {
-      repoBackup.restore(repositoryId);
+      await backupService.restore(repositoryId);
     } else {
-      repoBackup.clear(repositoryId);
+      await backupService.clear(repositoryId);
+    }
+  }
+
+  if (errorResponse) return errorResponse;
+
+  return { status: "success" };
+}
+
+//#endregion
+
+//#region API: Pull
+export type PullParameters = {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type PullResponse =
+  | {
+      status: "success";
+    }
+  | {
+      status: "error";
+      type:
+        | "PUBLISHED_VERSION_ALREADY_EXISTS"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
+    };
+
+export async function pull({
+  repositoryId,
+  credentials,
+}: PullParameters): Promise<PullResponse> {
+  console.debug(`[API/pull] Called with repositoryId=${repositoryId}`);
+
+  let errorResponse: PullResponse | null = null;
+  try {
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    if (currentVersion.type === "draft") {
+      // 1. Backup repository
+      await backupService.backup(repositoryId);
+
+      // 2. Fetch from remote
+      const fetchResult = await fetch({ repositoryId, credentials });
+
+      // TODO: check when fetchHead is null
+      if (fetchResult.fetchHead) {
+        // 3. Then merge
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const mergeResult = await git.merge({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          theirs: fetchResult.fetchHead,
+        });
+
+        console.debug(
+          `[API/pull] Merge success: ${JSON.stringify(mergeResult)}`,
+        );
+
+        // You need to checkout so that isomorphic-git merge works. see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
+        await git.checkout({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: currentVersion.branch,
+        });
+      }
+    }
+  } catch (error) {
+    console.error(
+      `[API/pull] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        errorResponse = {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        errorResponse = { status: "error", type: "UNKNOWN" };
+      }
+    } else {
+      errorResponse = { status: "error", type: "UNKNOWN" };
+    }
+  } finally {
+    if (errorResponse) {
+      await backupService.restore(repositoryId);
+    } else {
+      await backupService.clear(repositoryId);
     }
   }
 

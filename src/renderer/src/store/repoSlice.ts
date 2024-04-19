@@ -53,7 +53,8 @@ export type RemoteAction =
       type: "PUBLISH_DRAFT";
       draftVersion: DraftVersion;
       publishingName: string;
-    };
+    }
+  | { type: "PULL" };
 
 export type RepoState = {
   // Repository information

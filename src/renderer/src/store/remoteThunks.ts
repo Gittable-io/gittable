@@ -29,6 +29,7 @@ export const remoteAction = createAsyncThunk<
     | Awaited<ReturnType<typeof window.api.delete_draft>>
     | Awaited<ReturnType<typeof window.api.push_commits>>
     | Awaited<ReturnType<typeof window.api.publish_draft>>
+    | Awaited<ReturnType<typeof window.api.pull>>
     | null = null;
   switch (action.type) {
     case "INIT_REPO": {
@@ -66,6 +67,13 @@ export const remoteAction = createAsyncThunk<
         repositoryId,
         draftVersion: action.draftVersion,
         newPublishedVersionName: action.publishingName,
+        credentials,
+      });
+      break;
+    }
+    case "PULL": {
+      response = await window.api.pull({
+        repositoryId,
         credentials,
       });
       break;
@@ -118,6 +126,9 @@ export const remoteAction = createAsyncThunk<
       await thunkAPI.dispatch(repoActions.closeAllPanels());
       await thunkAPI.dispatch(fetchRepositoryDetails());
       break;
+    }
+    case "PULL": {
+      await thunkAPI.dispatch(updateVersionContent());
     }
   }
   return;

@@ -6,3 +6,9 @@
 
   padding: 20px 10px;
 }
+
+.workspace-toolbar .workspace-toolbar-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}

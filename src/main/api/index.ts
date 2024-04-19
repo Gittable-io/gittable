@@ -27,6 +27,9 @@ import {
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
+  get_current_version,
+  type GetCurrentVersionParameters,
+  type GetCurrentVersionResponse,
   switch_version,
   type SwitchVersionParameters,
   type SwitchVersionResponse,
@@ -42,11 +45,11 @@ import {
   publish_draft,
   type PublishDraftParameters,
   type PublishDraftResponse,
+  pull,
+  type PullParameters,
+  type PullResponse,
 } from "./repository";
 import {
-  get_current_version,
-  type GetCurrentVersionParameters,
-  type GetCurrentVersionResponse,
   get_current_version_content,
   type GetCurrentVersionContentParameters,
   type GetCurrentVersionContentResponse,
@@ -137,6 +140,8 @@ const gittableElectronAPI = {
     params: PublishDraftParameters,
   ): Promise<PublishDraftResponse> =>
     ipcRenderer.invoke("publish_draft", params),
+  pull: (params: PullParameters): Promise<PullResponse> =>
+    ipcRenderer.invoke("pull", params),
 
   // version API
   get_current_version_content: (
@@ -202,6 +207,7 @@ const addHandlesForGittableElectronAPICall = (): void => {
     compare_versions(params),
   );
   ipcMain.handle("publish_draft", (_event, params) => publish_draft(params));
+  ipcMain.handle("pull", (_event, params) => pull(params));
 
   // version API
   ipcMain.handle("get_current_version_content", (_event, params) =>

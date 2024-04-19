@@ -15,6 +15,10 @@ export function WorkspaceToolbar(): JSX.Element {
   const draftVersion = useSelector((state: AppRootState) =>
     repoSelectors.draftVersion(state),
   );
+  const isPullInProgress: boolean = useSelector(
+    (state: AppRootState) =>
+      state.repo.remoteActionSequence?.action.type === "PULL",
+  );
 
   return (
     <div className="workspace-toolbar">
@@ -24,20 +28,38 @@ export function WorkspaceToolbar(): JSX.Element {
             materialSymbol={getVersionMaterialSymbol(currentVersion)}
             text={`${currentVersion.type === "published" ? (currentVersion.newest ? "Viewing latest published" : "Viewing published") : "Editing draft"} version: ${currentVersion.name}`}
           />
-          {currentVersion.type === "draft" && (
-            <Button
-              text="Review version"
-              variant="outlined"
-              onClick={() =>
-                dispatch(
-                  repoActions.openPanel({ type: "review_current_version" }),
-                )
-              }
-            />
-          )}
-          {currentVersion.type === "published" && draftVersion && (
-            <DeleteDraft />
-          )}
+          <div className="workspace-toolbar-actions">
+            {currentVersion.type === "draft" && (
+              <Button
+                text="Review version"
+                variant="outlined"
+                onClick={() =>
+                  dispatch(
+                    repoActions.openPanel({ type: "review_current_version" }),
+                  )
+                }
+              />
+            )}
+            {currentVersion.type === "published" && draftVersion && (
+              <DeleteDraft />
+            )}
+            {currentVersion.type === "draft" && (
+              <Button
+                text="Get Latest Updates"
+                variant="outlined"
+                onClick={() =>
+                  dispatch(
+                    repoActions.remoteAction({
+                      action: {
+                        type: "PULL",
+                      },
+                    }),
+                  )
+                }
+                loading={isPullInProgress}
+              />
+            )}
+          </div>
         </>
       )}
     </div>
