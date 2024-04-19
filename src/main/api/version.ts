@@ -18,8 +18,8 @@ import {
   AuthWithProvidedCredentialsError,
   NoCredentialsProvidedError,
   pushBranchOrTag,
-} from "../utils/gitdb/remote";
-import { gitdb } from "../utils/gitdb/gitdb";
+} from "../services/git/remote";
+import * as gitService from "../services/git/local";
 import path from "node:path";
 
 //#region API: get_current_version
@@ -80,7 +80,9 @@ export async function get_current_version({
     });
 
     if (headStatus === "POINTS_TO_BRANCH") {
-      const draftVersions = await gitdb.getDraftVersions({ repositoryId });
+      const draftVersions = await gitService.getDraftVersions({
+        repositoryId,
+      });
 
       // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
       for (const version of draftVersions) {
@@ -95,7 +97,7 @@ export async function get_current_version({
         }
       }
     } else {
-      const publishedVersions = await gitdb.getPublishedVersions({
+      const publishedVersions = await gitService.getPublishedVersions({
         repositoryId,
       });
 
@@ -161,9 +163,9 @@ export async function get_current_version_content({
       /*
         1. Get tables and the diff between HEAD and WORKDIR
   
-        * Although, I can get the diff info directly from git.statusMatrix(), I chose to use gitdb.compareCommits()
+        * Although, I can get the diff info directly from git.statusMatrix(), I chose to use localGitService.compareCommits()
         * instead to centralize diff logic. But it may cause extra computation. 
-        * If there a performance issues in the future, do not call gitdb.compareCommits() and use git.statusMatrix() instead
+        * If there a performance issues in the future, do not call localGitService.compareCommits() and use git.statusMatrix() instead
       */
       const [FILE, _HEAD, _WORKDIR] = [0, 1, 2];
       const tables: TableMetadata[] = (
@@ -177,7 +179,7 @@ export async function get_current_version_content({
         name: getTableIdFromFileName(tableStatus[FILE] as string),
       }));
 
-      const workdirDiff = await gitdb.compareCommits({
+      const workdirDiff = await gitService.compareCommits({
         repositoryId,
         fromRef: "HEAD",
         toRef: "WORKDIR",
@@ -196,7 +198,7 @@ export async function get_current_version_content({
       );
 
       // 2. Get all commits in the draft branch
-      const branchCommits = await gitdb.getDraftVersionCommits({
+      const branchCommits = await gitService.getDraftVersionCommits({
         repositoryId,
         draftVersion: currentVersion,
       });

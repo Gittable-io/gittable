@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getConfig } from "../../config";
-import { getRepositoryPath } from "../utils";
+import { getRepositoryPath } from "../../utils/utils";
 
-async function backup(repositoryId: string): Promise<void> {
+export async function backup(repositoryId: string): Promise<void> {
   const original: string = getRepositoryPath(repositoryId);
   const backup: string = getBackupRepositoryPath(repositoryId);
 
@@ -11,7 +11,7 @@ async function backup(repositoryId: string): Promise<void> {
   await cp(original, backup);
 }
 
-async function restore(repositoryId: string): Promise<void> {
+export async function restore(repositoryId: string): Promise<void> {
   const original: string = getRepositoryPath(repositoryId);
   const backup: string = getBackupRepositoryPath(repositoryId);
 
@@ -19,7 +19,7 @@ async function restore(repositoryId: string): Promise<void> {
   await fs.rename(backup, original);
 }
 
-async function clear(repositoryId: string): Promise<void> {
+export async function clear(repositoryId: string): Promise<void> {
   const backup: string = getBackupRepositoryPath(repositoryId);
   await fs.rm(backup, { recursive: true, force: true });
 }
@@ -37,10 +37,7 @@ function getBackupRepositoryPath(repositoryId: string): string {
  * Since fs.cp() is still experimental, I did not use it (see https://nodejs.org/api/fs.html#fspromisescpsrc-dest-options)
  * Instead, I got this code from https://github.com/nodejs/node/issues/44598
  */
-export const cp = async (
-  source: string,
-  destination: string,
-): Promise<void> => {
+const cp = async (source: string, destination: string): Promise<void> => {
   const filesToCreate = await fs.readdir(source);
   for (const file of filesToCreate) {
     const originalFilePath = path.join(source, file);
@@ -56,9 +53,3 @@ export const cp = async (
 };
 
 //#endregion
-
-export const repoBackup = {
-  backup,
-  restore,
-  clear,
-};

@@ -6,15 +6,15 @@ import {
   PublishedVersion,
   VersionContentComparison,
 } from "@sharedTypes/index";
-import { getRepositoryPath, getTableIdFromFileName } from "../utils";
-import { gitUtils } from "./gitutils";
+import { getRepositoryPath, getTableIdFromFileName } from "../../utils/utils";
+import { gitUtils } from "./utils";
 
 /**
  *
  * @returns an array of published versions, i.e. tags on the main branch.
  * Returns an empty array if there's no published versions (no tags)
  */
-async function getPublishedVersions({
+export async function getPublishedVersions({
   repositoryId,
 }: {
   repositoryId: string;
@@ -78,7 +78,7 @@ async function getPublishedVersions({
  * @returns the last published version. i.e. the last tag on the main branch
  * return null if there are no published versions
  */
-async function getLastPublishedVersion({
+export async function getLastPublishedVersion({
   repositoryId,
 }: {
   repositoryId: string;
@@ -106,7 +106,7 @@ async function getLastPublishedVersion({
  *
  * TODO: This function is no longer used as of 17/04/2024. Delete it if it's still not used
  */
-async function getPublishedVersion({
+export async function getPublishedVersion({
   repositoryId,
   tagName,
 }: {
@@ -124,7 +124,7 @@ async function getPublishedVersion({
   return result ?? null;
 }
 
-async function getDraftVersions({
+export async function getDraftVersions({
   repositoryId,
 }: {
   repositoryId: string;
@@ -183,7 +183,7 @@ async function getDraftVersions({
  * @returns the draft version designated by the branch name.
  * Returns an empty array if there's no draft versions with the branch name
  */
-async function getDraftVersion({
+export async function getDraftVersion({
   repositoryId,
   branch,
 }: {
@@ -201,7 +201,7 @@ async function getDraftVersion({
   return result ?? null;
 }
 
-async function getInitialCommitOid({
+export async function getInitialCommitOid({
   repositoryId,
 }: {
   repositoryId: string;
@@ -225,7 +225,7 @@ async function getInitialCommitOid({
   return initialCommit.oid;
 }
 
-async function getDraftVersionCommits({
+export async function getDraftVersionCommits({
   repositoryId,
   draftVersion,
 }: {
@@ -276,7 +276,7 @@ async function getDraftVersionCommits({
  * A non-initialized repository has just been created in the Git server and this is the first clone
  * We determine that a repository is non-initialized when it doesn't have any branch (not even a main)
  */
-async function isRepositoryInitialized({
+export async function isRepositoryInitialized({
   repositoryId,
 }: {
   repositoryId: string;
@@ -297,7 +297,7 @@ async function isRepositoryInitialized({
  *
  * @returns if the repository has a published version.
  */
-async function hasPublished({
+export async function hasPublished({
   repositoryId,
 }: {
   repositoryId: string;
@@ -311,7 +311,7 @@ async function hasPublished({
   return publishedVersions.length > 0;
 }
 
-async function compareCommits({
+export async function compareCommits({
   repositoryId,
   fromRef,
   toRef,
@@ -365,16 +365,3 @@ async function compareCommits({
     return [];
   }
 }
-
-export const gitdb = {
-  getDraftVersionCommits,
-  getPublishedVersions,
-  getPublishedVersion,
-  getLastPublishedVersion,
-  getDraftVersions,
-  getDraftVersion,
-  getInitialCommitOid,
-  isRepositoryInitialized,
-  hasPublished,
-  compareCommits,
-};

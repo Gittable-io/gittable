@@ -3,7 +3,7 @@ import git, { FetchResult, PushResult } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import { RepositoryCredentials } from "@sharedTypes/index";
 import { UserDataStore } from "../../db";
-import { getRepositoryPath } from "../utils";
+import { getRepositoryPath } from "../../utils/utils";
 
 export class NoCredentialsProvidedError extends Error {
   constructor() {
