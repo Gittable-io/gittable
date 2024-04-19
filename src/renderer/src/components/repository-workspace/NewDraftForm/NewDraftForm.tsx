@@ -50,6 +50,7 @@ export function NewDraftForm(): JSX.Element {
       {!isCreateDraftInProgress ? (
         <MaterialSymbolButton
           symbol="check"
+          label="Confirm new draft version"
           disabled={error != null || draftName === ""}
           onClick={createDraft}
         />
