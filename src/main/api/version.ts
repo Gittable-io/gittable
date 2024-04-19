@@ -13,14 +13,10 @@ import {
   getRepositoryRelativeTablePath,
   getTableIdFromFileName,
 } from "../utils/utils";
-import {
-  AuthWithProvidedCredentialsError,
-  NoCredentialsProvidedError,
-  pushBranchOrTag,
-} from "../services/git/remote";
+import { pushBranchOrTag } from "../services/git/remote";
 import * as gitService from "../services/git/local";
 import path from "node:path";
-import { get_current_version } from "./repository";
+import { GitServiceError } from "../services/git/error";
 
 //#region API: get_current_version_content
 export type GetCurrentVersionContentParameters = {
@@ -34,7 +30,7 @@ export type GetCurrentVersionContentResponse =
     }
   | {
       status: "error";
-      type: "unknown";
+      type: "UNKNOWN";
     };
 
 export async function get_current_version_content({
@@ -45,11 +41,7 @@ export async function get_current_version_content({
   );
 
   try {
-    const currentVersionResp = await get_current_version({ repositoryId });
-    if (currentVersionResp.status === "error") {
-      throw new Error();
-    }
-    const currentVersion = currentVersionResp.version;
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
 
     if (currentVersion.type === "draft") {
       /*
@@ -118,8 +110,16 @@ export async function get_current_version_content({
         content: { tables, commits: [] },
       };
     }
-  } catch (err) {
-    return { status: "error", type: "unknown" };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(
+        `[API/get_current_version_content] Error : ${error.name}, ${error.message}`,
+      );
+    } else {
+      console.debug(`[API/get_current_version_content] Error`);
+    }
+
+    return { status: "error", type: "UNKNOWN" };
   }
 }
 
@@ -279,16 +279,14 @@ export async function push_commits({
 }: PushCommitsParameters): Promise<PushCommitsResponse> {
   console.debug(`[API/push_commits] Called with repositoryId=${repositoryId}`);
 
-  const currentVersionResp = await get_current_version({ repositoryId });
-  if (currentVersionResp.status === "error") {
-    return { status: "error", type: "UNKNOWN" };
-  } else if (currentVersionResp.version.type !== "draft") {
-    return { status: "error", type: "NOT_ON_DRAFT_VERSION" };
-  }
-
-  const currentDraftVersion: DraftVersion = currentVersionResp.version;
-
   try {
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    if (currentVersion.type !== "draft") {
+      return { status: "error", type: "NOT_ON_DRAFT_VERSION" };
+    }
+
+    const currentDraftVersion: DraftVersion = currentVersion;
+
     await pushBranchOrTag({
       repositoryId,
       branchOrTagName: currentDraftVersion.branch,
@@ -301,11 +299,21 @@ export async function push_commits({
     }
     return { status: "success", content: contentResp.content };
   } catch (error) {
-    console.debug(`[API/push_commits] Error pushing commits`);
-    if (error instanceof NoCredentialsProvidedError) {
-      return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
-    } else if (error instanceof AuthWithProvidedCredentialsError) {
-      return { status: "error", type: "AUTH_ERROR_WITH_CREDENTIALS" };
+    console.error(
+      `[API/push_commits] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        return {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        return { status: "error", type: "UNKNOWN" };
+      }
     } else {
       return { status: "error", type: "UNKNOWN" };
     }

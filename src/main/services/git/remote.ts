@@ -4,30 +4,7 @@ import http from "isomorphic-git/http/node";
 import { RepositoryCredentials } from "@sharedTypes/index";
 import { UserDataStore } from "../../db";
 import { getRepositoryPath } from "../../utils/utils";
-
-export class NoCredentialsProvidedError extends Error {
-  constructor() {
-    super("NoCredentialsProvidedError"); // To set the message
-    this.name = "NoCredentialsProvidedError";
-    Object.setPrototypeOf(this, NoCredentialsProvidedError.prototype);
-  }
-}
-
-export class AuthWithProvidedCredentialsError extends Error {
-  constructor() {
-    super("AuthWithProvidedCredentialsError"); // To set the message
-    this.name = "AuthWithProvidedCredentialsError";
-    Object.setPrototypeOf(this, AuthWithProvidedCredentialsError.prototype);
-  }
-}
-
-export class UnknownPushError extends Error {
-  constructor(message?: string) {
-    super(`UnknownPushError: ${message}`); // To set the message
-    this.name = "UnknownPushError";
-    Object.setPrototypeOf(this, UnknownPushError.prototype);
-  }
-}
+import { GitServiceError } from "./error";
 
 export async function pushBranchOrTag({
   repositoryId,
@@ -45,7 +22,7 @@ export async function pushBranchOrTag({
     providedCredentials ??
     (await UserDataStore.getRepositoryCredentials(repositoryId));
   if (credentials == null) {
-    throw new NoCredentialsProvidedError();
+    throw new GitServiceError("NO_CREDENTIALS_PROVIDED");
   }
 
   let pushResult: PushResult | null = null;
@@ -68,18 +45,24 @@ export async function pushBranchOrTag({
     if (error instanceof Error) {
       if (error.name === "UserCanceledError") {
         // This only occurs when I cancelled push with onAuthFailure
-        throw new AuthWithProvidedCredentialsError();
+        throw new GitServiceError("AUTH_FAILED_WITH_PROVIDED_CREDENTIALS");
       } else {
-        throw new UnknownPushError(`${error.name}: ${error.message}`);
+        throw new GitServiceError(
+          "UNKNOWN_REMOTE_OPERATION_ERROR",
+          `${error.name}: ${error.message}`,
+        );
       }
     } else {
-      throw new UnknownPushError();
+      throw new GitServiceError("UNKNOWN_REMOTE_OPERATION_ERROR");
     }
   }
 
   // After Push finished, check if there was an error
   if (!pushResult || pushResult.error) {
-    throw new UnknownPushError("Push succeeded but with errors");
+    throw new GitServiceError(
+      "UNKNOWN_REMOTE_OPERATION_ERROR",
+      "Push succeeded but with errors",
+    );
   }
 
   // Push was successfull
@@ -105,7 +88,7 @@ export async function fetch({
     providedCredentials ??
     (await UserDataStore.getRepositoryCredentials(repositoryId));
   if (credentials == null) {
-    throw new NoCredentialsProvidedError();
+    throw new GitServiceError("NO_CREDENTIALS_PROVIDED");
   }
 
   let fetchResult: FetchResult | null = null;
@@ -127,12 +110,15 @@ export async function fetch({
     if (error instanceof Error) {
       if (error.name === "UserCanceledError") {
         // This only occurs when I cancelled push with onAuthFailure
-        throw new AuthWithProvidedCredentialsError();
+        throw new GitServiceError("AUTH_FAILED_WITH_PROVIDED_CREDENTIALS");
       } else {
-        throw new UnknownPushError(`${error.name}: ${error.message}`);
+        throw new GitServiceError(
+          "UNKNOWN_REMOTE_OPERATION_ERROR",
+          `${error.name}: ${error.message}`,
+        );
       }
     } else {
-      throw new UnknownPushError();
+      throw new GitServiceError("UNKNOWN_REMOTE_OPERATION_ERROR");
     }
   }
 

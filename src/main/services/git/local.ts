@@ -4,10 +4,12 @@ import {
   Commit,
   DraftVersion,
   PublishedVersion,
+  Version,
   VersionContentComparison,
 } from "@sharedTypes/index";
 import { getRepositoryPath, getTableIdFromFileName } from "../../utils/utils";
 import { gitUtils } from "./utils";
+import { GitServiceError } from "./error";
 
 /**
  *
@@ -20,7 +22,7 @@ export async function getPublishedVersions({
   repositoryId: string;
 }): Promise<PublishedVersion[]> {
   console.debug(
-    `[gitdb/getPublishedVersions] Called with repositoryId=${repositoryId}`,
+    `[local/getPublishedVersions] Called with repositoryId=${repositoryId}`,
   );
 
   // 1. Get list of tags
@@ -84,7 +86,7 @@ export async function getLastPublishedVersion({
   repositoryId: string;
 }): Promise<PublishedVersion | null> {
   console.debug(
-    `[gitdb/getLastPublishedVersion] Called with repositoryId=${repositoryId}`,
+    `[local/getLastPublishedVersion] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
@@ -93,7 +95,7 @@ export async function getLastPublishedVersion({
   const latestPublishedVersion = publishedVersions.find((v) => v.newest);
   if (!latestPublishedVersion)
     throw new Error(
-      "[gitdb/getLastPublishedVersion] No Published version was marked as newest",
+      "[local/getLastPublishedVersion] No Published version was marked as newest",
     );
 
   return latestPublishedVersion;
@@ -114,7 +116,7 @@ export async function getPublishedVersion({
   tagName: string;
 }): Promise<PublishedVersion | null> {
   console.debug(
-    `[gitdb/getPublishedVersion] Called with repositoryId=${repositoryId} and tagName=${tagName}`,
+    `[local/getPublishedVersion] Called with repositoryId=${repositoryId} and tagName=${tagName}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
@@ -130,7 +132,7 @@ export async function getDraftVersions({
   repositoryId: string;
 }): Promise<DraftVersion[]> {
   console.debug(
-    `[gitdb/getDraftVersions] Called with repositoryId=${repositoryId}`,
+    `[local/getDraftVersions] Called with repositoryId=${repositoryId}`,
   );
 
   // 1. Get list of branches
@@ -162,7 +164,7 @@ export async function getDraftVersions({
 
     if (!basePublishedVersion) {
       throw new Error(
-        `[gitdb/getDraftVersions] Could not determine the base published version of ${branch}`,
+        `[local/getDraftVersions] Could not determine the base published version of ${branch}`,
       );
     }
 
@@ -178,6 +180,73 @@ export async function getDraftVersions({
   return draftVersions;
 }
 
+export async function getCurrentVersion({
+  repositoryId,
+}: {
+  repositoryId: string;
+}): Promise<Version> {
+  console.debug(
+    `[local/getCurrentVersion] Called with repositoryId=${repositoryId}`,
+  );
+
+  // Check where HEAD is pointing at
+  const currentBranch = await git.currentBranch({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+  });
+
+  const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
+    ? "POINTS_TO_BRANCH"
+    : "POINTS_TO_TAG";
+
+  console.debug(
+    `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
+  );
+
+  const headCommitOid = await git.resolveRef({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: "HEAD",
+  });
+
+  if (headStatus === "POINTS_TO_BRANCH") {
+    const draftVersions = await getDraftVersions({
+      repositoryId,
+    });
+
+    // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
+    for (const version of draftVersions) {
+      const branchCommitOid = await git.resolveRef({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: version.branch,
+      });
+
+      if (branchCommitOid === headCommitOid) {
+        return version;
+      }
+    }
+  } else {
+    const publishedVersions = await getPublishedVersions({
+      repositoryId,
+    });
+
+    for (const version of publishedVersions) {
+      const tagCommitOid = await git.resolveRef({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: version.tag,
+      });
+
+      if (tagCommitOid === headCommitOid) {
+        return version;
+      }
+    }
+  }
+
+  throw new GitServiceError("COULD_NOT_FIND_CURRENT_VERSION");
+}
+
 /**
  *
  * @returns the draft version designated by the branch name.
@@ -191,7 +260,7 @@ export async function getDraftVersion({
   branch: string;
 }): Promise<DraftVersion | null> {
   console.debug(
-    `[gitdb/getDraftVersion] Called with repositoryId=${repositoryId} and branch=${branch}`,
+    `[local/getDraftVersion] Called with repositoryId=${repositoryId} and branch=${branch}`,
   );
 
   const draftVersions = await getDraftVersions({ repositoryId });
@@ -207,7 +276,7 @@ export async function getInitialCommitOid({
   repositoryId: string;
 }): Promise<string> {
   console.debug(
-    `[gitdb/getInitialCommitOid] Called with repositoryId=${repositoryId}`,
+    `[local/getInitialCommitOid] Called with repositoryId=${repositoryId}`,
   );
 
   const mainLog = await git.log({
@@ -282,7 +351,7 @@ export async function isRepositoryInitialized({
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
+    `[local/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
   );
 
   const branches = await git.listBranches({
@@ -303,7 +372,7 @@ export async function hasPublished({
   repositoryId: string;
 }): Promise<boolean> {
   console.debug(
-    `[gitdb/hasPublished] Called with repositoryId=${repositoryId}`,
+    `[local/hasPublished] Called with repositoryId=${repositoryId}`,
   );
 
   const publishedVersions = await getPublishedVersions({ repositoryId });
