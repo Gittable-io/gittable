@@ -116,7 +116,7 @@ export async function init_repository({
     }
 
     // Before doing anything, backup the repo
-    backupService.backup(repositoryId);
+    await backupService.backup(repositoryId);
 
     // 1. Init repository so that init.defaultBranch is set up correctly to main
     await git.init({
@@ -186,9 +186,9 @@ export async function init_repository({
     }
   } finally {
     if (errorResponse) {
-      backupService.restore(repositoryId);
+      await backupService.restore(repositoryId);
     } else {
-      backupService.clear(repositoryId);
+      await backupService.clear(repositoryId);
     }
   }
 
@@ -697,7 +697,7 @@ export async function publish_draft({
   let errorResponse: PublishDraftResponse | null = null;
   try {
     // 1. Backup repository
-    backupService.backup(repositoryId);
+    await backupService.backup(repositoryId);
 
     // 2. Merge draft branch to main
     await git.merge({
@@ -780,9 +780,9 @@ export async function publish_draft({
     }
   } finally {
     if (errorResponse) {
-      backupService.restore(repositoryId);
+      await backupService.restore(repositoryId);
     } else {
-      backupService.clear(repositoryId);
+      await backupService.clear(repositoryId);
     }
   }
 
@@ -823,25 +823,26 @@ export async function pull({
     const currentVersion = await gitService.getCurrentVersion({ repositoryId });
     if (currentVersion.type === "draft") {
       // 1. Backup repository
-      backupService.backup(repositoryId);
+      await backupService.backup(repositoryId);
 
       // 2. Fetch from remote
-      const { fetchHead } = await fetch({ repositoryId, credentials });
+      const fetchResult = await fetch({ repositoryId, credentials });
 
       // TODO: check when fetchHead is null
-      if (fetchHead) {
+      if (fetchResult.fetchHead) {
         // 3. Then merge
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const mergeResult = await git.merge({
           fs,
           dir: getRepositoryPath(repositoryId),
-          theirs: fetchHead,
+          theirs: fetchResult.fetchHead,
         });
 
         console.debug(
           `[API/pull] Merge success: ${JSON.stringify(mergeResult)}`,
         );
 
+        // You need to checkout so that isomorphic-git merge works. see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
         await git.checkout({
           fs,
           dir: getRepositoryPath(repositoryId),
@@ -870,9 +871,9 @@ export async function pull({
     }
   } finally {
     if (errorResponse) {
-      backupService.restore(repositoryId);
+      await backupService.restore(repositoryId);
     } else {
-      backupService.clear(repositoryId);
+      await backupService.clear(repositoryId);
     }
   }
 

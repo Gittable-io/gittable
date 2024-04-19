@@ -43,20 +43,22 @@ export function WorkspaceToolbar(): JSX.Element {
             {currentVersion.type === "published" && draftVersion && (
               <DeleteDraft />
             )}
-            <Button
-              text="Get Latest Updates"
-              variant="outlined"
-              onClick={() =>
-                dispatch(
-                  repoActions.remoteAction({
-                    action: {
-                      type: "PULL",
-                    },
-                  }),
-                )
-              }
-              loading={isPullInProgress}
-            />
+            {currentVersion.type === "draft" && (
+              <Button
+                text="Get Latest Updates"
+                variant="outlined"
+                onClick={() =>
+                  dispatch(
+                    repoActions.remoteAction({
+                      action: {
+                        type: "PULL",
+                      },
+                    }),
+                  )
+                }
+                loading={isPullInProgress}
+              />
+            )}
           </div>
         </>
       )}
