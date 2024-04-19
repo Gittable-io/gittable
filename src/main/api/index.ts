@@ -27,6 +27,9 @@ import {
   list_versions,
   type ListVersionsParameters,
   type ListVersionsResponse,
+  get_current_version,
+  type GetCurrentVersionParameters,
+  type GetCurrentVersionResponse,
   switch_version,
   type SwitchVersionParameters,
   type SwitchVersionResponse,
@@ -47,9 +50,6 @@ import {
   type PullResponse,
 } from "./repository";
 import {
-  get_current_version,
-  type GetCurrentVersionParameters,
-  type GetCurrentVersionResponse,
   get_current_version_content,
   type GetCurrentVersionContentParameters,
   type GetCurrentVersionContentResponse,

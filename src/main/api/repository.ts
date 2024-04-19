@@ -10,7 +10,7 @@ import {
   VersionContent,
   VersionContentComparison,
 } from "@sharedTypes/index";
-import { get_current_version, get_current_version_content } from "./version";
+import { get_current_version_content } from "./version";
 import _ from "lodash";
 import {
   AuthWithProvidedCredentialsError,
@@ -234,6 +234,114 @@ export async function list_versions({
 
     return { status: "success", versions };
   } catch (error) {
+    return { status: "error", type: "unknown" };
+  }
+}
+//#endregion
+
+//#region API: get_current_version
+export type GetCurrentVersionParameters = {
+  repositoryId: string;
+};
+
+export type GetCurrentVersionResponse =
+  | {
+      status: "success";
+      version: Version;
+    }
+  | {
+      status: "error";
+      type: "COULD NOT FIND CURRENT VERSION";
+    }
+  | {
+      status: "error";
+      type: "unknown";
+    };
+
+export async function get_current_version({
+  repositoryId,
+}: GetCurrentVersionParameters): Promise<GetCurrentVersionResponse> {
+  console.debug(
+    `[API/get_current_version] Called with repositoryId=${repositoryId}`,
+  );
+
+  /*
+   * Here's the algorithm to know on which version I am :
+   *
+   * Check if git HEAD is pointing to a current branch or in a detached HEAD mode
+   *     If HEAD points to the current branch => I'm on a draft version
+   *     If Detached HEAD => I'm on a Tag
+   *
+   * This works, because, in the App, HEAD can only point to a Branch or to a Tag. There's no other options
+   */
+
+  try {
+    // Check where HEAD is pointing at
+    const currentBranch = await git.currentBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+    });
+
+    const headStatus: "POINTS_TO_BRANCH" | "POINTS_TO_TAG" = currentBranch
+      ? "POINTS_TO_BRANCH"
+      : "POINTS_TO_TAG";
+
+    console.debug(
+      `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
+    );
+
+    const headCommitOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "HEAD",
+    });
+
+    if (headStatus === "POINTS_TO_BRANCH") {
+      const draftVersions = await gitService.getDraftVersions({
+        repositoryId,
+      });
+
+      // Even though, there's only a single draft, we will verify that HEAD points to it (in the future, we will have multiple drafts)
+      for (const version of draftVersions) {
+        const branchCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.branch,
+        });
+
+        if (branchCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
+      }
+    } else {
+      const publishedVersions = await gitService.getPublishedVersions({
+        repositoryId,
+      });
+
+      for (const version of publishedVersions) {
+        const tagCommitOid = await git.resolveRef({
+          fs,
+          dir: getRepositoryPath(repositoryId),
+          ref: version.tag,
+        });
+
+        if (tagCommitOid === headCommitOid) {
+          return { status: "success", version };
+        }
+      }
+    }
+
+    return {
+      status: "error",
+      type: "COULD NOT FIND CURRENT VERSION",
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      console.debug(`[API/get_current_version] Error : ${error.name}`);
+    } else {
+      console.debug(`[API/get_current_version] Error`);
+    }
+
     return { status: "error", type: "unknown" };
   }
 }
