@@ -151,6 +151,13 @@ export async function getDraftVersions({
     // Get the draft version id and name
     const { id, name } = gitUtils.getDraftBranchInfo(branch);
 
+    // Get the commit Oid pointed to by the branch
+    const headOid = await git.resolveRef({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: branch,
+    });
+
     // Get the draft version base Oid
     const baseOid = await gitUtils.getDraftBranchBaseOid({
       repositoryId,
@@ -176,6 +183,7 @@ export async function getDraftVersions({
       id,
       branch: branch,
       name,
+      headOid,
       baseOid,
       basePublishedVersion,
     });

@@ -12,7 +12,7 @@ import {
 } from "@sharedTypes/index";
 import { get_current_version_content } from "./version";
 import _ from "lodash";
-import { fetch, pushBranchOrTag } from "../services/git/remote";
+import * as remoteService from "../services/git/remote";
 import * as gitService from "../services/git/local";
 import * as backupService from "../services/git/backup";
 import * as gitUtils from "../services/git/utils";
@@ -155,13 +155,13 @@ export async function init_repository({
     });
 
     // 2.1 Push main and draft initial branches
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: "main",
       credentials,
     });
 
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: initiaLDraftBranch,
       credentials,
@@ -430,7 +430,7 @@ export async function create_draft({
   let errorResponse: CreateDraftResponse | null = null;
   try {
     // 2. Push branch
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: branchName,
       credentials,
@@ -571,7 +571,7 @@ export async function delete_draft({
    */
   try {
     // 3. Delete remote branch
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: versionToDelete.branch,
       credentials,
@@ -749,21 +749,21 @@ export async function publish_draft({
     TODO: we should solve those issues
     */
     // 5. Push main
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: "main",
       credentials,
     });
 
     // 6. Push new tag
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: newPublishedVersionName,
       credentials,
     });
 
     // 7. Push delete remote branch
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: draftVersion.branch,
       credentials,
@@ -839,89 +839,10 @@ export async function pull({
 
   let errorResponse: PullResponse | null = null;
   try {
-    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-    if (currentVersion.type === "draft") {
-      // 1. Backup repository
-      await backupService.backup(repositoryId);
-
-      // 2. Fetch from remote
-      const fetchResult = await fetch({ repositoryId, credentials });
-
-      // ? In the type def of FetchResult, fetchHead can be null. However, I don't know in which case it is null
-      if (fetchResult.fetchHead == null) {
-        throw new Error("[API/pull] fetchResult.fetchHead is null");
-      }
-
-      // 3. Then merge
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const mergeResult = await git.merge({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        theirs: fetchResult.fetchHead,
-      });
-
-      console.debug(`[API/pull] Merge success: ${JSON.stringify(mergeResult)}`);
-
-      // You need to checkout so that isomorphic-git merge works. see https://github.com/isomorphic-git/isomorphic-git/issues/1286#issuecomment-744063430
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: currentVersion.branch,
-      });
-    } else {
-      // 1. Backup repository
-      await backupService.backup(repositoryId);
-
-      // 2. Fetch from remote
-      const fetchResult = await fetch({ repositoryId, credentials });
-
-      // ? In the type def of FetchResult, fetchHead can be null. However, I don't know in which case it is null
-      if (fetchResult.fetchHead == null) {
-        throw new Error("[API/pull] fetchResult.fetchHead is null");
-      }
-
-      /*
-       3. Check if there are new Draft Versions and create corresponding local branches
-       To do that : 
-        - Get lists of remote draft branches and current draft versions
-        - Check if a remote branch does not have a local branch
-        - In this case, create a local draft branch that tracks the remote draft branch
-
-        Note : we wrote as if we may have multiple draft branches, but for now, we will alwyas have a 0 or 1 draft branch
-      */
-      const remoteBranches = (
-        await git.listBranches({
-          fs,
-          dir: getRepositoryPath(repositoryId),
-          remote: "origin",
-        })
-      ).filter((remoteBranch) => remoteBranch.startsWith("draft/"));
-
-      const draftVersions = await gitService.getDraftVersions({ repositoryId });
-
-      const newRemoteBranches = remoteBranches.filter(
-        (remoteBranch) =>
-          draftVersions.find((dv) => dv.branch === remoteBranch) == undefined,
-      );
-
-      for (const newRemoteBranch of newRemoteBranches) {
-        // With isogit, we checkout the remote branch to create a local branch that tracks it (see API/clone_repository())
-        // ! Will those excessive checkouts cause issues?
-        // TODO: the cleanest way is to modify isogit and to add a --set-upstream-to option
-        await git.checkout({
-          fs,
-          dir: getRepositoryPath(repositoryId),
-          ref: newRemoteBranch,
-        });
-      }
-
-      // 4. Go back to the published version
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: currentVersion.tag,
-      });
-    }
+    await remoteService.pull({
+      repositoryId,
+      credentials,
+    });
   } catch (error) {
     console.error(
       `[API/pull] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
