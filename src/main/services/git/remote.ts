@@ -11,6 +11,7 @@ import { getRepositoryPath } from "../../utils/utils";
 import { GitServiceError } from "./error";
 import * as gitService from "./local";
 import * as gitUtils from "./utils";
+import * as gitFuture from "./isomorphic-git-overrides";
 
 export async function pushBranchOrTag({
   repositoryId,
@@ -324,23 +325,9 @@ export async function pull({
     // We assume that there's a single draft branch
     const change = newDraftChanges[0];
 
-    await git.writeRef({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: `refs/heads/${change.draftVersion.branch}`,
-      value: change.draftVersion.headOid,
-    });
-    await git.setConfig({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      path: `branch.${change.draftVersion.branch}.remote`,
-      value: "origin",
-    });
-    await git.setConfig({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      path: `branch.${change.draftVersion.branch}.merge`,
-      value: `refs/heads/${change.draftVersion.branch}`,
+    await gitFuture.createLocalBranchFromRemoteBranch({
+      repositoryId,
+      branchName: change.draftVersion.branch,
     });
   }
 

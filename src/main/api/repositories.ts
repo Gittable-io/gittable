@@ -17,6 +17,7 @@ import {
 import { UserDataStore } from "../db";
 import { switch_version } from "./repository";
 import * as gitService from "../services/git/local";
+import * as gitFuture from "../services/git/isomorphic-git-overrides";
 
 //#region API: clone_repository
 export type CloneRepositoryParameters = {
@@ -191,17 +192,9 @@ export async function clone_repository({
 
       for (const remoteBranch of remoteBranches) {
         if (remoteBranch.startsWith("draft/")) {
-          /*
-         * - If I just create a local branch of the same name, it won't work, as isogit (or git) doesn't automatically set it to track the remote branch of the same name
-         * - isogit doesn't have a command like git branch --set-upstream-to=<remote branch> that allows me to create a local branch and set its upstream branch
-         * - The solution I found is to checkout the branch, and here isogit will automatically create the local branch correctly set its upstream branch
-         *
-         TODO: For the future : Modify isogit and to add a --set-upstream-to option
-         */
-          await git.checkout({
-            fs,
-            dir: getRepositoryPath(repositoryId),
-            ref: remoteBranch,
+          await gitFuture.createLocalBranchFromRemoteBranch({
+            repositoryId,
+            branchName: remoteBranch,
           });
         }
       }
