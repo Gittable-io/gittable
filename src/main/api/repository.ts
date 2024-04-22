@@ -15,6 +15,7 @@ import _ from "lodash";
 import { fetch, pushBranchOrTag } from "../services/git/remote";
 import * as gitService from "../services/git/local";
 import * as backupService from "../services/git/backup";
+import * as gitUtils from "../services/git/utils";
 import { GitServiceError } from "../services/git/error";
 
 //#region API: get_repository_status
@@ -93,9 +94,8 @@ export type InitRepositoryResponse =
  * 1. Init repo and setup init.defaultBranch to "main"
  * 1. Create a branch named "main"
  * 1. Create an empty commit on "main"
- * 2. Create a draft branch "draft/initial" from that empty commit
- * 4. Push "main" and "draft/initial"
- * 3. Checkout to the draft branch "draft/initial"
+ * 2. Create a draft branch "initial" from that empty commit
+ * 4. Push "main" and "initial"
  */
 export async function init_repository({
   repositoryId,
@@ -139,21 +139,22 @@ export async function init_repository({
       message: "INITIAL_COMMIT",
     });
 
-    // 3. Create a draft branch "draft/initial" from that empty commit
+    const initiaLDraftBranch = await gitUtils.generateDraftBranch("initial");
+    // 3. Create a draft branch "draft/<id>/initial" from that empty commit
     await git.branch({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: "draft/initial",
+      ref: initiaLDraftBranch,
     });
 
-    // 3. Checkout to the draft branch "draft/initial"
+    // 3. Checkout to the draft branch "initial"
     await git.checkout({
       fs,
       dir: getRepositoryPath(repositoryId),
-      ref: "draft/initial",
+      ref: initiaLDraftBranch,
     });
 
-    // 2.1 Push main and draft/initial branches
+    // 2.1 Push main and draft initial branches
     await pushBranchOrTag({
       repositoryId,
       branchOrTagName: "main",
@@ -162,7 +163,7 @@ export async function init_repository({
 
     await pushBranchOrTag({
       repositoryId,
-      branchOrTagName: "draft/initial",
+      branchOrTagName: initiaLDraftBranch,
       credentials,
     });
   } catch (error) {
@@ -388,7 +389,7 @@ export async function create_draft({
     `[API/create_draft] Called with repositoryId=${repositoryId} and name=${draftName}`,
   );
 
-  const branchName = `draft/${draftName}`;
+  const branchName = await gitUtils.generateDraftBranch(draftName);
 
   try {
     // 1. Create branch

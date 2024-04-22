@@ -40,6 +40,7 @@ export type PublishedVersion = {
 
 export type DraftVersion = {
   type: "draft";
+  id: string;
   name: string;
   branch: string;
   baseOid: string;

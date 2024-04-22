@@ -6,7 +6,7 @@ import { getRepositoryPath } from "../../utils/utils";
  *
  * @returns the commit oid of the starting point of the draft branch (when it branched from main)
  */
-async function getDraftBranchBaseOid({
+export async function getDraftBranchBaseOid({
   repositoryId,
   draftBranchName,
 }: {
@@ -36,6 +36,34 @@ async function getDraftBranchBaseOid({
   return branchBaseOid[0];
 }
 
-export const gitUtils = {
-  getDraftBranchBaseOid,
-};
+export function getDraftBranchInfo(branchName: string): {
+  id: string;
+  name: string;
+} {
+  if (!branchName.startsWith("draft/")) {
+    throw new Error(`${branchName} is not a draft branch`);
+  }
+
+  const parts: string[] = branchName.split("/");
+  if (parts.length < 3 || parts[2] === "") {
+    throw new Error(`${branchName} has an illegal draft branch name`);
+  }
+
+  const id = parts[1];
+  const name = branchName.slice(parts[0].length + parts[1].length + 2);
+
+  return { id, name };
+}
+
+export async function generateDraftBranch(name: string): Promise<string> {
+  // ! I'm doing a dynamic import of nanoid, to solve a difficult ERR_REQUIRE_ESM error
+  // ! when importing nanoid
+  // ! There are other solutions, one of them is downgrading to nanoid v3
+  // ! see https://github.com/ai/nanoid?tab=readme-ov-file#install
+  // ! see https://stackoverflow.com/a/73191957/471461
+  //
+  const { nanoid } = await import("nanoid");
+
+  const id = nanoid();
+  return `draft/${id}/${name}`;
+}

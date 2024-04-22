@@ -166,7 +166,7 @@ export async function clone_repository({
 
       - 5.2 : Checkout to either: the last published version (tag) or the draft version if there's no published version
         - Why? When cloning a remote repo, by default, HEAD points to main.
-        - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
+        - However, we do not allow HEAD to point to main. We only allow it to point to a draft branch or a tag on main
         - We correct this by making HEAD point to the latest published tag or to a draft branch
 
       Note : if repository is not initialized we don't do nothing, as we should wait the user to initialize the repo

@@ -8,7 +8,7 @@ import {
   VersionContentComparison,
 } from "@sharedTypes/index";
 import { getRepositoryPath, getTableIdFromFileName } from "../../utils/utils";
-import { gitUtils } from "./utils";
+import * as gitUtils from "./utils";
 import { GitServiceError } from "./error";
 
 /**
@@ -148,6 +148,9 @@ export async function getDraftVersions({
   const draftVersions: DraftVersion[] = [];
   const publishedVersion = await getPublishedVersions({ repositoryId });
   for (const branch of draftBranches) {
+    // Get the draft version id and name
+    const { id, name } = gitUtils.getDraftBranchInfo(branch);
+
     // Get the draft version base Oid
     const baseOid = await gitUtils.getDraftBranchBaseOid({
       repositoryId,
@@ -170,8 +173,9 @@ export async function getDraftVersions({
 
     draftVersions.push({
       type: "draft",
+      id,
       branch: branch,
-      name: branch.slice(6),
+      name,
       baseOid,
       basePublishedVersion,
     });
