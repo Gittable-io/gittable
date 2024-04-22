@@ -243,6 +243,15 @@ export const repoSlice = createSlice({
       });
   },
   selectors: {
+    isWorkspaceDataCompletelyLoaded: (state): boolean => {
+      return (
+        state.repository != null &&
+        state.status != null &&
+        state.versions != null &&
+        state.currentVersion != null &&
+        state.currentVersionContent != null
+      );
+    },
     isWorkingDirModified: (state): boolean => {
       if (state.currentVersionContent == null) return false;
 
