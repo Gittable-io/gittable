@@ -142,7 +142,7 @@ export async function getDraftVersions({
   });
 
   // 2. Filter draft branches
-  const draftBranches = branches.filter((b) => b.startsWith("draft/"));
+  const draftBranches = branches.filter(gitUtils.isBranchDraftVersion);
 
   // 3. Map each branch to a DraftVersion
   const draftVersions: DraftVersion[] = [];

@@ -140,7 +140,7 @@ export async function init_repository({
     });
 
     const initiaLDraftBranch = await gitUtils.generateDraftBranch("initial");
-    // 3. Create a draft branch "draft/<id>/initial" from that empty commit
+    // 3. Create a draft branch from that empty commit
     await git.branch({
       fs,
       dir: getRepositoryPath(repositoryId),

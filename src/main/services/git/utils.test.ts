@@ -1,31 +1,22 @@
 import * as gitUtils from "./utils";
 
 describe("Test getDraftBranchInfo()", () => {
-  test("draft/V1StGXR8_Z5jdHi6B-myT/v1.0.0", () => {
+  test("draft/v1.0.0_bqp3gjaoxUTxjklVwf3O", () => {
     expect(
-      gitUtils.getDraftBranchInfo("draft/V1StGXR8_Z5jdHi6B-myT/v1.0.0"),
+      gitUtils.getDraftBranchInfo("draft/v1.0.0_bqp3gjaoxUTxjklVwf3O"),
     ).toEqual({
-      id: "V1StGXR8_Z5jdHi6B-myT",
+      id: "bqp3gjaoxUTxjklVwf3O",
       name: "v1.0.0",
     });
   });
 
-  test("draft/V1StGXR8_Z5jdHi6B-myT/v1.0.0", () => {
-    expect(
-      gitUtils.getDraftBranchInfo("draft/V1StGXR8_Z5jdHi6B-myT/v1.0.0"),
-    ).toEqual({
-      id: "V1StGXR8_Z5jdHi6B-myT",
-      name: "v1.0.0",
-    });
-  });
-
-  test("draft/V1StGXR8_Z5jdHi6B-myT/feat/new-feature", () => {
+  test("draft/feat/new-feature_bqp3gjaoxUTxjklVwf3O", () => {
     expect(
       gitUtils.getDraftBranchInfo(
-        "draft/V1StGXR8_Z5jdHi6B-myT/feat/new-feature",
+        "draft/feat/new-feature_bqp3gjaoxUTxjklVwf3O",
       ),
     ).toEqual({
-      id: "V1StGXR8_Z5jdHi6B-myT",
+      id: "bqp3gjaoxUTxjklVwf3O",
       name: "feat/new-feature",
     });
   });
@@ -34,13 +25,17 @@ describe("Test getDraftBranchInfo()", () => {
     expect(() => gitUtils.getDraftBranchInfo("draft/v1.0.0")).toThrow();
   });
 
-  test("V1StGXR8_Z5jdHi6B-myT/v1.0.0", () => {
+  test("bqp3gjaoxUTxjklVwf3O/v1.0.0", () => {
     expect(() =>
-      gitUtils.getDraftBranchInfo("V1StGXR8_Z5jdHi6B-myT/v1.0.0"),
+      gitUtils.getDraftBranchInfo("bqp3gjaoxUTxjklVwf3O/v1.0.0"),
     ).toThrow();
   });
 
   test("v1.0.0", () => {
     expect(() => gitUtils.getDraftBranchInfo("v1.0.0")).toThrow();
+  });
+
+  test("draft/v1.0.0_", () => {
+    expect(() => gitUtils.getDraftBranchInfo("draft/v1.0.0_")).toThrow();
   });
 });

@@ -36,6 +36,14 @@ export async function getDraftBranchBaseOid({
   return branchBaseOid[0];
 }
 
+export function isBranchDraftVersion(branchName: string): boolean {
+  return (
+    branchName.startsWith("draft/") &&
+    branchName.includes("_") &&
+    !branchName.endsWith("_")
+  );
+}
+
 export function getDraftBranchInfo(branchName: string): {
   id: string;
   name: string;
@@ -43,18 +51,39 @@ export function getDraftBranchInfo(branchName: string): {
   if (!branchName.startsWith("draft/")) {
     throw new Error(`${branchName} is not a draft branch`);
   }
-
-  const parts: string[] = branchName.split("/");
-  if (parts.length < 3 || parts[2] === "") {
+  if (!branchName.includes("_")) {
+    throw new Error(`${branchName} has an illegal draft branch name`);
+  }
+  if (branchName.endsWith("_")) {
     throw new Error(`${branchName} has an illegal draft branch name`);
   }
 
-  const id = parts[1];
-  const name = branchName.slice(parts[0].length + parts[1].length + 2);
+  const startIdIdx = branchName.lastIndexOf("_") + 1;
+  const id = branchName.slice(startIdIdx);
+  const name = branchName.slice("draft/".length, startIdIdx - 1);
 
   return { id, name };
 }
 
+/**
+ * Generate a draft branch name from the given version name.
+ * The draft branch name is of format "draft/<name>_<id>"
+ *
+ * Some notes :
+ * - In the previous version, the branch name was of the format : "draft/<id>/<name>"
+ *   However, I noticed an issue with isomorphic-git:
+ *   With a branch named "draft/<id>/<name>", isomorphic-git (and Git) creates a ref in
+ *   .git/refs/heads/draft/<id>.
+ *   However, when I tell isomorphic-git to delete the reference, it only deletes the <name> file,
+ *   leaving .git/refs/heads/draft/<id> as empty folders.
+ *   I was afraid, that with time, we will have many empty folders in .git/refs/heads/draft, so this is why I switched
+ *   to the format "draft/<name>_<id>"
+ *   The issue will still be present if users creates draft with names like "feat/xxx", but there will be less empty folders
+ *   than having a folder for each <id>
+ *
+ *   TODO: modify isomorphic-git so that it cleanups empty folders in refs
+ *
+ */
 export async function generateDraftBranch(name: string): Promise<string> {
   // ! I'm doing a dynamic import of nanoid, to solve a difficult ERR_REQUIRE_ESM error
   // ! when importing nanoid
@@ -62,8 +91,12 @@ export async function generateDraftBranch(name: string): Promise<string> {
   // ! see https://github.com/ai/nanoid?tab=readme-ov-file#install
   // ! see https://stackoverflow.com/a/73191957/471461
   //
-  const { nanoid } = await import("nanoid");
+  const { customAlphabet } = await import("nanoid");
 
+  const alphabet =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const nanoid = customAlphabet(alphabet, 20);
   const id = nanoid();
-  return `draft/${id}/${name}`;
+
+  return `draft/${name}_${id}`;
 }

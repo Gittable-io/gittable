@@ -17,6 +17,7 @@ import {
 import { UserDataStore } from "../db";
 import { switch_version } from "./repository";
 import * as gitService from "../services/git/local";
+import * as gitUtils from "../services/git/utils";
 import * as gitFuture from "../services/git/isomorphic-git-overrides";
 
 //#region API: clone_repository
@@ -191,7 +192,7 @@ export async function clone_repository({
       });
 
       for (const remoteBranch of remoteBranches) {
-        if (remoteBranch.startsWith("draft/")) {
+        if (gitUtils.isBranchDraftVersion(remoteBranch)) {
           await gitFuture.createLocalBranchFromRemoteBranch({
             repositoryId,
             branchName: remoteBranch,
