@@ -17,6 +17,8 @@ import {
 import { UserDataStore } from "../db";
 import { switch_version } from "./repository";
 import * as gitService from "../services/git/local";
+import * as gitUtils from "../services/git/utils";
+import * as gitFuture from "../services/git/isomorphic-git-overrides";
 
 //#region API: clone_repository
 export type CloneRepositoryParameters = {
@@ -166,7 +168,7 @@ export async function clone_repository({
 
       - 5.2 : Checkout to either: the last published version (tag) or the draft version if there's no published version
         - Why? When cloning a remote repo, by default, HEAD points to main.
-        - However, we do not allow HEAD to point to main. We only allow it to point to a draft/ branch or a tag on main
+        - However, we do not allow HEAD to point to main. We only allow it to point to a draft branch or a tag on main
         - We correct this by making HEAD point to the latest published tag or to a draft branch
 
       Note : if repository is not initialized we don't do nothing, as we should wait the user to initialize the repo
@@ -190,18 +192,10 @@ export async function clone_repository({
       });
 
       for (const remoteBranch of remoteBranches) {
-        if (remoteBranch.startsWith("draft/")) {
-          /*
-         * - If I just create a local branch of the same name, it won't work, as isogit (or git) doesn't automatically set it to track the remote branch of the same name
-         * - isogit doesn't have a command like git branch --set-upstream-to=<remote branch> that allows me to create a local branch and set its upstream branch
-         * - The solution I found is to checkout the branch, and here isogit will automatically create the local branch correctly set its upstream branch
-         *
-         TODO: For the future : Modify isogit and to add a --set-upstream-to option
-         */
-          await git.checkout({
-            fs,
-            dir: getRepositoryPath(repositoryId),
-            ref: remoteBranch,
+        if (gitUtils.isBranchDraftVersion(remoteBranch)) {
+          await gitFuture.createLocalBranchFromRemoteBranch({
+            repositoryId,
+            branchName: remoteBranch,
           });
         }
       }

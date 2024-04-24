@@ -180,7 +180,7 @@ export const updateVersions = createAsyncThunk<
     repositoryId,
   });
   if (repoStatusResp.status === "error") {
-    return thunkAPI.rejectWithValue("Error fetching repsoitory status");
+    return thunkAPI.rejectWithValue("Error fetching repository status");
   }
 
   // 2. Fetch versions

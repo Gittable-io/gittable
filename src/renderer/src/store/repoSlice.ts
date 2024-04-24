@@ -19,6 +19,7 @@ import {
   updateVersions,
 } from "./thunks";
 import { remoteAction } from "./remoteThunks";
+import { isVersionEqual } from "@renderer/utils/utils";
 
 export type DiffDescription = {
   table: TableMetadata;
@@ -180,6 +181,14 @@ export const repoSlice = createSlice({
         return initState(null);
       })
       .addCase(fetchRepositoryDetails.fulfilled, (state, action) => {
+        // If we switched versions, then close all panels
+        if (
+          !isVersionEqual(state.currentVersion, action.payload.currentVersion)
+        ) {
+          state.panels = [];
+          state.selectedPanelId = null;
+        }
+
         state.status = action.payload.status;
         state.versions = action.payload.versions;
         state.currentVersion = action.payload.currentVersion;
@@ -243,6 +252,15 @@ export const repoSlice = createSlice({
       });
   },
   selectors: {
+    isWorkspaceDataCompletelyLoaded: (state): boolean => {
+      return (
+        state.repository != null &&
+        state.status != null &&
+        state.versions != null &&
+        state.currentVersion != null &&
+        state.currentVersionContent != null
+      );
+    },
     isWorkingDirModified: (state): boolean => {
       if (state.currentVersionContent == null) return false;
 

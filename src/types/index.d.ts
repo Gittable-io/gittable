@@ -40,8 +40,10 @@ export type PublishedVersion = {
 
 export type DraftVersion = {
   type: "draft";
+  id: string;
   name: string;
   branch: string;
+  headOid: string;
   baseOid: string;
   basePublishedVersion: PublishedVersion | "INITIAL";
 };
@@ -70,3 +72,19 @@ export type VersionContentComparison = {
   table: TableMetadata;
   change: DocumentChangeType;
 }[];
+
+// Repository Changes
+export type RemoteRepositoryChanges = {
+  newDraft?: {
+    draftVersion: Pick<
+      DraftVersion,
+      "type" | "id" | "name" | "branch" | "headOid"
+    >;
+  };
+  newCommits?: {
+    version: DraftVersion;
+  };
+  deletedDraft?: {
+    version: DraftVersion;
+  };
+};
