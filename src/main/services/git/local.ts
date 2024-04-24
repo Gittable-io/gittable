@@ -21,10 +21,6 @@ export async function getPublishedVersions({
 }: {
   repositoryId: string;
 }): Promise<PublishedVersion[]> {
-  console.debug(
-    `[local/getPublishedVersions] Called with repositoryId=${repositoryId}`,
-  );
-
   // 1. Get list of tags
   const tags = await git.listTags({
     fs,
@@ -85,10 +81,6 @@ export async function getLastPublishedVersion({
 }: {
   repositoryId: string;
 }): Promise<PublishedVersion | null> {
-  console.debug(
-    `[local/getLastPublishedVersion] Called with repositoryId=${repositoryId}`,
-  );
-
   const publishedVersions = await getPublishedVersions({ repositoryId });
   if (publishedVersions.length === 0) return null;
 
@@ -115,10 +107,6 @@ export async function getPublishedVersion({
   repositoryId: string;
   tagName: string;
 }): Promise<PublishedVersion | null> {
-  console.debug(
-    `[local/getPublishedVersion] Called with repositoryId=${repositoryId} and tagName=${tagName}`,
-  );
-
   const publishedVersions = await getPublishedVersions({ repositoryId });
 
   const result = publishedVersions.find((v) => v.tag === tagName);
@@ -131,10 +119,6 @@ export async function getDraftVersions({
 }: {
   repositoryId: string;
 }): Promise<DraftVersion[]> {
-  console.debug(
-    `[local/getDraftVersions] Called with repositoryId=${repositoryId}`,
-  );
-
   // 1. Get list of branches
   const branches = await git.listBranches({
     fs,
@@ -197,10 +181,6 @@ export async function getCurrentVersion({
 }: {
   repositoryId: string;
 }): Promise<Version> {
-  console.debug(
-    `[local/getCurrentVersion] Called with repositoryId=${repositoryId}`,
-  );
-
   // Check where HEAD is pointing at
   const currentBranch = await git.currentBranch({
     fs,
@@ -271,10 +251,6 @@ export async function getDraftVersion({
   repositoryId: string;
   branch: string;
 }): Promise<DraftVersion | null> {
-  console.debug(
-    `[local/getDraftVersion] Called with repositoryId=${repositoryId} and branch=${branch}`,
-  );
-
   const draftVersions = await getDraftVersions({ repositoryId });
 
   const result = draftVersions.find((v) => v.branch === branch);
@@ -287,10 +263,6 @@ export async function getInitialCommitOid({
 }: {
   repositoryId: string;
 }): Promise<string> {
-  console.debug(
-    `[local/getInitialCommitOid] Called with repositoryId=${repositoryId}`,
-  );
-
   const mainLog = await git.log({
     fs,
     dir: getRepositoryPath(repositoryId),
@@ -362,10 +334,6 @@ export async function isRepositoryInitialized({
 }: {
   repositoryId: string;
 }): Promise<boolean> {
-  console.debug(
-    `[local/isRepositoryInitialized] Called with repositoryId=${repositoryId}`,
-  );
-
   const branches = await git.listBranches({
     fs,
     dir: getRepositoryPath(repositoryId),
@@ -383,10 +351,6 @@ export async function hasPublished({
 }: {
   repositoryId: string;
 }): Promise<boolean> {
-  console.debug(
-    `[local/hasPublished] Called with repositoryId=${repositoryId}`,
-  );
-
   const publishedVersions = await getPublishedVersions({ repositoryId });
 
   return publishedVersions.length > 0;

@@ -19,6 +19,7 @@ export function DeleteDraft(): JSX.Element {
     <>
       <Button
         text="Delete draft"
+        testId="Delete draft"
         variant="danger"
         onClick={() =>
           dispatch(

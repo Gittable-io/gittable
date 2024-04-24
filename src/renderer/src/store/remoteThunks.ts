@@ -128,8 +128,7 @@ export const remoteAction = createAsyncThunk<
       break;
     }
     case "PULL": {
-      await thunkAPI.dispatch(updateVersions());
-      await thunkAPI.dispatch(updateVersionContent());
+      await thunkAPI.dispatch(fetchRepositoryDetails());
     }
   }
   return;

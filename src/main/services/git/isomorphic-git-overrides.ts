@@ -51,3 +51,45 @@ export async function createLocalBranchFromRemoteBranch({
     value: `refs/heads/${branchName}`,
   });
 }
+
+/**
+ * This function replaces and fills a gap in isomorphic git's deleteBranch()
+ * The issue is, that isogit deleted the ref to the branch, but does not delete the upstream-branch config in the config file
+ * which is the beahvior of git branch -d
+ * This function is here to remedy that.
+ *
+ * TODO: do a PR in isomorphic git
+ */
+export async function deleteBranch(
+  options: Parameters<typeof git.deleteBranch>[0],
+): ReturnType<typeof git.deleteBranch> {
+  await git.deleteBranch(options);
+
+  const branch_merge = await git.getConfig({
+    fs: options.fs,
+    dir: options.dir,
+    path: `branch.${options.ref}.merge`,
+  });
+  if (branch_merge) {
+    await git.setConfig({
+      fs: options.fs,
+      dir: options.dir,
+      path: `branch.${options.ref}.merge`,
+      value: undefined,
+    });
+  }
+
+  const branch_remote = await git.getConfig({
+    fs: options.fs,
+    dir: options.dir,
+    path: `branch.${options.ref}.remote`,
+  });
+  if (branch_remote) {
+    await git.setConfig({
+      fs: options.fs,
+      dir: options.dir,
+      path: `branch.${options.ref}.remote`,
+      value: undefined,
+    });
+  }
+}

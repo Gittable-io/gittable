@@ -11,7 +11,6 @@ import {
   VersionContentComparison,
 } from "@sharedTypes/index";
 import { get_current_version_content } from "./version";
-import _ from "lodash";
 import * as remoteService from "../services/git/remote";
 import * as gitService from "../services/git/local";
 import * as backupService from "../services/git/backup";
@@ -536,7 +535,9 @@ export async function delete_draft({
     const draftVersions = await gitService.getDraftVersions({
       repositoryId,
     });
-    if (!draftVersions.find((dv) => _.isEqual(dv, versionToDelete))) {
+    if (
+      !draftVersions.find((dv) => gitUtils.isVersionEqual(dv, versionToDelete))
+    ) {
       return {
         status: "error",
         type: "DRAFT_VERSION_DO_NOT_EXIST",
@@ -545,7 +546,7 @@ export async function delete_draft({
 
     // 2. Check that we're not in actual draft version
     const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-    if (_.isEqual(currentVersion, versionToDelete)) {
+    if (gitUtils.isVersionEqual(currentVersion, versionToDelete)) {
       return {
         status: "error",
         type: "DRAFT_VERSION_OPENED",
@@ -839,6 +840,9 @@ export async function pull({
 
   let errorResponse: PullResponse | null = null;
   try {
+    // 1. Backup repository
+    await backupService.backup(repositoryId);
+
     await remoteService.pull({
       repositoryId,
       credentials,

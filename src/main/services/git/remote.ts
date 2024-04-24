@@ -2,8 +2,7 @@ import fs from "node:fs/promises";
 import git, { FetchResult, PushResult, ServerRef } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import {
-  DraftVersion,
-  RepositoryChange,
+  RemoteRepositoryChanges,
   RepositoryCredentials,
 } from "@sharedTypes/index";
 import { UserDataStore } from "../../db";
@@ -13,6 +12,7 @@ import * as gitService from "./local";
 import * as gitUtils from "./utils";
 import * as gitFuture from "./isomorphic-git-overrides";
 
+//#region pushBranchOrTag
 export async function pushBranchOrTag({
   repositoryId,
   branchOrTagName,
@@ -83,6 +83,9 @@ export async function pushBranchOrTag({
   return;
 }
 
+//#endregion
+
+//#region fetch
 export async function fetch({
   repositoryId,
   credentials: providedCredentials,
@@ -106,6 +109,7 @@ export async function fetch({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
+      prune: true,
       onAuth: () => {
         return credentials;
       },
@@ -140,27 +144,125 @@ export async function fetch({
 
   return fetchResult;
 }
+//#endregion
 
-type RemoteRepositoryChange =
-  | {
-      type: "NEW_DRAFT";
-      draftVersion: Pick<
-        DraftVersion,
-        "type" | "id" | "name" | "branch" | "headOid"
-      >;
+//#region pull
+export async function pull({
+  repositoryId,
+  credentials,
+}: {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+}): Promise<RemoteRepositoryChanges> {
+  // (A) Determine the changes in the remote repository. If there are GitServiceErrorType, they will be handled by the API function
+  const remoteRepositoryChanges = await getRemoteRepositoryChanges({
+    repositoryId,
+    credentials,
+  });
+  const { newDraft, deletedDraft, newCommits } = remoteRepositoryChanges;
+
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+
+  // (B) Before fetching, you may need to prepare the local repository
+  // 1. If the checked out branch got deleted in remote, then switch temporarily to main
+  // isomorphic-git's fetch() throws an error if you're on a branch that got deleted on remote
+  if (
+    deletedDraft &&
+    currentVersion.type === "draft" &&
+    currentVersion.name === deletedDraft.version.name
+  ) {
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "main",
+    });
+  }
+
+  // (C) Then fetch all changes from remote. If there are GitServiceErrorType, they will be handled by the API function
+  await fetch({ repositoryId, credentials });
+
+  // (D) After fetching, integrate the fetched remote changed into the local repository
+  // 1. Integrate new commits : Merge on draft branch
+  if (newCommits) {
+    // We assume that there's a single draft branch
+    const draftVersion = newCommits.version;
+
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: draftVersion.branch,
+      theirs: `refs/remotes/origin/${draftVersion.branch}`,
+    });
+
+    // If the user is on the draft version, they need to checkout to complete the merge
+    // If the user is on a published version, it doesn't seem to need that
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    if (
+      currentVersion.type === "draft" &&
+      currentVersion.name === draftVersion.name
+    ) {
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: draftVersion.branch,
+      });
     }
-  | {
-      type: "NEW_COMMITS_ON_EXISTING_DRAFT";
-      version: DraftVersion;
-    };
+  }
 
-export async function getRemoteRepositoryChanges({
+  // 2. Integrate new draft branches : Create local branches
+  if (newDraft) {
+    await gitFuture.createLocalBranchFromRemoteBranch({
+      repositoryId,
+      branchName: newDraft.draftVersion.branch,
+    });
+  }
+
+  // 3. Integrate deleted draft branches : delete local branches
+  if (deletedDraft) {
+    // We assume that there's a single draft branch
+    const deletedDraftVersion = deletedDraft.version;
+
+    // If the user is on the deleted draft version, we need to switch to the last published version
+    if (
+      currentVersion.type === "draft" &&
+      currentVersion.name === deletedDraftVersion.name
+    ) {
+      const lastPublishedVersion = await gitService.getLastPublishedVersion({
+        repositoryId,
+      });
+
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: lastPublishedVersion
+          ? lastPublishedVersion.tag
+          : await gitService.getInitialCommitOid({ repositoryId }),
+      });
+    }
+
+    // Delete local branch
+    // Remote branch is already deleted with git.fetch({prune:true})
+    await gitFuture.deleteBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: deletedDraftVersion.branch,
+    });
+  }
+
+  return remoteRepositoryChanges;
+}
+//#endregion
+
+//#region getRemoteRepositoryChanges
+
+async function getRemoteRepositoryChanges({
   repositoryId,
   credentials: providedCredentials,
 }: {
   repositoryId: string;
   credentials?: RepositoryCredentials;
-}): Promise<RemoteRepositoryChange[]> {
+}): Promise<RemoteRepositoryChanges> {
+  // (A) Fetch Server Refs
   // Retrieve credentials, and return error if there are no credentials
   const credentials =
     providedCredentials ??
@@ -199,53 +301,76 @@ export async function getRemoteRepositoryChanges({
     }
   }
 
-  // =============== Determine remote repository changes from serverRefs
-  const remoteRepositoryChanges: RemoteRepositoryChange[] = [];
+  // (B) Determine remote repository changes from serverRefs
+  const remoteRepoChanges: RemoteRepositoryChanges = {};
 
-  // 1. Determine new draft branches
-  const remoteDraftBrancheRefs = serverRefs.filter((ref) =>
-    ref.ref.startsWith("refs/heads/draft"),
-  );
+  const remoteDraftBrancheRefs: Array<ServerRef & { branchName: string }> =
+    serverRefs
+      .filter((ref) =>
+        gitUtils.isBranchDraftVersion(ref.ref.slice("refs/heads/".length)),
+      )
+      .map((ref) => ({
+        ...ref,
+        branchName: ref.ref.slice("refs/heads/".length),
+      }));
 
   const localDraftVersions = await gitService.getDraftVersions({
     repositoryId,
   });
-  for (const remoteDraftBrancheRef of remoteDraftBrancheRefs) {
-    const remoteBranch = remoteDraftBrancheRef.ref.slice("refs/heads/".length);
-    if (!localDraftVersions.find((ldv) => ldv.branch === remoteBranch)) {
-      const { id, name } = gitUtils.getDraftBranchInfo(remoteBranch);
-      remoteRepositoryChanges.push({
-        type: "NEW_DRAFT",
+
+  // 1. Determine new draft branches
+  for (const remoteDraftBranchRef of remoteDraftBrancheRefs) {
+    if (
+      !localDraftVersions.find(
+        (ldv) => ldv.branch === remoteDraftBranchRef.branchName,
+      )
+    ) {
+      const { id, name } = gitUtils.getDraftBranchInfo(
+        remoteDraftBranchRef.branchName,
+      );
+      remoteRepoChanges.newDraft = {
         draftVersion: {
           type: "draft",
-          branch: remoteBranch,
+          branch: remoteDraftBranchRef.branchName,
           id,
           name,
-          headOid: remoteDraftBrancheRef.oid,
+          headOid: remoteDraftBranchRef.oid,
         },
-      });
+      };
+
+      break; // We assume there's always a single new draft
     }
   }
 
   // 2. Determine new commits on existing draft branches
-  for (const remoteDraftBrancheRef of remoteDraftBrancheRefs) {
-    const remoteBranch = remoteDraftBrancheRef.ref.slice("refs/heads/".length);
+  for (const remoteDraftBranchRef of remoteDraftBrancheRefs) {
     const localDraftVersion = localDraftVersions.find(
-      (ldv) => ldv.branch === remoteBranch,
+      (ldv) => ldv.branch === remoteDraftBranchRef.branchName,
     );
     if (
       localDraftVersion &&
-      localDraftVersion.headOid !== remoteDraftBrancheRef.oid
+      localDraftVersion.headOid !== remoteDraftBranchRef.oid
     ) {
-      remoteRepositoryChanges.push({
-        type: "NEW_COMMITS_ON_EXISTING_DRAFT",
-        version: localDraftVersion,
-      });
+      remoteRepoChanges.newCommits = { version: localDraftVersion };
+
+      break; // We assume there's always a single draft branch
     }
   }
 
-  // Operation was successfull
-  // If credentials were provided, then save those credentials
+  // 3. Determine deleted draft branches
+  for (const draftVersion of localDraftVersions) {
+    const localBranch = draftVersion.branch;
+    if (
+      !remoteDraftBrancheRefs.find(
+        (remoteBranchRef) => remoteBranchRef.branchName === localBranch,
+      )
+    ) {
+      remoteRepoChanges.deletedDraft = { version: draftVersion };
+      break; // We assume there's always a single draft branch
+    }
+  }
+
+  // (C) Operation was successfull : If credentials were provided, then save those credentials
   if (providedCredentials) {
     await UserDataStore.setRepositoryCredentials(
       repositoryId,
@@ -253,83 +378,8 @@ export async function getRemoteRepositoryChanges({
     );
   }
 
-  return remoteRepositoryChanges;
+  // (D) Prepare return result
+  return remoteRepoChanges;
 }
 
-export async function pull({
-  repositoryId,
-  credentials,
-}: {
-  repositoryId: string;
-  credentials?: RepositoryCredentials;
-}): Promise<RepositoryChange[]> {
-  // First, determine the changes in the remote repository. If there are GitServiceErrorType, they will be handled by the API function
-  const remoteRepositoryChanges = await getRemoteRepositoryChanges({
-    repositoryId,
-    credentials,
-  });
-
-  // Then fetch all changes from remote. If there are GitServiceErrorType, they will be handled by the API function
-  await fetch({ repositoryId, credentials });
-
-  // 1. Handle new commits on existing branches
-  function isNewCommitsOnExistingDraft(
-    change: RemoteRepositoryChange,
-  ): change is Extract<
-    RemoteRepositoryChange,
-    { type: "NEW_COMMITS_ON_EXISTING_DRAFT" }
-  > {
-    return change.type === "NEW_COMMITS_ON_EXISTING_DRAFT";
-  }
-
-  const newCommitsChanges = remoteRepositoryChanges.filter(
-    isNewCommitsOnExistingDraft,
-  );
-
-  if (newCommitsChanges.length > 0) {
-    // We assume that there's a single draft branch
-    const change = newCommitsChanges[0];
-    const draftVersion = change.version;
-
-    await git.merge({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ours: draftVersion.branch,
-      theirs: `refs/remotes/origin/${draftVersion.branch}`,
-    });
-
-    // If the user is on the draft version, they need to checkout to complete the merge
-    // If the user is on a published version, it doesn't seem to need that
-    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-    if (
-      currentVersion.type === "draft" &&
-      currentVersion.name === draftVersion.name
-    ) {
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: draftVersion.branch,
-      });
-    }
-  }
-
-  // 2. Handle new draft branches
-  function isNewDraft(
-    change: RemoteRepositoryChange,
-  ): change is Extract<RemoteRepositoryChange, { type: "NEW_DRAFT" }> {
-    return change.type === "NEW_DRAFT";
-  }
-
-  const newDraftChanges = remoteRepositoryChanges.filter(isNewDraft);
-  if (newDraftChanges.length > 0) {
-    // We assume that there's a single draft branch
-    const change = newDraftChanges[0];
-
-    await gitFuture.createLocalBranchFromRemoteBranch({
-      repositoryId,
-      branchName: change.draftVersion.branch,
-    });
-  }
-
-  return [];
-}
+//#endregion

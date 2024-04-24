@@ -73,12 +73,18 @@ export type VersionContentComparison = {
   change: DocumentChangeType;
 }[];
 
-export type RepositoryChange =
-  | {
-      type: "NEW_DRAFT";
-      draftVersion: Pick<DraftVersion, "type" | "id" | "name" | "branch">;
-    }
-  | {
-      type: "NEW_COMMITS_ON_EXISTING_DRAFT";
-      version: DraftVersion;
-    };
+// Repository Changes
+export type RemoteRepositoryChanges = {
+  newDraft?: {
+    draftVersion: Pick<
+      DraftVersion,
+      "type" | "id" | "name" | "branch" | "headOid"
+    >;
+  };
+  newCommits?: {
+    version: DraftVersion;
+  };
+  deletedDraft?: {
+    version: DraftVersion;
+  };
+};
