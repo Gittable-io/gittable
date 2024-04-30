@@ -5,7 +5,6 @@ import { Button, IconAndText } from "gittable-editor";
 import { getVersionMaterialSymbol } from "@renderer/utils/utils";
 import { repoActions, repoSelectors } from "@renderer/store/repoSlice";
 import { DeleteDraft } from "../DeleteDraft";
-import { RemoteNotificationBar } from "../RemoteNotificationBar";
 
 export function WorkspaceToolbar(): JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,7 +30,6 @@ export function WorkspaceToolbar(): JSX.Element {
               materialSymbol={getVersionMaterialSymbol(currentVersion)}
               text={`${currentVersion.type === "published" ? (currentVersion.newest ? "Viewing latest published" : "Viewing published") : "Editing draft"} version: ${currentVersion.name}`}
             />
-            <RemoteNotificationBar />
           </div>
           <div className="workspace-toolbar-actions">
             {currentVersion.type === "draft" && (
