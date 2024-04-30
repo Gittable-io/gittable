@@ -79,6 +79,34 @@ export type RemoteDraftVersion = Pick<
   "type" | "id" | "name" | "branch" | "headOid"
 >;
 
+export type RemotePublishedVersion = Pick<
+  PublishedVersion,
+  "type" | "name" | "tag" | "mainCommitOid"
+>;
+
+export type PullNewDraftAction = {
+  type: "PULL_NEW_DRAFT";
+  draftVersion: RemoteDraftVersion;
+};
+
+export type PullNewCommitsAction = {
+  type: "PULL_NEW_COMMITS";
+  version: DraftVersion;
+};
+export type PullDeletedDraftAction = {
+  type: "PULL_DELETED_DRAFT";
+  version: DraftVersion;
+};
+export type PullNewPublishedVersionsAction = {
+  type: "PULL_NEW_PUBLISHED_VERSIONS";
+};
+
+export type PullActionType =
+  | PullNewDraftAction["type"]
+  | PullNewCommitsAction["type"]
+  | PullDeletedDraftAction["type"]
+  | PullNewPublishedVersionsAction["type"];
+
 export type RemoteRepositoryChanges = {
   newDraft?: {
     draftVersion: RemoteDraftVersion;
@@ -89,7 +117,5 @@ export type RemoteRepositoryChanges = {
   deletedDraft?: {
     version: DraftVersion;
   };
-  newPublishedVersions?: {
-    version: Pick<PublishedVersion, "type" | "name" | "tag" | "mainCommitOid">;
-  }[];
+  newPublishedVersions?: { versions: RemotePublishedVersion[] };
 };

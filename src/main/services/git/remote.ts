@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import git, { FetchResult, PushResult, ServerRef } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import {
-  PublishedVersion,
+  RemotePublishedVersion,
   RemoteRepositoryChanges,
   RepositoryCredentials,
 } from "@sharedTypes/index";
@@ -215,26 +215,22 @@ export async function getRemoteRepositoryChanges({
     repositoryId,
   });
 
-  const newPublishedVersions: {
-    version: Pick<PublishedVersion, "type" | "name" | "tag" | "mainCommitOid">;
-  }[] = [];
+  const newPublishedVersions: RemotePublishedVersion[] = [];
 
   for (const remoteTagRef of remoteTagsRefs) {
     if (
       !localPublishedVersions.find((lpv) => lpv.tag === remoteTagRef.tagName)
     ) {
       newPublishedVersions.push({
-        version: {
-          type: "published",
-          name: remoteTagRef.tagName,
-          tag: remoteTagRef.tagName,
-          mainCommitOid: remoteTagRef.peeled!,
-        },
+        type: "published",
+        name: remoteTagRef.tagName,
+        tag: remoteTagRef.tagName,
+        mainCommitOid: remoteTagRef.peeled!,
       });
     }
   }
   if (newPublishedVersions.length > 0) {
-    remoteRepoChanges.newPublishedVersions = newPublishedVersions;
+    remoteRepoChanges.newPublishedVersions = { versions: newPublishedVersions };
   }
 
   // (C) Operation was successfull : If credentials were provided, then save those credentials
