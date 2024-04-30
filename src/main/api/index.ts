@@ -48,6 +48,9 @@ import {
   pull,
   type PullParameters,
   type PullResponse,
+  get_remote_info,
+  type GetRemoteInfoParameters,
+  type GetRemoteInfoResponse,
 } from "./repository";
 import {
   get_current_version_content,
@@ -142,6 +145,10 @@ const gittableElectronAPI = {
     ipcRenderer.invoke("publish_draft", params),
   pull: (params: PullParameters): Promise<PullResponse> =>
     ipcRenderer.invoke("pull", params),
+  get_remote_info: (
+    params: GetRemoteInfoParameters,
+  ): Promise<GetRemoteInfoResponse> =>
+    ipcRenderer.invoke("get_remote_info", params),
 
   // version API
   get_current_version_content: (
@@ -208,6 +215,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   );
   ipcMain.handle("publish_draft", (_event, params) => publish_draft(params));
   ipcMain.handle("pull", (_event, params) => pull(params));
+  ipcMain.handle("get_remote_info", (_event, params) =>
+    get_remote_info(params),
+  );
 
   // version API
   ipcMain.handle("get_current_version_content", (_event, params) =>

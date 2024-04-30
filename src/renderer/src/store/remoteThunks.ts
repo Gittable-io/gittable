@@ -1,7 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RemoteAction, repoActions } from "./repoSlice";
 import { AppRootState } from "./store";
-import { DraftVersion, RepositoryCredentials } from "@sharedTypes/index";
+import {
+  DraftVersion,
+  RemoteRepositoryChanges,
+  RepositoryCredentials,
+} from "@sharedTypes/index";
 import {
   fetchRepositoryDetails,
   switchVersion,
@@ -30,6 +34,7 @@ export const remoteAction = createAsyncThunk<
     | Awaited<ReturnType<typeof window.api.push_commits>>
     | Awaited<ReturnType<typeof window.api.publish_draft>>
     | Awaited<ReturnType<typeof window.api.pull>>
+    | Awaited<ReturnType<typeof window.api.get_remote_info>>
     | null = null;
   switch (action.type) {
     case "INIT_REPO": {
@@ -73,6 +78,13 @@ export const remoteAction = createAsyncThunk<
     }
     case "PULL": {
       response = await window.api.pull({
+        repositoryId,
+        credentials,
+      });
+      break;
+    }
+    case "FETCH_REMOTE_REPOSITORY_CHANGES": {
+      response = await window.api.get_remote_info({
         repositoryId,
         credentials,
       });
@@ -129,6 +141,18 @@ export const remoteAction = createAsyncThunk<
     }
     case "PULL": {
       await thunkAPI.dispatch(fetchRepositoryDetails());
+      break;
+    }
+    case "FETCH_REMOTE_REPOSITORY_CHANGES": {
+      const remoteChanges: RemoteRepositoryChanges = (
+        response as {
+          status: "success";
+          remoteChanges: RemoteRepositoryChanges;
+        }
+      ).remoteChanges;
+
+      await thunkAPI.dispatch(repoActions.updateRemoteStatus(remoteChanges));
+      break;
     }
   }
   return;

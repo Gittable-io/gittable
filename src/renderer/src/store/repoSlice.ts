@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   DraftVersion,
+  RemoteRepositoryChanges,
   Repository,
   RepositoryStatus,
   TableMetadata,
@@ -55,12 +56,14 @@ export type RemoteAction =
       draftVersion: DraftVersion;
       publishingName: string;
     }
-  | { type: "PULL" };
+  | { type: "PULL" }
+  | { type: "FETCH_REMOTE_REPOSITORY_CHANGES" };
 
 export type RepoState = {
   // Repository information
   repository: Repository | null;
   status: RepositoryStatus | null;
+  remoteStatus: RemoteRepositoryChanges | null;
   versions: Version[] | null;
   currentVersion: Version | null;
   currentVersionContent: VersionContent | null;
@@ -92,6 +95,7 @@ function initState(repository: Repository | null): RepoState {
   return {
     repository,
     status: null,
+    remoteStatus: null,
     versions: null,
     currentVersion: null,
     currentVersionContent: null,
@@ -118,7 +122,12 @@ export const repoSlice = createSlice({
     cancelRemoteAction: (state) => {
       state.remoteActionSequence = null;
     },
-
+    updateRemoteStatus: (
+      state,
+      action: PayloadAction<RemoteRepositoryChanges>,
+    ) => {
+      state.remoteStatus = action.payload;
+    },
     setWaitingForNewDraftName: (state, action: PayloadAction<boolean>) => {
       state.waitingForNewDraftName = action.payload;
     },
@@ -268,6 +277,16 @@ export const repoSlice = createSlice({
         return true;
 
       return false;
+    },
+    isRemoteRepositoryModified: (state): boolean => {
+      if (state.remoteStatus == null) return false;
+
+      return (
+        state.remoteStatus.deletedDraft != undefined ||
+        state.remoteStatus.newCommits != undefined ||
+        state.remoteStatus.newDraft != undefined ||
+        state.remoteStatus.newPublishedVersions != undefined
+      );
     },
     draftVersion: (state): DraftVersion | null => {
       const draftVersion = state.versions?.find((v) => v.type === "draft");

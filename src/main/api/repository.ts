@@ -4,6 +4,7 @@ import { getRepositoryPath } from "../utils/utils";
 import {
   DraftVersion,
   PublishedVersion,
+  RemoteRepositoryChanges,
   RepositoryCredentials,
   RepositoryStatus,
   Version,
@@ -675,7 +676,7 @@ export async function compare_versions({
 
 //#endregion
 
-//#region API: Publish draft
+//#region API: publish_draft
 export type PublishDraftParameters = {
   repositoryId: string;
   draftVersion: DraftVersion;
@@ -809,6 +810,65 @@ export async function publish_draft({
   if (errorResponse) return errorResponse;
 
   return { status: "success" };
+}
+
+//#endregion
+
+//#region API: get_remote_info
+export type GetRemoteInfoParameters = {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+};
+
+export type GetRemoteInfoResponse =
+  | {
+      status: "success";
+      remoteChanges: RemoteRepositoryChanges;
+    }
+  | {
+      status: "error";
+      type:
+        | "PUBLISHED_VERSION_ALREADY_EXISTS"
+        | "NO_PROVIDED_CREDENTIALS"
+        | "AUTH_ERROR_WITH_CREDENTIALS"
+        | "UNKNOWN";
+    };
+
+export async function get_remote_info({
+  repositoryId,
+  credentials,
+}: GetRemoteInfoParameters): Promise<GetRemoteInfoResponse> {
+  console.debug(
+    `[API/get_remote_info] Called with repositoryId=${repositoryId}`,
+  );
+
+  try {
+    const remoteChanges = await remoteService.getRemoteRepositoryChanges({
+      repositoryId,
+      credentials,
+    });
+
+    return { status: "success", remoteChanges };
+  } catch (error) {
+    console.error(
+      `[API/pull] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
+    );
+
+    if (error instanceof GitServiceError) {
+      if (error.name === "NO_CREDENTIALS_PROVIDED") {
+        return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+      } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
+        return {
+          status: "error",
+          type: "AUTH_ERROR_WITH_CREDENTIALS",
+        };
+      } else {
+        return { status: "error", type: "UNKNOWN" };
+      }
+    } else {
+      return { status: "error", type: "UNKNOWN" };
+    }
+  }
 }
 
 //#endregion

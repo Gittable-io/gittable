@@ -267,7 +267,7 @@ export async function pull({
 
 //#region getRemoteRepositoryChanges
 
-async function getRemoteRepositoryChanges({
+export async function getRemoteRepositoryChanges({
   repositoryId,
   credentials: providedCredentials,
 }: {
