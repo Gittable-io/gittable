@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import git, { FetchResult, PushResult, ServerRef } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import {
+  PublishedVersion,
   RemoteRepositoryChanges,
   RepositoryCredentials,
 } from "@sharedTypes/index";
@@ -109,6 +110,7 @@ export async function fetch({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
+      tags: true,
       prune: true,
       onAuth: () => {
         return credentials;
@@ -159,7 +161,8 @@ export async function pull({
     repositoryId,
     credentials,
   });
-  const { newDraft, deletedDraft, newCommits } = remoteRepositoryChanges;
+  const { newDraft, deletedDraft, newCommits, newPublishedVersions } =
+    remoteRepositoryChanges;
 
   const currentVersion = await gitService.getCurrentVersion({ repositoryId });
 
@@ -184,7 +187,6 @@ export async function pull({
   // (D) After fetching, integrate the fetched remote changed into the local repository
   // 1. Integrate new commits : Merge on draft branch
   if (newCommits) {
-    // We assume that there's a single draft branch
     const draftVersion = newCommits.version;
 
     await git.merge({
@@ -217,7 +219,17 @@ export async function pull({
     });
   }
 
-  // 3. Integrate deleted draft branches : delete local branches
+  // 3. Integrate new tags (new published versions) : merge origin/main with main
+  if (newPublishedVersions) {
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: "main",
+      theirs: `refs/remotes/origin/main`,
+    });
+  }
+
+  // 4. Integrate deleted draft branches : delete local branches
   if (deletedDraft) {
     // We assume that there's a single draft branch
     const deletedDraftVersion = deletedDraft.version;
@@ -278,6 +290,7 @@ async function getRemoteRepositoryChanges({
     serverRefs = await git.listServerRefs({
       http,
       url: repositoryUrl,
+      peelTags: true,
       onAuth: () => {
         return credentials;
       },
@@ -368,6 +381,39 @@ async function getRemoteRepositoryChanges({
       remoteRepoChanges.deletedDraft = { version: draftVersion };
       break; // We assume there's always a single draft branch
     }
+  }
+
+  // 4. Determine new published versions
+  const remoteTagsRefs: Array<ServerRef & { tagName: string }> = serverRefs
+    .filter((ref) => ref.ref.startsWith("refs/tags/"))
+    .map((ref) => ({
+      ...ref,
+      tagName: ref.ref.slice("refs/tags/".length),
+    }));
+  const localPublishedVersions = await gitService.getPublishedVersions({
+    repositoryId,
+  });
+
+  const newPublishedVersions: {
+    version: Pick<PublishedVersion, "type" | "name" | "tag" | "mainCommitOid">;
+  }[] = [];
+
+  for (const remoteTagRef of remoteTagsRefs) {
+    if (
+      !localPublishedVersions.find((lpv) => lpv.tag === remoteTagRef.tagName)
+    ) {
+      newPublishedVersions.push({
+        version: {
+          type: "published",
+          name: remoteTagRef.tagName,
+          tag: remoteTagRef.tagName,
+          mainCommitOid: remoteTagRef.peeled!,
+        },
+      });
+    }
+  }
+  if (newPublishedVersions.length > 0) {
+    remoteRepoChanges.newPublishedVersions = newPublishedVersions;
   }
 
   // (C) Operation was successfull : If credentials were provided, then save those credentials

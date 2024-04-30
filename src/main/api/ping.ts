@@ -1,5 +1,4 @@
-import fs from "node:fs/promises";
-import git from "isomorphic-git";
+import git, { ServerRef } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 
 export type PingResponse = { status: "success"; message: "pong" };
@@ -12,18 +11,24 @@ export async function ping(): Promise<PingResponse> {
 export async function test(): Promise<void> {
   console.log("[API/test] called");
 
-  const pushResult = await git.push({
-    fs,
-    http,
-    dir: "C:\\Users\\hhour\\Desktop\\git-test\\empty-repo",
-    ref: "v1.0",
-    onAuth: () => {
-      return { username: "habib", password: "habib" };
-    },
-    onAuthFailure: () => {
-      console.log("[API/test] onAuthFailure");
-    },
-  });
+  let serverRefs: ServerRef[] | null = null;
+  try {
+    serverRefs = await git.listServerRefs({
+      http,
+      url: "http://localhost:3000/habib/dev-repo-2t-1d.git",
+      onAuth: () => {
+        console.log("Needs authentication");
+      },
+      onAuthFailure: () => {
+        console.error("Authentication failure");
+      },
+      onAuthSuccess: () => {
+        console.log("Authentication success");
+      },
+    });
+  } catch (error) {
+    console.error(`Error: ${JSON.stringify(error)}`);
+  }
 
-  console.log(JSON.stringify(pushResult));
+  console.log(`Server Refs: ${JSON.stringify(serverRefs)}`);
 }

@@ -87,4 +87,7 @@ export type RemoteRepositoryChanges = {
   deletedDraft?: {
     version: DraftVersion;
   };
+  newPublishedVersions?: {
+    version: Pick<PublishedVersion, "type" | "name" | "tag" | "mainCommitOid">;
+  }[];
 };
