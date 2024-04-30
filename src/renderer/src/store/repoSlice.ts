@@ -2,6 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   DraftVersion,
+  PullNewCommitsAction,
   PullNewDraftAction,
   RemoteRepositoryChanges,
   Repository,
@@ -59,7 +60,8 @@ export type RemoteAction =
     }
   | { type: "FETCH_REMOTE_REPOSITORY_CHANGES" }
   | { type: "PULL" } // TODO: to remove after refatoring pull
-  | PullNewDraftAction;
+  | PullNewDraftAction
+  | PullNewCommitsAction;
 
 export type RepoState = {
   // Repository information

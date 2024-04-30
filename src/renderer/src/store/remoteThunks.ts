@@ -96,7 +96,15 @@ export const remoteAction = createAsyncThunk<
       response = await window.api.pull_new_draft({
         repositoryId,
         credentials,
-        remoteDraftRef: action.draftVersion.branch,
+        remoteDraftVersion: action.draftVersion,
+      });
+      break;
+    }
+    case "PULL_NEW_COMMITS": {
+      response = await window.api.pull_new_commits({
+        repositoryId,
+        credentials,
+        draftVersion: action.version,
       });
       break;
     }
@@ -165,6 +173,18 @@ export const remoteAction = createAsyncThunk<
       );
       break;
     }
+    case "PULL_NEW_COMMITS": {
+      await thunkAPI.dispatch(fetchRepositoryDetails());
+      await thunkAPI.dispatch(
+        repoActions.remoteAction({
+          action: {
+            type: "FETCH_REMOTE_REPOSITORY_CHANGES",
+          },
+        }),
+      );
+      break;
+    }
+
     case "FETCH_REMOTE_REPOSITORY_CHANGES": {
       const remoteChanges: RemoteRepositoryChanges = (
         response as {

@@ -21,7 +21,8 @@ export function RemoteNotificationBar(): JSX.Element | null {
 
   const isPullInProgress: boolean = useSelector(
     (state: AppRootState) =>
-      state.repo.remoteActionSequence?.action.type === "PULL_NEW_DRAFT",
+      state.repo.remoteActionSequence?.action.type === "PULL_NEW_DRAFT" ||
+      state.repo.remoteActionSequence?.action.type === "PULL_NEW_COMMITS",
   );
 
   const getNotificationType = (): PullActionType | null => {
@@ -48,13 +49,13 @@ export function RemoteNotificationBar(): JSX.Element | null {
 
     switch (notifType) {
       case "PULL_NEW_COMMITS":
-        return <p>There are new commits</p>;
+        return <p>There are new commits. Click to retrieve them.</p>;
       case "PULL_DELETED_DRAFT":
-        return <p>The draft is deleted</p>;
+        return <p>This draft was deleted. Click to remove it.</p>;
       case "PULL_NEW_DRAFT":
         return <p>There is a new draft. Click to retrieve it.</p>;
       case "PULL_NEW_PUBLISHED_VERSIONS":
-        return <p>There are new published version</p>;
+        return <p>There are new published versions. Click to retrieve them.</p>;
     }
   };
 
@@ -66,6 +67,17 @@ export function RemoteNotificationBar(): JSX.Element | null {
             action: {
               type: "PULL_NEW_DRAFT",
               draftVersion: remoteStatus.newDraft!.draftVersion,
+            },
+          }),
+        );
+        break;
+      }
+      case "PULL_NEW_COMMITS": {
+        dispatch(
+          repoActions.remoteAction({
+            action: {
+              type: "PULL_NEW_COMMITS",
+              version: remoteStatus.newCommits!.version,
             },
           }),
         );

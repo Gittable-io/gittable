@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import git, { FetchResult, PushResult, ServerRef } from "isomorphic-git";
 import http from "isomorphic-git/http/node";
 import {
+  DraftVersion,
+  RemoteDraftVersion,
   RemotePublishedVersion,
   RemoteRepositoryChanges,
   RepositoryCredentials,
@@ -432,11 +434,11 @@ export async function pull({
 //#region pull_new_draft
 export async function pull_new_draft({
   repositoryId,
-  remoteDraftRef,
+  remoteDraftVersion,
   credentials,
 }: {
   repositoryId: string;
-  remoteDraftRef: string;
+  remoteDraftVersion: RemoteDraftVersion;
   credentials?: RepositoryCredentials;
 }): Promise<void> {
   const currentVersion = await gitService.getCurrentVersion({ repositoryId });
@@ -449,12 +451,50 @@ export async function pull_new_draft({
   await fetch({
     repositoryId,
     credentials,
-    fetchOptions: { singleBranch: true, remoteRef: remoteDraftRef },
+    fetchOptions: { singleBranch: true, remoteRef: remoteDraftVersion.branch },
   });
 
   await gitFuture.createLocalBranchFromRemoteBranch({
     repositoryId,
-    branchName: remoteDraftRef,
+    branchName: remoteDraftVersion.branch,
+  });
+}
+//#endregion
+
+//#region pull_new_commits
+export async function pull_new_commits({
+  repositoryId,
+  draftVersion,
+  credentials,
+}: {
+  repositoryId: string;
+  draftVersion: DraftVersion;
+  credentials?: RepositoryCredentials;
+}): Promise<void> {
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+  if (!gitUtils.isVersionEqual(currentVersion, draftVersion))
+    throw new GitServiceError(
+      "ILLEGAL_PULL_OPERATION",
+      "You should be on the draft version to pull the new commits",
+    );
+
+  await fetch({
+    repositoryId,
+    credentials,
+    fetchOptions: { singleBranch: true, ref: draftVersion.branch },
+  });
+
+  await git.merge({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ours: draftVersion.branch,
+    theirs: `refs/remotes/origin/${draftVersion.branch}`,
+  });
+
+  await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: draftVersion.branch,
   });
 }
 //#endregion

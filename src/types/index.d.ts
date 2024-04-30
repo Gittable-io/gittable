@@ -101,11 +101,13 @@ export type PullNewPublishedVersionsAction = {
   type: "PULL_NEW_PUBLISHED_VERSIONS";
 };
 
-export type PullActionType =
-  | PullNewDraftAction["type"]
-  | PullNewCommitsAction["type"]
-  | PullDeletedDraftAction["type"]
-  | PullNewPublishedVersionsAction["type"];
+export type PullAction =
+  | PullNewDraftAction
+  | PullNewCommitsAction
+  | PullDeletedDraftAction
+  | PullNewPublishedVersionsAction;
+
+export type PullActionType = PullAction["type"];
 
 export type RemoteRepositoryChanges = {
   newDraft?: {

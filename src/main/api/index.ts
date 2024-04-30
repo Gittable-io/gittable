@@ -56,6 +56,9 @@ import {
   pull_new_draft,
   type PullNewDraftParameters,
   type PullNewDraftResponse,
+  pull_new_commits,
+  type PullNewCommitsParameters,
+  type PullNewCommitsResponse,
 } from "./repository_pull";
 import {
   get_current_version_content,
@@ -160,6 +163,10 @@ const gittableElectronAPI = {
     params: PullNewDraftParameters,
   ): Promise<PullNewDraftResponse> =>
     ipcRenderer.invoke("pull_new_draft", params),
+  pull_new_commits: (
+    params: PullNewCommitsParameters,
+  ): Promise<PullNewCommitsResponse> =>
+    ipcRenderer.invoke("pull_new_commits", params),
 
   // version API
   get_current_version_content: (
@@ -232,6 +239,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
 
   // repository_pull API
   ipcMain.handle("pull_new_draft", (_event, params) => pull_new_draft(params));
+  ipcMain.handle("pull_new_commits", (_event, params) =>
+    pull_new_commits(params),
+  );
 
   // version API
   ipcMain.handle("get_current_version_content", (_event, params) =>
