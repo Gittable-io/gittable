@@ -86,185 +86,6 @@ export async function pushBranchOrTag({
 
 //#endregion
 
-//#region fetch
-export async function fetch({
-  repositoryId,
-  credentials: providedCredentials,
-}: {
-  repositoryId: string;
-  credentials?: RepositoryCredentials;
-}): Promise<FetchResult> {
-  // Retrieve credentials, and return error if there are no credentials
-  const credentials =
-    providedCredentials ??
-    (await UserDataStore.getRepositoryCredentials(repositoryId));
-  if (credentials == null) {
-    throw new GitServiceError("NO_CREDENTIALS_PROVIDED");
-  }
-
-  let fetchResult: FetchResult | null = null;
-
-  try {
-    // Push branch
-    fetchResult = await git.fetch({
-      fs,
-      http,
-      dir: getRepositoryPath(repositoryId),
-      tags: true,
-      prune: true,
-      onAuth: () => {
-        return credentials;
-      },
-      onAuthFailure: () => {
-        return { cancel: true };
-      },
-    });
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === "UserCanceledError") {
-        // This only occurs when I cancelled push with onAuthFailure
-        throw new GitServiceError("AUTH_FAILED_WITH_PROVIDED_CREDENTIALS");
-      } else {
-        throw new GitServiceError(
-          "UNKNOWN_REMOTE_OPERATION_ERROR",
-          `${error.name}: ${error.message}`,
-        );
-      }
-    } else {
-      throw new GitServiceError("UNKNOWN_REMOTE_OPERATION_ERROR");
-    }
-  }
-
-  // Fetch was successfull
-  // If credentials were provided, then save those credentials
-  if (providedCredentials) {
-    await UserDataStore.setRepositoryCredentials(
-      repositoryId,
-      providedCredentials,
-    );
-  }
-
-  return fetchResult;
-}
-//#endregion
-
-//#region pull
-export async function pull({
-  repositoryId,
-  credentials,
-}: {
-  repositoryId: string;
-  credentials?: RepositoryCredentials;
-}): Promise<RemoteRepositoryChanges> {
-  // (A) Determine the changes in the remote repository. If there are GitServiceErrorType, they will be handled by the API function
-  const remoteRepositoryChanges = await getRemoteRepositoryChanges({
-    repositoryId,
-    credentials,
-  });
-  const { newDraft, deletedDraft, newCommits, newPublishedVersions } =
-    remoteRepositoryChanges;
-
-  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-
-  // (B) Before fetching, you may need to prepare the local repository
-  // 1. If the checked out branch got deleted in remote, then switch temporarily to main
-  // isomorphic-git's fetch() throws an error if you're on a branch that got deleted on remote
-  if (
-    deletedDraft &&
-    currentVersion.type === "draft" &&
-    currentVersion.name === deletedDraft.version.name
-  ) {
-    await git.checkout({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: "main",
-    });
-  }
-
-  // (C) Then fetch all changes from remote. If there are GitServiceErrorType, they will be handled by the API function
-  await fetch({ repositoryId, credentials });
-
-  // (D) After fetching, integrate the fetched remote changed into the local repository
-  // 1. Integrate new commits : Merge on draft branch
-  if (newCommits) {
-    const draftVersion = newCommits.version;
-
-    await git.merge({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ours: draftVersion.branch,
-      theirs: `refs/remotes/origin/${draftVersion.branch}`,
-    });
-
-    // If the user is on the draft version, they need to checkout to complete the merge
-    // If the user is on a published version, it doesn't seem to need that
-    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-    if (
-      currentVersion.type === "draft" &&
-      currentVersion.name === draftVersion.name
-    ) {
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: draftVersion.branch,
-      });
-    }
-  }
-
-  // 2. Integrate new draft branches : Create local branches
-  if (newDraft) {
-    await gitFuture.createLocalBranchFromRemoteBranch({
-      repositoryId,
-      branchName: newDraft.draftVersion.branch,
-    });
-  }
-
-  // 3. Integrate new tags (new published versions) : merge origin/main with main
-  if (newPublishedVersions) {
-    await git.merge({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ours: "main",
-      theirs: `refs/remotes/origin/main`,
-    });
-  }
-
-  // 4. Integrate deleted draft branches : delete local branches
-  if (deletedDraft) {
-    // We assume that there's a single draft branch
-    const deletedDraftVersion = deletedDraft.version;
-
-    // If the user is on the deleted draft version, we need to switch to the last published version
-    if (
-      currentVersion.type === "draft" &&
-      currentVersion.name === deletedDraftVersion.name
-    ) {
-      const lastPublishedVersion = await gitService.getLastPublishedVersion({
-        repositoryId,
-      });
-
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: lastPublishedVersion
-          ? lastPublishedVersion.tag
-          : await gitService.getInitialCommitOid({ repositoryId }),
-      });
-    }
-
-    // Delete local branch
-    // Remote branch is already deleted with git.fetch({prune:true})
-    await gitFuture.deleteBranch({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: deletedDraftVersion.branch,
-    });
-  }
-
-  return remoteRepositoryChanges;
-}
-//#endregion
-
 //#region getRemoteRepositoryChanges
 
 export async function getRemoteRepositoryChanges({
@@ -428,4 +249,216 @@ export async function getRemoteRepositoryChanges({
   return remoteRepoChanges;
 }
 
+//#endregion
+
+//#region fetch
+async function fetch({
+  repositoryId,
+  credentials: providedCredentials,
+  fetchOptions,
+}: {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+  fetchOptions?: Partial<Parameters<typeof git.fetch>[0]>;
+}): Promise<FetchResult> {
+  // Retrieve credentials, and return error if there are no credentials
+  const credentials =
+    providedCredentials ??
+    (await UserDataStore.getRepositoryCredentials(repositoryId));
+  if (credentials == null) {
+    throw new GitServiceError("NO_CREDENTIALS_PROVIDED");
+  }
+
+  let fetchResult: FetchResult | null = null;
+
+  try {
+    // Push branch
+    fetchResult = await git.fetch({
+      fs,
+      http,
+      dir: getRepositoryPath(repositoryId),
+      tags: true,
+      prune: true,
+      onAuth: () => {
+        return credentials;
+      },
+      onAuthFailure: () => {
+        return { cancel: true };
+      },
+      ...fetchOptions,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "UserCanceledError") {
+        // This only occurs when I cancelled push with onAuthFailure
+        throw new GitServiceError("AUTH_FAILED_WITH_PROVIDED_CREDENTIALS");
+      } else {
+        throw new GitServiceError(
+          "UNKNOWN_REMOTE_OPERATION_ERROR",
+          `${error.name}: ${error.message}`,
+        );
+      }
+    } else {
+      throw new GitServiceError("UNKNOWN_REMOTE_OPERATION_ERROR");
+    }
+  }
+
+  // Fetch was successfull
+  // If credentials were provided, then save those credentials
+  if (providedCredentials) {
+    await UserDataStore.setRepositoryCredentials(
+      repositoryId,
+      providedCredentials,
+    );
+  }
+
+  return fetchResult;
+}
+//#endregion
+
+//#region pull
+export async function pull({
+  repositoryId,
+  credentials,
+}: {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+}): Promise<RemoteRepositoryChanges> {
+  // (A) Determine the changes in the remote repository. If there are GitServiceErrorType, they will be handled by the API function
+  const remoteRepositoryChanges = await getRemoteRepositoryChanges({
+    repositoryId,
+    credentials,
+  });
+  const { newDraft, deletedDraft, newCommits, newPublishedVersions } =
+    remoteRepositoryChanges;
+
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+
+  // (B) Before fetching, you may need to prepare the local repository
+  // 1. If the checked out branch got deleted in remote, then switch temporarily to main
+  // isomorphic-git's fetch() throws an error if you're on a branch that got deleted on remote
+  if (
+    deletedDraft &&
+    currentVersion.type === "draft" &&
+    currentVersion.name === deletedDraft.version.name
+  ) {
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: "main",
+    });
+  }
+
+  // (C) Then fetch all changes from remote. If there are GitServiceErrorType, they will be handled by the API function
+  await fetch({ repositoryId, credentials });
+
+  // (D) After fetching, integrate the fetched remote changed into the local repository
+  // 1. Integrate new commits : Merge on draft branch
+  if (newCommits) {
+    const draftVersion = newCommits.version;
+
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: draftVersion.branch,
+      theirs: `refs/remotes/origin/${draftVersion.branch}`,
+    });
+
+    // If the user is on the draft version, they need to checkout to complete the merge
+    // If the user is on a published version, it doesn't seem to need that
+    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+    if (
+      currentVersion.type === "draft" &&
+      currentVersion.name === draftVersion.name
+    ) {
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: draftVersion.branch,
+      });
+    }
+  }
+
+  // 2. Integrate new draft branches : Create local branches
+  if (newDraft) {
+    await gitFuture.createLocalBranchFromRemoteBranch({
+      repositoryId,
+      branchName: newDraft.draftVersion.branch,
+    });
+  }
+
+  // 3. Integrate new tags (new published versions) : merge origin/main with main
+  if (newPublishedVersions) {
+    await git.merge({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ours: "main",
+      theirs: `refs/remotes/origin/main`,
+    });
+  }
+
+  // 4. Integrate deleted draft branches : delete local branches
+  if (deletedDraft) {
+    // We assume that there's a single draft branch
+    const deletedDraftVersion = deletedDraft.version;
+
+    // If the user is on the deleted draft version, we need to switch to the last published version
+    if (
+      currentVersion.type === "draft" &&
+      currentVersion.name === deletedDraftVersion.name
+    ) {
+      const lastPublishedVersion = await gitService.getLastPublishedVersion({
+        repositoryId,
+      });
+
+      await git.checkout({
+        fs,
+        dir: getRepositoryPath(repositoryId),
+        ref: lastPublishedVersion
+          ? lastPublishedVersion.tag
+          : await gitService.getInitialCommitOid({ repositoryId }),
+      });
+    }
+
+    // Delete local branch
+    // Remote branch is already deleted with git.fetch({prune:true})
+    await gitFuture.deleteBranch({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: deletedDraftVersion.branch,
+    });
+  }
+
+  return remoteRepositoryChanges;
+}
+//#endregion
+
+//#region pull_new_draft
+export async function pull_new_draft({
+  repositoryId,
+  remoteDraftRef,
+  credentials,
+}: {
+  repositoryId: string;
+  remoteDraftRef: string;
+  credentials?: RepositoryCredentials;
+}): Promise<void> {
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+  if (currentVersion.type === "draft")
+    throw new GitServiceError(
+      "ILLEGAL_PULL_OPERATION",
+      "You should be on a published version to pull a new draft version",
+    );
+
+  await fetch({
+    repositoryId,
+    credentials,
+    fetchOptions: { singleBranch: true, remoteRef: remoteDraftRef },
+  });
+
+  await gitFuture.createLocalBranchFromRemoteBranch({
+    repositoryId,
+    branchName: remoteDraftRef,
+  });
+}
 //#endregion

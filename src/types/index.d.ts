@@ -73,13 +73,15 @@ export type VersionContentComparison = {
   change: DocumentChangeType;
 }[];
 
-// Repository Changes
+// Used as I may not have all the properties of a Draft Version that only exists on remote
+export type RemoteDraftVersion = Pick<
+  DraftVersion,
+  "type" | "id" | "name" | "branch" | "headOid"
+>;
+
 export type RemoteRepositoryChanges = {
   newDraft?: {
-    draftVersion: Pick<
-      DraftVersion,
-      "type" | "id" | "name" | "branch" | "headOid"
-    >;
+    draftVersion: RemoteDraftVersion;
   };
   newCommits?: {
     version: DraftVersion;
