@@ -59,6 +59,9 @@ import {
   pull_new_commits,
   type PullNewCommitsParameters,
   type PullNewCommitsResponse,
+  pull_deleted_draft,
+  type PullDeletedDraftParameters,
+  type PullDeletedDraftResponse,
 } from "./repository_pull";
 import {
   get_current_version_content,
@@ -167,6 +170,10 @@ const gittableElectronAPI = {
     params: PullNewCommitsParameters,
   ): Promise<PullNewCommitsResponse> =>
     ipcRenderer.invoke("pull_new_commits", params),
+  pull_deleted_draft: (
+    params: PullDeletedDraftParameters,
+  ): Promise<PullDeletedDraftResponse> =>
+    ipcRenderer.invoke("pull_deleted_draft", params),
 
   // version API
   get_current_version_content: (
@@ -241,6 +248,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   ipcMain.handle("pull_new_draft", (_event, params) => pull_new_draft(params));
   ipcMain.handle("pull_new_commits", (_event, params) =>
     pull_new_commits(params),
+  );
+  ipcMain.handle("pull_deleted_draft", (_event, params) =>
+    pull_deleted_draft(params),
   );
 
   // version API

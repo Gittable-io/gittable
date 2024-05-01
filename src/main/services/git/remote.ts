@@ -276,7 +276,6 @@ async function fetch({
       http,
       dir: getRepositoryPath(repositoryId),
       tags: true,
-      prune: true,
       onAuth: () => {
         return credentials;
       },
@@ -492,6 +491,50 @@ export async function pull_new_commits({
   });
 
   await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: draftVersion.branch,
+  });
+}
+//#endregion
+
+//#region pull_deleted_draft
+export async function pull_deleted_draft({
+  repositoryId,
+  draftVersion,
+}: {
+  repositoryId: string;
+  draftVersion: DraftVersion;
+  credentials?: RepositoryCredentials;
+}): Promise<void> {
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+  if (!gitUtils.isVersionEqual(currentVersion, draftVersion))
+    throw new GitServiceError(
+      "ILLEGAL_PULL_OPERATION",
+      "You should be on the draft version to pull the deleted branch",
+    );
+
+  // 1. Get out of the draft version to the last published version
+  const lastPublishedVersion = await gitService.getLastPublishedVersion({
+    repositoryId,
+  });
+
+  await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: lastPublishedVersion
+      ? lastPublishedVersion.tag
+      : await gitService.getInitialCommitOid({ repositoryId }),
+  });
+
+  // Delete local branch
+  await gitFuture.deleteBranch({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: draftVersion.branch,
+  });
+
+  await gitFuture.deleteRemoteTrackingBranch({
     fs,
     dir: getRepositoryPath(repositoryId),
     ref: draftVersion.branch,

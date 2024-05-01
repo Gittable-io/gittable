@@ -22,7 +22,8 @@ export function RemoteNotificationBar(): JSX.Element | null {
   const isPullInProgress: boolean = useSelector(
     (state: AppRootState) =>
       state.repo.remoteActionSequence?.action.type === "PULL_NEW_DRAFT" ||
-      state.repo.remoteActionSequence?.action.type === "PULL_NEW_COMMITS",
+      state.repo.remoteActionSequence?.action.type === "PULL_NEW_COMMITS" ||
+      state.repo.remoteActionSequence?.action.type === "PULL_DELETED_DRAFT",
   );
 
   const getNotificationType = (): PullActionType | null => {
@@ -81,6 +82,18 @@ export function RemoteNotificationBar(): JSX.Element | null {
             },
           }),
         );
+        break;
+      }
+      case "PULL_DELETED_DRAFT": {
+        dispatch(
+          repoActions.remoteAction({
+            action: {
+              type: "PULL_DELETED_DRAFT",
+              version: remoteStatus.deletedDraft!.version,
+            },
+          }),
+        );
+        break;
       }
     }
   };

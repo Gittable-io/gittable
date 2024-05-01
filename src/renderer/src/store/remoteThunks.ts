@@ -108,6 +108,14 @@ export const remoteAction = createAsyncThunk<
       });
       break;
     }
+    case "PULL_DELETED_DRAFT": {
+      response = await window.api.pull_deleted_draft({
+        repositoryId,
+        credentials,
+        draftVersion: action.version,
+      });
+      break;
+    }
   }
 
   // 2. Check if there's an error
@@ -162,7 +170,9 @@ export const remoteAction = createAsyncThunk<
       await thunkAPI.dispatch(fetchRepositoryDetails());
       break;
     }
-    case "PULL_NEW_DRAFT": {
+    case "PULL_NEW_COMMITS":
+    case "PULL_NEW_DRAFT":
+    case "PULL_DELETED_DRAFT": {
       await thunkAPI.dispatch(fetchRepositoryDetails());
       await thunkAPI.dispatch(
         repoActions.remoteAction({
@@ -173,18 +183,6 @@ export const remoteAction = createAsyncThunk<
       );
       break;
     }
-    case "PULL_NEW_COMMITS": {
-      await thunkAPI.dispatch(fetchRepositoryDetails());
-      await thunkAPI.dispatch(
-        repoActions.remoteAction({
-          action: {
-            type: "FETCH_REMOTE_REPOSITORY_CHANGES",
-          },
-        }),
-      );
-      break;
-    }
-
     case "FETCH_REMOTE_REPOSITORY_CHANGES": {
       const remoteChanges: RemoteRepositoryChanges = (
         response as {
