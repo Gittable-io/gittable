@@ -88,6 +88,7 @@ export function ReviewVersionChanges(): JSX.Element {
           />
           <Button
             text="Publish"
+            testId="publish-button"
             variant="outlined"
             disabled={!canPublish}
             onClick={() =>

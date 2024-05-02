@@ -16,9 +16,10 @@ export function WorkspaceToolbar(): JSX.Element {
     repoSelectors.draftVersion(state),
   );
 
-  const isPullInProgress: boolean = useSelector(
+  const isFetchRemoteRepositoryChangesInProgress: boolean = useSelector(
     (state: AppRootState) =>
-      state.repo.remoteActionSequence?.action.type === "PULL",
+      state.repo.remoteActionSequence?.action.type ===
+      "FETCH_REMOTE_REPOSITORY_CHANGES",
   );
 
   return (
@@ -58,7 +59,7 @@ export function WorkspaceToolbar(): JSX.Element {
                   }),
                 )
               }
-              loading={isPullInProgress}
+              loading={isFetchRemoteRepositoryChangesInProgress}
             />
           </div>
         </>

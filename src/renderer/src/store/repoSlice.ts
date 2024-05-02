@@ -5,6 +5,7 @@ import {
   PullDeletedDraftAction,
   PullNewCommitsAction,
   PullNewDraftAction,
+  PullNewPublishedVersionsAction,
   RemoteRepositoryChanges,
   Repository,
   RepositoryStatus,
@@ -60,10 +61,10 @@ export type RemoteAction =
       publishingName: string;
     }
   | { type: "FETCH_REMOTE_REPOSITORY_CHANGES" }
-  | { type: "PULL" } // TODO: to remove after refatoring pull
   | PullNewDraftAction
   | PullNewCommitsAction
-  | PullDeletedDraftAction;
+  | PullDeletedDraftAction
+  | PullNewPublishedVersionsAction;
 
 export type RepoState = {
   // Repository information

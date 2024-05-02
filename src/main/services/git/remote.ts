@@ -275,7 +275,6 @@ async function fetch({
       fs,
       http,
       dir: getRepositoryPath(repositoryId),
-      tags: true,
       onAuth: () => {
         return credentials;
       },
@@ -310,123 +309,6 @@ async function fetch({
   }
 
   return fetchResult;
-}
-//#endregion
-
-//#region pull
-export async function pull({
-  repositoryId,
-  credentials,
-}: {
-  repositoryId: string;
-  credentials?: RepositoryCredentials;
-}): Promise<RemoteRepositoryChanges> {
-  // (A) Determine the changes in the remote repository. If there are GitServiceErrorType, they will be handled by the API function
-  const remoteRepositoryChanges = await getRemoteRepositoryChanges({
-    repositoryId,
-    credentials,
-  });
-  const { newDraft, deletedDraft, newCommits, newPublishedVersions } =
-    remoteRepositoryChanges;
-
-  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-
-  // (B) Before fetching, you may need to prepare the local repository
-  // 1. If the checked out branch got deleted in remote, then switch temporarily to main
-  // isomorphic-git's fetch() throws an error if you're on a branch that got deleted on remote
-  if (
-    deletedDraft &&
-    currentVersion.type === "draft" &&
-    currentVersion.name === deletedDraft.version.name
-  ) {
-    await git.checkout({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: "main",
-    });
-  }
-
-  // (C) Then fetch all changes from remote. If there are GitServiceErrorType, they will be handled by the API function
-  await fetch({ repositoryId, credentials });
-
-  // (D) After fetching, integrate the fetched remote changed into the local repository
-  // 1. Integrate new commits : Merge on draft branch
-  if (newCommits) {
-    const draftVersion = newCommits.version;
-
-    await git.merge({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ours: draftVersion.branch,
-      theirs: `refs/remotes/origin/${draftVersion.branch}`,
-    });
-
-    // If the user is on the draft version, they need to checkout to complete the merge
-    // If the user is on a published version, it doesn't seem to need that
-    const currentVersion = await gitService.getCurrentVersion({ repositoryId });
-    if (
-      currentVersion.type === "draft" &&
-      currentVersion.name === draftVersion.name
-    ) {
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: draftVersion.branch,
-      });
-    }
-  }
-
-  // 2. Integrate new draft branches : Create local branches
-  if (newDraft) {
-    await gitFuture.createLocalBranchFromRemoteBranch({
-      repositoryId,
-      branchName: newDraft.draftVersion.branch,
-    });
-  }
-
-  // 3. Integrate new tags (new published versions) : merge origin/main with main
-  if (newPublishedVersions) {
-    await git.merge({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ours: "main",
-      theirs: `refs/remotes/origin/main`,
-    });
-  }
-
-  // 4. Integrate deleted draft branches : delete local branches
-  if (deletedDraft) {
-    // We assume that there's a single draft branch
-    const deletedDraftVersion = deletedDraft.version;
-
-    // If the user is on the deleted draft version, we need to switch to the last published version
-    if (
-      currentVersion.type === "draft" &&
-      currentVersion.name === deletedDraftVersion.name
-    ) {
-      const lastPublishedVersion = await gitService.getLastPublishedVersion({
-        repositoryId,
-      });
-
-      await git.checkout({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: lastPublishedVersion
-          ? lastPublishedVersion.tag
-          : await gitService.getInitialCommitOid({ repositoryId }),
-      });
-    }
-
-    // Delete local branch
-    // Remote branch is already deleted with git.fetch({prune:true})
-    await gitFuture.deleteBranch({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: deletedDraftVersion.branch,
-    });
-  }
-
-  return remoteRepositoryChanges;
 }
 //#endregion
 
@@ -538,6 +420,70 @@ export async function pull_deleted_draft({
     fs,
     dir: getRepositoryPath(repositoryId),
     ref: draftVersion.branch,
+  });
+}
+//#endregion
+
+//#region pull_new_published_versions
+export async function pull_new_published_versions({
+  repositoryId,
+  credentials,
+}: {
+  repositoryId: string;
+  credentials?: RepositoryCredentials;
+}): Promise<void> {
+  const currentVersion = await gitService.getCurrentVersion({ repositoryId });
+  if (currentVersion.type !== "published")
+    throw new GitServiceError(
+      "ILLEGAL_PULL_OPERATION",
+      "You cannot be on a draft to pull a new published version",
+    );
+
+  // 1. Checkout to main
+  await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: "main",
+  });
+
+  // 2. Fetch new commits on main and new tags
+  /*
+  Here I'm fetching tags and all branches.
+  I tried, but I couldn't make it work to fetch only "main" and tags on "main"
+    - I tried with {singleBranch:true, ref:"main", tags: true} => but {tags:true} doesn't work with {singleBranch:true}
+    - I tried with {tags:true, exclude:[ref to draft branch]} => but it corrupted the .git folder
+    - It also seems that "git fetch --tags" also fetches tags on all branches
+
+  So for now, I am fetching everything in order to be able to fetch tags.
+  
+  The side-effect is that I can have remote draft branches in my local repo. but for now, it doesn't seem to cause problems
+  */
+  await fetch({
+    repositoryId,
+    credentials,
+    fetchOptions: { tags: true },
+  });
+
+  // 3. Merge origin/main with main
+  await git.merge({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ours: "main",
+    theirs: `refs/remotes/origin/main`,
+  });
+
+  // 4. Checkout to main to complete the merge
+  await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: "main",
+  });
+
+  // 5. Return to the published version you were in previously
+  await git.checkout({
+    fs,
+    dir: getRepositoryPath(repositoryId),
+    ref: currentVersion.tag,
   });
 }
 //#endregion

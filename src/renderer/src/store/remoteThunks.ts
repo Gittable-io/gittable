@@ -34,7 +34,6 @@ export const remoteAction = createAsyncThunk<
     | Awaited<ReturnType<typeof window.api.push_commits>>
     | Awaited<ReturnType<typeof window.api.publish_draft>>
     | Awaited<ReturnType<typeof window.api.get_remote_info>>
-    | Awaited<ReturnType<typeof window.api.pull>> // TODO: to remove after refatoring pull
     | Awaited<ReturnType<typeof window.api.pull_new_draft>>
     | null = null;
   switch (action.type) {
@@ -84,14 +83,6 @@ export const remoteAction = createAsyncThunk<
       });
       break;
     }
-    case "PULL": {
-      // TODO: to remove after refatoring pull
-      response = await window.api.pull({
-        repositoryId,
-        credentials,
-      });
-      break;
-    }
     case "PULL_NEW_DRAFT": {
       response = await window.api.pull_new_draft({
         repositoryId,
@@ -113,6 +104,13 @@ export const remoteAction = createAsyncThunk<
         repositoryId,
         credentials,
         draftVersion: action.version,
+      });
+      break;
+    }
+    case "PULL_NEW_PUBLISHED_VERSIONS": {
+      response = await window.api.pull_new_published_versions({
+        repositoryId,
+        credentials,
       });
       break;
     }
@@ -165,14 +163,10 @@ export const remoteAction = createAsyncThunk<
       await thunkAPI.dispatch(fetchRepositoryDetails());
       break;
     }
-    case "PULL": {
-      // TODO: to remove after refatoring pull
-      await thunkAPI.dispatch(fetchRepositoryDetails());
-      break;
-    }
     case "PULL_NEW_COMMITS":
     case "PULL_NEW_DRAFT":
-    case "PULL_DELETED_DRAFT": {
+    case "PULL_DELETED_DRAFT":
+    case "PULL_NEW_PUBLISHED_VERSIONS": {
       await thunkAPI.dispatch(fetchRepositoryDetails());
       await thunkAPI.dispatch(
         repoActions.remoteAction({

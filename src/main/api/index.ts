@@ -45,9 +45,6 @@ import {
   publish_draft,
   type PublishDraftParameters,
   type PublishDraftResponse,
-  pull,
-  type PullParameters,
-  type PullResponse,
   get_remote_info,
   type GetRemoteInfoParameters,
   type GetRemoteInfoResponse,
@@ -62,6 +59,9 @@ import {
   pull_deleted_draft,
   type PullDeletedDraftParameters,
   type PullDeletedDraftResponse,
+  pull_new_published_versions,
+  type PullNewPublishedVersionsParameters,
+  type PullNewPublishedVersionsResponse,
 } from "./repository_pull";
 import {
   get_current_version_content,
@@ -154,8 +154,6 @@ const gittableElectronAPI = {
     params: PublishDraftParameters,
   ): Promise<PublishDraftResponse> =>
     ipcRenderer.invoke("publish_draft", params),
-  pull: (params: PullParameters): Promise<PullResponse> =>
-    ipcRenderer.invoke("pull", params),
   get_remote_info: (
     params: GetRemoteInfoParameters,
   ): Promise<GetRemoteInfoResponse> =>
@@ -174,6 +172,10 @@ const gittableElectronAPI = {
     params: PullDeletedDraftParameters,
   ): Promise<PullDeletedDraftResponse> =>
     ipcRenderer.invoke("pull_deleted_draft", params),
+  pull_new_published_versions: (
+    params: PullNewPublishedVersionsParameters,
+  ): Promise<PullNewPublishedVersionsResponse> =>
+    ipcRenderer.invoke("pull_new_published_versions", params),
 
   // version API
   get_current_version_content: (
@@ -239,7 +241,6 @@ const addHandlesForGittableElectronAPICall = (): void => {
     compare_versions(params),
   );
   ipcMain.handle("publish_draft", (_event, params) => publish_draft(params));
-  ipcMain.handle("pull", (_event, params) => pull(params));
   ipcMain.handle("get_remote_info", (_event, params) =>
     get_remote_info(params),
   );
@@ -251,6 +252,9 @@ const addHandlesForGittableElectronAPICall = (): void => {
   );
   ipcMain.handle("pull_deleted_draft", (_event, params) =>
     pull_deleted_draft(params),
+  );
+  ipcMain.handle("pull_new_published_versions", (_event, params) =>
+    pull_new_published_versions(params),
   );
 
   // version API

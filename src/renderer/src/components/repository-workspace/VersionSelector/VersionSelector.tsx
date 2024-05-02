@@ -13,7 +13,7 @@ const formatOptionLabel = ({ value, label }): JSX.Element => (
   <IconAndText
     materialSymbol={getVersionMaterialSymbol(value)}
     text={label}
-    testId={`version-${label}`}
+    testId={`version-${value.type}-${label}`}
   />
 );
 
