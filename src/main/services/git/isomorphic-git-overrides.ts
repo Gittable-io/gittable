@@ -53,18 +53,21 @@ export async function createLocalBranchFromRemoteBranch({
 }
 
 /**
- * This function replaces and fills a gap in isomorphic git's deleteBranch()
- * The issue is, that isogit deleted the ref to the branch, but does not delete the upstream-branch config in the config file
- * which is the beahvior of git branch -d
- * This function is here to remedy that.
+ *
+ * This function tries to replicate "git branch -d", which isomorphic-git deleteBranch() doesn't implement it exactly like Git
+ *
+ * The issue is, that isogit deletes the ref to the branch, but does not delete the upstream-branch config in the config file
+ * which is the behavior of git branch -d
  *
  * TODO: do a PR in isomorphic git
  */
 export async function deleteBranch(
   options: Parameters<typeof git.deleteBranch>[0],
 ): ReturnType<typeof git.deleteBranch> {
+  // Delete the branch ref
   await git.deleteBranch(options);
 
+  // Missing: delete the upstream-branch config
   const branch_merge = await git.getConfig({
     fs: options.fs,
     dir: options.dir,
@@ -92,4 +95,26 @@ export async function deleteBranch(
       value: undefined,
     });
   }
+}
+
+/**
+ *
+ * This functions implements "git branch -d -r" which deleted remote-tracking branches (refs to remote branches), but keeps local branches
+ * This features does not exist yet in isogit's deleteBranch()
+ *
+ * Note: it exists with isogit's fetch({prune:true}), but I would like to delete the remote branch ref without fetching (as I already know that it was deleted)
+ *
+ * In the future, try to add a remote parameter to isogit deleteBranch()
+ *
+ * TODO: do a PR in isomorphic git
+ */
+export async function deleteRemoteTrackingBranch(
+  options: Parameters<typeof git.deleteBranch>[0],
+): ReturnType<typeof git.deleteBranch> {
+  const remoteRef = `refs/remotes/origin/${options.ref}`;
+
+  await git.deleteRef({
+    ...options,
+    ref: remoteRef,
+  });
 }

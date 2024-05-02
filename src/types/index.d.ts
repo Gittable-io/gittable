@@ -36,6 +36,7 @@ export type PublishedVersion = {
   tag: string;
   newest: boolean;
   mainCommitOid: string;
+  annotatedTagOid: string;
 };
 
 export type DraftVersion = {
@@ -73,13 +74,45 @@ export type VersionContentComparison = {
   change: DocumentChangeType;
 }[];
 
-// Repository Changes
+// Used as I may not have all the properties of a Draft Version that only exists on remote
+export type RemoteDraftVersion = Pick<
+  DraftVersion,
+  "type" | "id" | "name" | "branch" | "headOid"
+>;
+
+export type RemotePublishedVersion = Pick<
+  PublishedVersion,
+  "type" | "name" | "tag" | "mainCommitOid" | "annotatedTagOid"
+>;
+
+export type PullNewDraftAction = {
+  type: "PULL_NEW_DRAFT";
+  draftVersion: RemoteDraftVersion;
+};
+
+export type PullNewCommitsAction = {
+  type: "PULL_NEW_COMMITS";
+  version: DraftVersion;
+};
+export type PullDeletedDraftAction = {
+  type: "PULL_DELETED_DRAFT";
+  version: DraftVersion;
+};
+export type PullNewPublishedVersionsAction = {
+  type: "PULL_NEW_PUBLISHED_VERSIONS";
+};
+
+export type PullAction =
+  | PullNewDraftAction
+  | PullNewCommitsAction
+  | PullDeletedDraftAction
+  | PullNewPublishedVersionsAction;
+
+export type PullActionType = PullAction["type"];
+
 export type RemoteRepositoryChanges = {
   newDraft?: {
-    draftVersion: Pick<
-      DraftVersion,
-      "type" | "id" | "name" | "branch" | "headOid"
-    >;
+    draftVersion: RemoteDraftVersion;
   };
   newCommits?: {
     version: DraftVersion;
@@ -87,4 +120,5 @@ export type RemoteRepositoryChanges = {
   deletedDraft?: {
     version: DraftVersion;
   };
+  newPublishedVersions?: { versions: RemotePublishedVersion[] };
 };

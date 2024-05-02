@@ -1,7 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RemoteAction, repoActions } from "./repoSlice";
 import { AppRootState } from "./store";
-import { DraftVersion, RepositoryCredentials } from "@sharedTypes/index";
+import {
+  DraftVersion,
+  RemoteRepositoryChanges,
+  RepositoryCredentials,
+} from "@sharedTypes/index";
 import {
   fetchRepositoryDetails,
   switchVersion,
@@ -29,7 +33,8 @@ export const remoteAction = createAsyncThunk<
     | Awaited<ReturnType<typeof window.api.delete_draft>>
     | Awaited<ReturnType<typeof window.api.push_commits>>
     | Awaited<ReturnType<typeof window.api.publish_draft>>
-    | Awaited<ReturnType<typeof window.api.pull>>
+    | Awaited<ReturnType<typeof window.api.get_remote_info>>
+    | Awaited<ReturnType<typeof window.api.pull_new_draft>>
     | null = null;
   switch (action.type) {
     case "INIT_REPO": {
@@ -71,8 +76,39 @@ export const remoteAction = createAsyncThunk<
       });
       break;
     }
-    case "PULL": {
-      response = await window.api.pull({
+    case "LOOKUP_REMOTE_REPO_CHANGES": {
+      response = await window.api.get_remote_info({
+        repositoryId,
+        credentials,
+      });
+      break;
+    }
+    case "PULL_NEW_DRAFT": {
+      response = await window.api.pull_new_draft({
+        repositoryId,
+        credentials,
+        remoteDraftVersion: action.draftVersion,
+      });
+      break;
+    }
+    case "PULL_NEW_COMMITS": {
+      response = await window.api.pull_new_commits({
+        repositoryId,
+        credentials,
+        draftVersion: action.version,
+      });
+      break;
+    }
+    case "PULL_DELETED_DRAFT": {
+      response = await window.api.pull_deleted_draft({
+        repositoryId,
+        credentials,
+        draftVersion: action.version,
+      });
+      break;
+    }
+    case "PULL_NEW_PUBLISHED_VERSIONS": {
+      response = await window.api.pull_new_published_versions({
         repositoryId,
         credentials,
       });
@@ -127,8 +163,30 @@ export const remoteAction = createAsyncThunk<
       await thunkAPI.dispatch(fetchRepositoryDetails());
       break;
     }
-    case "PULL": {
+    case "PULL_NEW_COMMITS":
+    case "PULL_NEW_DRAFT":
+    case "PULL_DELETED_DRAFT":
+    case "PULL_NEW_PUBLISHED_VERSIONS": {
       await thunkAPI.dispatch(fetchRepositoryDetails());
+      await thunkAPI.dispatch(
+        repoActions.remoteAction({
+          action: {
+            type: "LOOKUP_REMOTE_REPO_CHANGES",
+          },
+        }),
+      );
+      break;
+    }
+    case "LOOKUP_REMOTE_REPO_CHANGES": {
+      const remoteChanges: RemoteRepositoryChanges = (
+        response as {
+          status: "success";
+          remoteChanges: RemoteRepositoryChanges;
+        }
+      ).remoteChanges;
+
+      await thunkAPI.dispatch(repoActions.updateRemoteStatus(remoteChanges));
+      break;
     }
   }
   return;

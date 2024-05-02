@@ -15,19 +15,23 @@ export function WorkspaceToolbar(): JSX.Element {
   const draftVersion = useSelector((state: AppRootState) =>
     repoSelectors.draftVersion(state),
   );
-  const isPullInProgress: boolean = useSelector(
+
+  const isLookupRemoteRepoChangesInProgress: boolean = useSelector(
     (state: AppRootState) =>
-      state.repo.remoteActionSequence?.action.type === "PULL",
+      state.repo.remoteActionSequence?.action.type ===
+      "LOOKUP_REMOTE_REPO_CHANGES",
   );
 
   return (
     <div className="workspace-toolbar">
       {currentVersion && (
         <>
-          <IconAndText
-            materialSymbol={getVersionMaterialSymbol(currentVersion)}
-            text={`${currentVersion.type === "published" ? (currentVersion.newest ? "Viewing latest published" : "Viewing published") : "Editing draft"} version: ${currentVersion.name}`}
-          />
+          <div className="workspace-info">
+            <IconAndText
+              materialSymbol={getVersionMaterialSymbol(currentVersion)}
+              text={`${currentVersion.type === "published" ? (currentVersion.newest ? "Viewing latest published" : "Viewing published") : "Editing draft"} version: ${currentVersion.name}`}
+            />
+          </div>
           <div className="workspace-toolbar-actions">
             {currentVersion.type === "draft" && (
               <Button
@@ -44,18 +48,18 @@ export function WorkspaceToolbar(): JSX.Element {
               <DeleteDraft />
             )}
             <Button
-              text="Get Latest Updates"
+              text="Lookup Latest Updates"
               variant="outlined"
               onClick={() =>
                 dispatch(
                   repoActions.remoteAction({
                     action: {
-                      type: "PULL",
+                      type: "LOOKUP_REMOTE_REPO_CHANGES",
                     },
                   }),
                 )
               }
-              loading={isPullInProgress}
+              loading={isLookupRemoteRepoChangesInProgress}
             />
           </div>
         </>

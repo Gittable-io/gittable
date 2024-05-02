@@ -64,6 +64,7 @@ export async function getPublishedVersions({
       name: tag.tag.tag,
       tag: tag.tag.tag,
       mainCommitOid: tag.tag.object,
+      annotatedTagOid: tag.oid,
       newest: idx === 0, // The newest tag is the first one (array is sorted anti-chronologically)
     }),
   );
@@ -195,7 +196,12 @@ export async function getCurrentVersion({
     `[API/get_current_version] HEAD status is ${headStatus}, and current branch is ${currentBranch}`,
   );
 
-  const headCommitOid = await git.resolveRef({
+  /*
+    HEAD will either point to : 
+      - The commit oid referenced by the branch ref
+      - The Annotated tag oid (not the commit pointed to by this tag)
+  */
+  const headOid = await git.resolveRef({
     fs,
     dir: getRepositoryPath(repositoryId),
     ref: "HEAD",
@@ -214,7 +220,7 @@ export async function getCurrentVersion({
         ref: version.branch,
       });
 
-      if (branchCommitOid === headCommitOid) {
+      if (branchCommitOid === headOid) {
         return version;
       }
     }
@@ -223,14 +229,12 @@ export async function getCurrentVersion({
       repositoryId,
     });
 
+    /*
+    Note : in cases where mutliple tags points to the same commit (published versions with no commit)
+    It will work, as HEAD points to the annotated tag and not to the commit referenced by the annotated tag 
+    */
     for (const version of publishedVersions) {
-      const tagCommitOid = await git.resolveRef({
-        fs,
-        dir: getRepositoryPath(repositoryId),
-        ref: version.tag,
-      });
-
-      if (tagCommitOid === headCommitOid) {
+      if (version.annotatedTagOid === headOid) {
         return version;
       }
     }

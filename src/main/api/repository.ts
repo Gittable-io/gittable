@@ -4,6 +4,7 @@ import { getRepositoryPath } from "../utils/utils";
 import {
   DraftVersion,
   PublishedVersion,
+  RemoteRepositoryChanges,
   RepositoryCredentials,
   RepositoryStatus,
   Version,
@@ -16,6 +17,7 @@ import * as gitService from "../services/git/local";
 import * as backupService from "../services/git/backup";
 import * as gitUtils from "../services/git/utils";
 import { GitServiceError } from "../services/git/error";
+import * as gitFuture from "../services/git/isomorphic-git-overrides";
 
 //#region API: get_repository_status
 export type GetRepositoryStatusParameters = {
@@ -675,7 +677,7 @@ export async function compare_versions({
 
 //#endregion
 
-//#region API: Publish draft
+//#region API: publish_draft
 export type PublishDraftParameters = {
   repositoryId: string;
   draftVersion: DraftVersion;
@@ -737,33 +739,29 @@ export async function publish_draft({
       ref: newPublishedVersionName,
     });
 
-    // 4. Checkout to the newly created tag
-    await git.checkout({
-      fs,
-      dir: getRepositoryPath(repositoryId),
-      ref: newPublishedVersionName,
-    });
-
     /*
     ! This is not atomic : If one of the 3 pushes fails (I had a scenario where the 3rd one failed),
     ! then the remote repo is in an illegal state. And since we rollbacked the local repo, it's unsynchronized with remote
     TODO: we should solve those issues
     */
-    // 5. Push main
+    // 4. Push main
     await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: "main",
       credentials,
     });
 
-    // 6. Push new tag
+    // 5. Push new tag
+    // ! There's an issue (that for now doesn't appear as a bug) when pushing a new annotated tage
+    // ! See https://github.com/Gittable-io/gittable/issues/59
     await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: newPublishedVersionName,
       credentials,
     });
 
-    // 7. Push delete remote branch
+    // 6. Push delete remote branch
+    // * Note: this also deletes the refs/remotes/origin/draft/<branch>. So no need to separately delete the remote tracking branch
     await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: draftVersion.branch,
@@ -773,11 +771,18 @@ export async function publish_draft({
 
     // ! it seems that isomorphic-git cannot delete a remote branch if it was deleted in local repository beforehand
     // ! see https://github.com/isomorphic-git/isomorphic-git/issues/40#issuecomment-1593728372
-    // 8. Delete draft branch
-    await git.deleteBranch({
+    // 7. Delete draft branch
+    await gitFuture.deleteBranch({
       fs,
       dir: getRepositoryPath(repositoryId),
       ref: draftVersion.branch,
+    });
+
+    // 8. Checkout to the newly created tag
+    await git.checkout({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      ref: newPublishedVersionName,
     });
   } catch (error) {
     console.error(
@@ -813,15 +818,16 @@ export async function publish_draft({
 
 //#endregion
 
-//#region API: Pull
-export type PullParameters = {
+//#region API: get_remote_info
+export type GetRemoteInfoParameters = {
   repositoryId: string;
   credentials?: RepositoryCredentials;
 };
 
-export type PullResponse =
+export type GetRemoteInfoResponse =
   | {
       status: "success";
+      remoteChanges: RemoteRepositoryChanges;
     }
   | {
       status: "error";
@@ -832,21 +838,21 @@ export type PullResponse =
         | "UNKNOWN";
     };
 
-export async function pull({
+export async function get_remote_info({
   repositoryId,
   credentials,
-}: PullParameters): Promise<PullResponse> {
-  console.debug(`[API/pull] Called with repositoryId=${repositoryId}`);
+}: GetRemoteInfoParameters): Promise<GetRemoteInfoResponse> {
+  console.debug(
+    `[API/get_remote_info] Called with repositoryId=${repositoryId}`,
+  );
 
-  let errorResponse: PullResponse | null = null;
   try {
-    // 1. Backup repository
-    await backupService.backup(repositoryId);
-
-    await remoteService.pull({
+    const remoteChanges = await remoteService.getRemoteRepositoryChanges({
       repositoryId,
       credentials,
     });
+
+    return { status: "success", remoteChanges };
   } catch (error) {
     console.error(
       `[API/pull] Error : ${error instanceof Error ? `${error.name}: ${error.message}` : ""}`,
@@ -854,29 +860,19 @@ export async function pull({
 
     if (error instanceof GitServiceError) {
       if (error.name === "NO_CREDENTIALS_PROVIDED") {
-        errorResponse = { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
+        return { status: "error", type: "NO_PROVIDED_CREDENTIALS" };
       } else if (error.name === "AUTH_FAILED_WITH_PROVIDED_CREDENTIALS") {
-        errorResponse = {
+        return {
           status: "error",
           type: "AUTH_ERROR_WITH_CREDENTIALS",
         };
       } else {
-        errorResponse = { status: "error", type: "UNKNOWN" };
+        return { status: "error", type: "UNKNOWN" };
       }
     } else {
-      errorResponse = { status: "error", type: "UNKNOWN" };
-    }
-  } finally {
-    if (errorResponse) {
-      await backupService.restore(repositoryId);
-    } else {
-      await backupService.clear(repositoryId);
+      return { status: "error", type: "UNKNOWN" };
     }
   }
-
-  if (errorResponse) return errorResponse;
-
-  return { status: "success" };
 }
 
 //#endregion
