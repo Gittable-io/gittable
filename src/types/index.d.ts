@@ -36,6 +36,7 @@ export type PublishedVersion = {
   tag: string;
   newest: boolean;
   mainCommitOid: string;
+  annotatedTagOid: string;
 };
 
 export type DraftVersion = {
