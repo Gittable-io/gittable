@@ -16,10 +16,10 @@ export function WorkspaceToolbar(): JSX.Element {
     repoSelectors.draftVersion(state),
   );
 
-  const isFetchRemoteRepositoryChangesInProgress: boolean = useSelector(
+  const isLookupRemoteRepoChangesInProgress: boolean = useSelector(
     (state: AppRootState) =>
       state.repo.remoteActionSequence?.action.type ===
-      "FETCH_REMOTE_REPOSITORY_CHANGES",
+      "LOOKUP_REMOTE_REPO_CHANGES",
   );
 
   return (
@@ -48,18 +48,18 @@ export function WorkspaceToolbar(): JSX.Element {
               <DeleteDraft />
             )}
             <Button
-              text="Get Latest Updates"
+              text="Lookup Latest Updates"
               variant="outlined"
               onClick={() =>
                 dispatch(
                   repoActions.remoteAction({
                     action: {
-                      type: "FETCH_REMOTE_REPOSITORY_CHANGES",
+                      type: "LOOKUP_REMOTE_REPO_CHANGES",
                     },
                   }),
                 )
               }
-              loading={isFetchRemoteRepositoryChangesInProgress}
+              loading={isLookupRemoteRepoChangesInProgress}
             />
           </div>
         </>

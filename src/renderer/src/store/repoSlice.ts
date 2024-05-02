@@ -60,7 +60,7 @@ export type RemoteAction =
       draftVersion: DraftVersion;
       publishingName: string;
     }
-  | { type: "FETCH_REMOTE_REPOSITORY_CHANGES" }
+  | { type: "LOOKUP_REMOTE_REPO_CHANGES" }
   | PullNewDraftAction
   | PullNewCommitsAction
   | PullDeletedDraftAction

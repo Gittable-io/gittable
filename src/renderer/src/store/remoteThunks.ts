@@ -76,7 +76,7 @@ export const remoteAction = createAsyncThunk<
       });
       break;
     }
-    case "FETCH_REMOTE_REPOSITORY_CHANGES": {
+    case "LOOKUP_REMOTE_REPO_CHANGES": {
       response = await window.api.get_remote_info({
         repositoryId,
         credentials,
@@ -171,13 +171,13 @@ export const remoteAction = createAsyncThunk<
       await thunkAPI.dispatch(
         repoActions.remoteAction({
           action: {
-            type: "FETCH_REMOTE_REPOSITORY_CHANGES",
+            type: "LOOKUP_REMOTE_REPO_CHANGES",
           },
         }),
       );
       break;
     }
-    case "FETCH_REMOTE_REPOSITORY_CHANGES": {
+    case "LOOKUP_REMOTE_REPO_CHANGES": {
       const remoteChanges: RemoteRepositoryChanges = (
         response as {
           status: "success";
