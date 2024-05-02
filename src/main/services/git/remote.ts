@@ -228,6 +228,7 @@ export async function getRemoteRepositoryChanges({
         name: remoteTagRef.tagName,
         tag: remoteTagRef.tagName,
         mainCommitOid: remoteTagRef.peeled!,
+        annotatedTagOid: remoteTagRef.oid,
       });
     }
   }

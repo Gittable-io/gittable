@@ -82,7 +82,7 @@ export type RemoteDraftVersion = Pick<
 
 export type RemotePublishedVersion = Pick<
   PublishedVersion,
-  "type" | "name" | "tag" | "mainCommitOid"
+  "type" | "name" | "tag" | "mainCommitOid" | "annotatedTagOid"
 >;
 
 export type PullNewDraftAction = {
