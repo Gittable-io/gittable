@@ -44,10 +44,14 @@ export function ReviewVersionChanges(): JSX.Element {
   const isWorkingDirModified = useSelector((state: AppRootState) =>
     repoSelectors.isWorkingDirModified(state),
   );
+  const isDraftDeleted = useSelector(
+    (state: AppRootState) => state.repo.remoteStatus?.deletedDraft != undefined,
+  );
 
   const [publishName, setPublishName] = useState<string>(currentVersion.name);
 
-  const canPublish = currentVersion.type === "draft" && !isWorkingDirModified;
+  const canPublish =
+    currentVersion.type === "draft" && !isWorkingDirModified && !isDraftDeleted;
 
   useEffect(() => {
     const fetchDiff = async (): Promise<void> => {

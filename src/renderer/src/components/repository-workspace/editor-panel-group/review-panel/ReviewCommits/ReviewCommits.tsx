@@ -35,12 +35,16 @@ export function ReviewCommits(): JSX.Element {
   const commits = useSelector(
     (state: AppRootState) => state.repo.currentVersionContent!.commits,
   );
+  const isDraftDeleted = useSelector(
+    (state: AppRootState) => state.repo.remoteStatus?.deletedDraft != undefined,
+  );
   const isPushCommitInProgress: boolean = useSelector(
     (state: AppRootState) =>
       state.repo.remoteActionSequence?.action.type === "PUSH_COMMITS",
   );
 
   const unpushedCommits = commits.some((c) => !c.inRemote);
+  const canPushCommits = unpushedCommits && !isDraftDeleted;
 
   return (
     <div className="review-commits">
@@ -48,7 +52,7 @@ export function ReviewCommits(): JSX.Element {
       <Button
         text="Share your commits"
         variant="outlined"
-        disabled={!unpushedCommits}
+        disabled={!canPushCommits}
         onClick={() =>
           dispatch(
             repoActions.remoteAction({
