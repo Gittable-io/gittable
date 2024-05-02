@@ -79,7 +79,7 @@ export async function pull_new_draft({
 
 //#endregion
 
-//#region API: pull_new_draft
+//#region API: pull_new_commits
 export type PullNewCommitsParameters = {
   repositoryId: string;
   draftVersion: DraftVersion;

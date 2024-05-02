@@ -124,3 +124,23 @@ export function isVersionEqual(
     }
   }
 }
+
+export async function isCommitOidPresent({
+  repositoryId,
+  commitOid,
+}: {
+  repositoryId: string;
+  commitOid: string;
+}): Promise<boolean> {
+  try {
+    await git.readCommit({
+      fs,
+      dir: getRepositoryPath(repositoryId),
+      oid: commitOid,
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.name === "NotFoundError") return false;
+    else throw error;
+  }
+}

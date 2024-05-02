@@ -187,9 +187,26 @@ export async function getRemoteRepositoryChanges({
       localDraftVersion &&
       localDraftVersion.headOid !== remoteDraftBranchRef.oid
     ) {
-      remoteRepoChanges.newCommits = { version: localDraftVersion };
+      /*
+       The local & remote draft branches refer to different commits
+       There can be 3 reasons : 
+       - New commits on remote
+       - New commits on local
+       - Both
 
-      break; // We assume there's always a single draft branch
+       In this function, we are interested to detects if there are new commits on remote
+
+       I'm using a very simple solution : check if the commit pointed to by the remote branch exists in the local repository
+       In the usage of this App, I don't see for now cases where this might cause issues
+      */
+      const remoteCommitOidPresent = await gitUtils.isCommitOidPresent({
+        repositoryId,
+        commitOid: remoteDraftBranchRef.oid,
+      });
+      if (!remoteCommitOidPresent) {
+        remoteRepoChanges.newCommits = { version: localDraftVersion };
+        break; // We assume there's always a single draft branch
+      }
     }
   }
 
