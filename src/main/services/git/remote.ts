@@ -383,11 +383,14 @@ export async function pull_new_commits({
     fetchOptions: { singleBranch: true, ref: draftVersion.branch },
   });
 
+  const userName = (await UserDataStore.getGitConfig()).user.name;
+  const mergeCommitMessage = `Merge recent contributions with ${userName}'s work`;
   await git.merge({
     fs,
     dir: getRepositoryPath(repositoryId),
     ours: draftVersion.branch,
     theirs: `refs/remotes/origin/${draftVersion.branch}`,
+    message: mergeCommitMessage,
   });
 
   await git.checkout({
