@@ -263,7 +263,7 @@ export const repoSlice = createSlice({
         } else if (action.payload === "AUTH_ERROR_WITH_CREDENTIALS") {
           state.remoteActionSequence!.step = "AUTH_ERROR";
         } else {
-          state.remoteActionSequence!.step = "UNKOWN_ERROR";
+          state.remoteActionSequence = null;
         }
       });
   },

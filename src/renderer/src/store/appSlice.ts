@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { Repository } from "@sharedTypes/index";
+import { nanoid } from "nanoid";
 
 export type GitConfig = {
   user: {
@@ -9,10 +10,18 @@ export type GitConfig = {
   };
 };
 
+export type SnackbarNotification = {
+  id: string;
+  type: "error" | "info";
+  message: string;
+};
+
 export type AppState = {
   repositories: Repository[];
   openedRepository: Repository | null;
   gitConfig: GitConfig;
+
+  snackbars: SnackbarNotification[];
 };
 
 function initState(): AppState {
@@ -25,6 +34,7 @@ function initState(): AppState {
         email: "",
       },
     },
+    snackbars: [],
   };
 }
 
@@ -52,6 +62,19 @@ export const appSlice = createSlice({
     },
     setGitConfig: (state, action: PayloadAction<GitConfig>) => {
       state.gitConfig = action.payload;
+    },
+    addSnackbar: (
+      state,
+      action: PayloadAction<Omit<SnackbarNotification, "id">>,
+    ) => {
+      const notif = { id: nanoid(), ...action.payload };
+      state.snackbars.push(notif);
+    },
+    removeSnackbar: (state, action: PayloadAction<string>) => {
+      const idx = state.snackbars.findIndex(
+        (notif) => notif.id === action.payload,
+      );
+      if (idx !== -1) state.snackbars.splice(idx, 1);
     },
   },
   selectors: {

@@ -13,7 +13,7 @@ import {
   getRepositoryRelativeTablePath,
   getTableIdFromFileName,
 } from "../utils/utils";
-import { pushBranchOrTag } from "../services/git/remote";
+import * as remoteService from "../services/git/remote";
 import * as gitService from "../services/git/local";
 import path from "node:path";
 import { GitServiceError } from "../services/git/error";
@@ -268,6 +268,7 @@ export type PushCommitsResponse =
       status: "error";
       type:
         | "NOT_ON_DRAFT_VERSION"
+        | "UNPULLED_REMOTE_COMMITS"
         | "NO_PROVIDED_CREDENTIALS"
         | "AUTH_ERROR_WITH_CREDENTIALS"
         | "UNKNOWN";
@@ -280,14 +281,25 @@ export async function push_commits({
   console.debug(`[API/push_commits] Called with repositoryId=${repositoryId}`);
 
   try {
+    // First, check that we are on the draft version
     const currentVersion = await gitService.getCurrentVersion({ repositoryId });
     if (currentVersion.type !== "draft") {
       return { status: "error", type: "NOT_ON_DRAFT_VERSION" };
     }
 
+    // Second, before pushing commits, check that there are no remote commits to pull
+    const remoteRepoChanges = await remoteService.getRemoteRepositoryChanges({
+      repositoryId,
+      credentials,
+    });
+    if (remoteRepoChanges.newCommits) {
+      return { status: "error", type: "UNPULLED_REMOTE_COMMITS" };
+    }
+
+    // If all is well, push commits
     const currentDraftVersion: DraftVersion = currentVersion;
 
-    await pushBranchOrTag({
+    await remoteService.pushBranchOrTag({
       repositoryId,
       branchOrTagName: currentDraftVersion.branch,
       credentials,
