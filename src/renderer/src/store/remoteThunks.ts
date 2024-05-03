@@ -12,6 +12,7 @@ import {
   updateVersionContent,
   updateVersions,
 } from "./thunks";
+import { appActions } from "./appSlice";
 
 export const remoteAction = createAsyncThunk<
   void,
@@ -118,17 +119,27 @@ export const remoteAction = createAsyncThunk<
 
   // 2. Check if there's an error
   if (response.status === "error") {
-    switch (response.type) {
-      case "NO_PROVIDED_CREDENTIALS": {
-        return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
-      }
-      case "AUTH_ERROR_WITH_CREDENTIALS": {
-        return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
-      }
-      default: {
-        return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
+    // If it's a common authentication error
+    if (response.type === "NO_PROVIDED_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("NO_PROVIDED_CREDENTIALS");
+    } else if (response.type === "AUTH_ERROR_WITH_CREDENTIALS") {
+      return thunkAPI.rejectWithValue("AUTH_ERROR_WITH_CREDENTIALS");
+    }
+
+    // else, if it's a specific action error
+    if (action.type === "PUSH_COMMITS") {
+      if (response.type === "UNPULLED_REMOTE_COMMITS") {
+        thunkAPI.dispatch(
+          appActions.addSnackbar({
+            type: "error",
+            message:
+              "There are documents modified by your teammates. You have to first retrieve them and make sure they do not conflict with your changes.",
+          }),
+        );
       }
     }
+
+    return thunkAPI.rejectWithValue("UNKNOWN_ERROR");
   }
 
   // 3. If success, dispatch an action that will update

@@ -9,6 +9,7 @@ import ReactModal from "react-modal";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppRootState, store } from "@renderer/store/store";
 import { appActions } from "@renderer/store/appSlice";
+import { SnackbarContainer } from "../SnackbarContainer";
 
 // Add this as required by the react-modal library to prevent an error in the console (although without it the app functions normally)
 ReactModal.setAppElement("#root");
@@ -43,6 +44,7 @@ function App(): JSX.Element {
 
   return (
     <div id="app">
+      <SnackbarContainer />
       <div className="main-container">
         {openedRepository ? <RepositoryWorkspace /> : <WelcomePage />}
       </div>

@@ -1,0 +1,23 @@
+.snackbar {
+  width: 400px;
+
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 5px 20px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.snackbar.info {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.snackbar.error {
+  background-color: var(--color-danger);
+  color: white;
+}
